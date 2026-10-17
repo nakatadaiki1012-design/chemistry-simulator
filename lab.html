@@ -1798,6 +1798,8 @@ PR['p-distill'] = {
     });
     const stones = fg.children.filter(c => c.geometry && c.geometry.type === 'DodecahedronGeometry');
     const gauze = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.03, 1.4), solid(0x9aa1aa)); gauze.position.set(FX, FY + 0.03, 0); g.add(gauze);
+    const cer = cyl(0.42, 0.42, 0.03, solid(0xe8e6df), 32); cer.position.set(FX, FY + 0.045, 0); g.add(cer);
+    const tp = tripod(FY, 0.62); tp.position.x = FX; g.add(tp); // 金網は三脚の上にのせる
     const NECK_TOP = FY + 3.98 * 0.7;
     const st = rubberStopper(0.26, 0.21, 0.3); st.position.set(FX, NECK_TOP + 0.08, 0); g.add(st);
     const armA = new THREE.Vector3(FX + 0.2, FY + 3.3 * 0.7, 0), armB = new THREE.Vector3(-1.0, FY + 1.75, 0);
@@ -1832,7 +1834,8 @@ PR['p-distill'] = {
     const drip = bubbleSet(3, 0xd8ecf8, 0.05); drip.forEach(f => g.add(f));
     const labels = [['枝付きフラスコ', () => new THREE.Vector3(FX - 0.9, FY + 0.9, 0)], ['温度計', () => new THREE.Vector3(FX + 0.15, NECK_TOP + 1.6, 0)],
       ['リービッヒ冷却器', () => cA.clone().lerp(cB, 0.5).add(new THREE.Vector3(0, 0.45, 0))], ['冷却水', () => portLow.clone().add(new THREE.Vector3(0.45, -1.15, 0))], ['受け器', () => new THREE.Vector3(3.3, 1.0, 0)]];
-    labels.forEach(([n, f]) => { const L = addLabel(n, f); L.part = true; L.el.hidden = !state.parts; });
+    const Ls = labels.map(([n, f]) => { const L = addLabel(n, f); L.part = true; L.el.hidden = !state.parts; return L; });
+    const LT = Ls[1];
     let builtAmt = null;
     R.tick = tt => {
       if (builtAmt !== s.amount) {
@@ -1872,6 +1875,10 @@ PR['p-distill'] = {
       });
       rcLiq.scale.y = good && s.running ? Math.min(1.6, 0.4 + e * 0.15) : 0.4;
       rcLiq.visible = good && (s.running || (s.result && s.result.done));
+      // 温度計の表示：はじめは室温 → エタノールが出ている間は 78〜80 ℃ くらいで止まる
+      const T = !s.running && !(s.result && s.result.done) ? 20 : s.running ? (e < 2 ? 20 + e * 29 : 78 + Math.min(2, (e - 2) * 0.5)) : 80;
+      const txt = s.therm === 'branch' ? `温度計 ${Math.round(T)} ℃` : '温度計';
+      if (LT.el.textContent !== txt) LT.el.textContent = txt;
       if (s.running && e > 6) { s.running = false; s.result.done = true; renderCard(); }
     };
     frame(2.6, 4.2, new THREE.Vector3(0.1, 0.2, 1));
@@ -1899,7 +1906,7 @@ PR['p-distill'] = {
       if (s.water !== 'bottom') bad.push('冷却水は下から入れて上から出す（上から入れると冷却器の中に水が満たされず、よく冷えない）');
       if (s.amount !== 'half') bad.push('液はフラスコの半分以下にする（多いと、沸騰した液が枝に入ってしまう）');
       if (s.seal) bad.push('受け器をゴム栓で密閉すると、中の圧力が上がって装置が破裂する危険がある');
-      s.result = bad.length ? { ok: false, msg: 'このままでは危ない・うまくいかない：' + bad.join('。') + '。' } : { ok: true, msg: 'うまく蒸留できた！ 沸点の低いエタノール（78 ℃）が先に気体になり、冷却器で冷やされて液体にもどり、受け器にたまる。' };
+      s.result = bad.length ? { ok: false, msg: 'このままでは危ない・うまくいかない：' + bad.join('。') + '。' } : { ok: true, msg: 'うまく蒸留できた！ 沸点の低いエタノール（78 ℃）が先に気体になり、冷却器で冷やされて液体にもどり、受け器にたまる。温度計が 78〜80 ℃ くらいの間に出てくる液はエタノールが多い（水も少しまざるので、純粋なエタノールにはならない）。温度が上がりはじめたら受け器をかえる。' };
       if (!bad.length) { s.running = true; s.t0 = performance.now(); markDone('p-distill'); }
     }
     renderCard();
@@ -1961,10 +1968,11 @@ const EXP_INFO = {
       ['液は枝付きフラスコの半分以下にし、沸騰石を入れる', '多いと沸騰した液が枝から流れ出る。沸騰石は突沸（急な激しい沸騰）を防ぐ。'],
       ['温度計の球部を、枝の付け根の高さにする', 'はかりたいのは「出ていく蒸気」の温度。液の中に入れると液の温度になってしまう。'],
       ['冷却水は、冷却器の下から入れて上から出す', '下から入れると冷却器の中が水で満たされ、よく冷える。上から入れると水がすぐ流れ落ちて、すき間ができる。'],
+      ['冷却水を流しはじめてから、加熱する', '先に加熱すると、冷えていない冷却器から蒸気がそのまま出てしまう。エタノールの蒸気は燃えやすく危険。'],
       ['受け器（三角フラスコ）は密閉しない（アルミはくでかるくおおう）', '密閉すると中の圧力が上がって破裂する。アルミはくで蒸発やごみを防ぐ。'],
       ['ゆっくり加熱し、温度計を見ながら集める', '沸点の低い成分（エタノール 78 ℃）が先に出てくる。温度が上がりはじめたら受け器をかえる。'],
     ],
-    mistakes: ['温度計を液の中に入れてしまう。', '冷却水を上から入れる。', '沸騰石を入れ忘れ、加熱中にあわてて入れる（突沸の危険。一度冷ましてから入れる）。'],
+    mistakes: ['温度計を液の中に入れてしまう。', '冷却水を上から入れる。', '冷却水を流す前に加熱を始める。', '沸騰石を入れ忘れ、加熱中にあわてて入れる（突沸の危険。一度冷ましてから入れる）。'],
     danger: ['エタノールは燃えやすい。受け器を炎の近くに置かない。', '装置を密閉しない。', '加熱をやめたあとも、しばらくは冷却水を流しておく。'],
   },
 };
