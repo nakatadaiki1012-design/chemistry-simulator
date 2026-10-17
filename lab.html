@@ -121,12 +121,20 @@ ul.caution li b.o { background: var(--ok); } ul.caution li b.x { background: var
 .qprog { height: 5px; border-radius: 999px; background: var(--chip); overflow: hidden; margin: 6px 0; }
 .qprog i { display: block; height: 100%; background: var(--accent); }
 .purpose { background: var(--chip); border-left: 3px solid var(--accent); border-radius: 8px; padding: 8px 10px; margin: 8px 0; font-size: 14px; line-height: 1.65; }
-.purpose b { display: block; font-size: 12px; color: var(--accent); }
+.purpose > b:first-child { display: block; font-size: 12px; color: var(--accent); }
+.purpose b { color: var(--accent); }
 ol.whysteps { margin: 6px 0 0; padding-left: 22px; font-size: 14px; }
 ol.whysteps li { margin-bottom: 8px; }
 ol.whysteps li b { display: block; }
 ol.whysteps li span { display: block; color: var(--muted); font-size: 13px; line-height: 1.6; }
 ul.caution.danger li b.x { background: #b7791f; }
+.gtab { width: 100%; border-collapse: collapse; font-size: 13px; margin: 2px 0; }
+.gtab th { text-align: left; font-weight: 500; color: var(--muted); padding: 3px 8px 3px 0; white-space: nowrap; vertical-align: top; }
+.gtab td { padding: 3px 0; }
+.gtab tr + tr > * { border-top: 1px solid var(--line); }
+.gtab .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.elecv { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13.5px; background: var(--chip); border-radius: 10px; padding: 6px 10px; }
+.elecv b { font-family: var(--font-data); font-size: 17px; }
 .fallback { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted); }
 @media (max-width: 900px) {
   body { overflow: auto; height: auto; min-height: 100%; }
@@ -344,6 +352,11 @@ function makeFlame() {
     glow.material.color.set(f.air > 0.5 ? 0x7fa8ff : 0xffb060);
     light.intensity = 1.2 * f.size;
     light.color.set(f.air > 0.5 ? 0x9cc0ff : 0xffb060);
+    if (f.tint) {
+      outer.material.color.lerp(f.tint, 0.9); mid.material.color.lerp(f.tint, 0.75); inner.material.color.lerp(f.tint, 0.4);
+      outer.material.opacity = 0.78; mid.material.opacity = 0.55; glow.material.color.copy(f.tint); light.color.copy(f.tint);
+      outer.scale.x *= 1.15; outer.scale.z *= 1.15; outer.scale.y *= 1.1;
+    }
   };
   return f;
 }
@@ -1171,7 +1184,8 @@ function showPractice(id) {
 }
 function practiceCardHTML(p) {
   const it = ITEMS.find(x => x.id === p.item), info = INFO[p.id], tab = state.ptab || 'op';
-  let h = `<div class="card-head"><div class="eyebrow">操作の練習${done.has(p.id) ? ' ・ ✓ クリア' : ''}</div><h2 class="name">${esc(p.name)}</h2></div>
+  const eyebrow = p.grp === '実験' ? '実験' : '操作の練習';
+  let h = `<div class="card-head"><div class="eyebrow">${eyebrow}${done.has(p.id) ? ' ・ ✓ クリア' : ''}</div><h2 class="name">${esc(p.name)}</h2></div>
     <div class="tabs" role="tablist">${[['op', 'やってみる'], ['why', '手順のわけ'], ['miss', 'ミスしやすい点'], ['danger', '危険']].map(([k, n]) => `<button type="button" role="tab" data-ptab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div><div class="body">`;
   if (tab === 'op') h += PR[p.id].html();
   else if (tab === 'why') {
@@ -1179,7 +1193,8 @@ function practiceCardHTML(p) {
   } else if (tab === 'miss') h += `<ul class="caution">${info.mistakes.map(x => `<li><b class="x">!</b><span>${esc(x)}</span></li>`).join('')}</ul>`;
   else h += `<ul class="caution danger">${info.danger.map(x => `<li><b class="x">⚠</b><span>${esc(x)}</span></li>`).join('')}</ul>`;
   if (tab !== 'op') h += `<p style="margin-top:12px"><button type="button" class="btn main" data-ptab="op">やってみる →</button></p>`;
-  h += `<p style="margin-top:10px"><button type="button" class="btn" data-see="${it.id}">「${esc(it.name)}」の説明を見る</button></p></div>`;
+  if (it) h += `<p style="margin-top:10px"><button type="button" class="btn" data-see="${it.id}">「${esc(it.name)}」の説明を見る</button></p>`;
+  h += '</div>';
   return h;
 }
 
@@ -1202,6 +1217,641 @@ const SAFETY_Q = [
   ['ゴム栓でしっかりふたをした三角フラスコを加熱する。', false, '中の気体がふくらんで破裂する危険がある。'],
   ['ビーカーを加熱するときは、金網をしく。', true, '直接炎にあてると、割れることがある。'],
 ];
+// ===== 実験（気体・電気分解・炎色反応・中和滴定・蒸留） =====
+function tubePath(pts, r, mat) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p[0], p[1], p[2] || 0)), false, 'catmullrom', 0.2);
+  const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 80, r, 12, false), mat);
+  m.renderOrder = 2;
+  return m;
+}
+function bubbleSet(n, color, r) {
+  const mat = new THREE.MeshPhongMaterial({ color: color || 0xffffff, transparent: true, opacity: 0.65, shininess: 120, depthWrite: false });
+  const geo = new THREE.SphereGeometry(r || 0.05, 10, 8);
+  return Array.from({ length: n }, (_, i) => { const m = new THREE.Mesh(geo, mat); m.visible = false; m.userData.ph = i / n; m.renderOrder = 3; return m; });
+}
+// 集気びん（上向きの形：底 y=0、口 y=2.15）
+const BOTTLE_IN = [[0, 0.08], [0.42, 0.08], [0.45, 0.15], [0.45, 1.7], [0.3, 1.95], [0.25, 2.1], [0.27, 2.15]];
+function bottle() { const g = new THREE.Group(); g.add(shell(BOTTLE_IN, 0.035)); return g; }
+function rubberStopper(rt, rb, h) { return cyl(rt, rb, h, solid(0x6b4a3a, { shininess: 15 }), 24); }
+
+// ---------- 気体の集め方 ----------
+const GASES = [
+  { id: 'h2', f: 'H₂', name: '水素', M: 2, sol: 0, ok: ['water'],
+    gen: '亜鉛にうすい塩酸を加える　Zn + 2HCl → ZnCl₂ + H₂', test: 'マッチの火を近づけると、ポンと音を立てて燃える（水ができる）。' },
+  { id: 'o2', f: 'O₂', name: '酸素', M: 32, sol: 0, ok: ['water'],
+    gen: '過酸化水素水に酸化マンガン(IV)を加える　2H₂O₂ → 2H₂O + O₂', test: '火のついた線香を入れると、炎を上げて激しく燃える。' },
+  { id: 'co2', f: 'CO₂', name: '二酸化炭素', M: 44, sol: 1, ok: ['down', 'water'],
+    gen: '石灰石にうすい塩酸を加える　CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂', test: '石灰水に通すと、白くにごる。' },
+  { id: 'nh3', f: 'NH₃', name: 'アンモニア', M: 17, sol: 2, ok: ['up'],
+    gen: '塩化アンモニウムと水酸化カルシウムを混ぜて加熱する　2NH₄Cl + Ca(OH)₂ → CaCl₂ + 2H₂O + 2NH₃', test: '水でぬらした赤色リトマス紙を近づけると青くなる。鼻をさす刺激臭。' },
+  { id: 'hcl', f: 'HCl', name: '塩化水素', M: 36.5, sol: 2, ok: ['down'],
+    gen: '塩化ナトリウムに濃硫酸を加えて加熱する　NaCl + H₂SO₄ → NaHSO₄ + HCl', test: 'アンモニア水をつけたガラス棒を近づけると、白い煙（塩化アンモニウム）が出る。' },
+  { id: 'cl2', f: 'Cl₂', name: '塩素', M: 71, sol: 1, ok: ['down'], color: 0xc8dc4a,
+    gen: '酸化マンガン(IV)に濃塩酸を加えて加熱する　MnO₂ + 4HCl → MnCl₂ + 2H₂O + Cl₂', test: '黄緑色で刺激臭（有毒）。水でぬらしたヨウ化カリウムデンプン紙が青紫色になる。' },
+  { id: 'n2', f: 'N₂', name: '窒素', M: 28, sol: 0, ok: ['water'],
+    gen: '亜硝酸アンモニウム水溶液を加熱する　NH₄NO₂ → N₂ + 2H₂O', test: '火のついた線香を入れると火が消える。石灰水は変化しない。' },
+];
+const METHOD = { water: '水上置換', up: '上方置換', down: '下方置換' };
+const SOL_TXT = ['水に溶けにくい', '水に少し溶ける', '水にとても溶けやすい'];
+PR['p-gas'] = {
+  init() {
+    const g = R.group;
+    const s = { gas: (state.pr && state.pr.gasKeep) || 'o2', method: (state.pr && state.pr.methodKeep) || 'water', running: false, t0: 0, result: null };
+    state.pr = s;
+    // 気体をつくるフラスコ
+    const gen = MODELS.erlen().g; gen.scale.setScalar(0.62); gen.position.set(-3.4, 0, 0); g.add(gen);
+    gen.children.forEach(c => { if (c.renderOrder === 1) c.material.color.set(0xd6e6ee); });
+    const st = rubberStopper(0.27, 0.21, 0.32); st.position.set(-3.4, 2.13, 0); g.add(st);
+    const genB = bubbleSet(10, 0xffffff, 0.04); genB.forEach(b => g.add(b));
+    const setups = {};
+    const tubeMat = glassMat({ opacity: 0.4 });
+    const start = [[-3.4, 1.9], [-3.4, 2.9], [-2.9, 3.15]];
+    // 水上置換：水槽＋水を満たした集気びん（逆さ）
+    {
+      const sg = new THREE.Group();
+      const trough = [[0, 0.06], [1.55, 0.06], [1.55, 1.25], [1.6, 1.3]];
+      const tr = shell(trough, 0.05); tr.position.x = 0.3; sg.add(tr);
+      const w = liquid(trough.slice(0, 3), 0.95, 0x9fd3f2, 0.0); w.position.x = 0.3; sg.add(w);
+      const b = bottle(); b.rotation.z = Math.PI; b.position.set(0.3, 0.45 + 2.15, 0); sg.add(b);
+      sg.add(tubePath(start.concat([[-2.0, 2.4], [-1.45, 1.55], [-1.05, 0.7], [-0.6, 0.28], [0.15, 0.25], [0.3, 0.42]]), 0.06, tubeMat));
+      sg.add(withShadow(new THREE.Group(), 3.4));
+      setups.water = { g: sg, x: 0.3, mouth: 0.45, top: 2.52, inverted: true, tip: [0.3, 0.45] };
+    }
+    // 上方置換：口を下に向けた集気びん、管をびんの奥まで
+    {
+      const sg = new THREE.Group();
+      const b = bottle(); b.rotation.z = Math.PI; b.position.set(0.3, 0.95 + 2.15, 0); sg.add(b);
+      const stand = makeStand(4.0, 2.4, 1.35); stand.position.set(0.3, 0, -0.55); sg.add(stand);
+      sg.add(tubePath(start.concat([[-2.0, 2.3], [-1.3, 1.0], [-0.5, 0.42], [0.2, 0.45], [0.3, 0.9], [0.3, 2.75]]), 0.06, tubeMat));
+      setups.up = { g: sg, x: 0.3, mouth: 0.95, top: 3.02, inverted: true, tip: [0.3, 2.75] };
+    }
+    // 下方置換：上向きの集気びん、管を底まで
+    {
+      const sg = new THREE.Group();
+      const b = bottle(); b.position.set(0.3, 0, 0); sg.add(b);
+      sg.add(withShadow(new THREE.Group(), 1.6));
+      sg.add(tubePath(start.concat([[-1.6, 3.5], [-0.2, 3.5], [0.25, 3.1], [0.3, 2.3], [0.3, 0.3]]), 0.06, tubeMat));
+      setups.down = { g: sg, x: 0.3, mouth: 2.15, top: 0.1, inverted: false, tip: [0.3, 0.3] };
+    }
+    Object.values(setups).forEach(su => g.add(su.g));
+    s.setups = setups;
+    // びんの中の気体・水
+    const fog = new THREE.Mesh(new THREE.CylinderGeometry(0.41, 0.41, 1, 28), new THREE.MeshPhongMaterial({ color: 0xcfe0f0, transparent: true, opacity: 0.25, depthWrite: false }));
+    fog.renderOrder = 1; g.add(fog);
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.41, 0.41, 1, 28), liquidMat(0x9fd3f2, 0.55)); g.add(col);
+    const bub = bubbleSet(14, 0xffffff, 0.06); bub.forEach(b => g.add(b));
+    const leak = bubbleSet(18, 0xcfe0f0, 0.07); leak.forEach(b => g.add(b));
+    const L1 = addLabel('気体をつくるフラスコ', () => new THREE.Vector3(-3.4, 2.5, 0)); L1.part = true;
+    const L2 = addLabel('集気びん', () => new THREE.Vector3(0.75, 2.0, 0)); L2.part = true;
+    s.L = [L1, L2];
+    s.L.forEach(L => { L.el.hidden = !state.parts; });
+    R.tick = t => {
+      const su = setups[s.method];
+      Object.entries(setups).forEach(([k, x]) => { x.g.visible = k === s.method; });
+      const gas = GASES.find(x => x.id === s.gas);
+      const e = s.running ? (performance.now() - s.t0) / 1000 : 0;
+      const ok = s.result && s.result.level !== 'ng';
+      const f = !s.running ? (s.result && s.result.done ? (ok ? 1 : 0.12) : 0) : Math.min(ok ? 1 : 0.12, e / 4);
+      if (s.running && e > 4.2) { s.running = false; s.result.done = true; renderCard(); }
+      fog.material.color.set(gas.color || 0xcfe0f0); fog.material.opacity = gas.color ? 0.55 : 0.28;
+      const bodyH = 1.9;
+      const fh = Math.max(0.001, f * bodyH);
+      fog.visible = f > 0.001;
+      if (su.inverted) { fog.scale.y = fh; fog.position.set(su.x, su.top - fh / 2, 0); }
+      else { fog.scale.y = fh; fog.position.set(su.x, 0.12 + fh / 2, 0); }
+      // 水上置換：びんの中の水（溶ける気体だと水が上がってくる）
+      col.visible = s.method === 'water';
+      if (col.visible) {
+        let top = su.top - fh;
+        if (s.result && s.result.suck) { top = su.top; fog.visible = false; }
+        const bot = 0.95, h = Math.max(0.01, top - bot);
+        col.scale.y = h; col.position.set(su.x, bot + h / 2, 0);
+      }
+      // 発生のあわ
+      genB.forEach((b, i) => {
+        b.visible = s.running;
+        const k = (e * 0.8 + b.userData.ph) % 1;
+        b.position.set(-3.4 + Math.sin(i * 2.3) * 0.35, 0.15 + k * 0.45, Math.cos(i * 1.7) * 0.3);
+      });
+      // 水上置換のあわ
+      bub.forEach((b, i) => {
+        b.visible = s.running && s.method === 'water' && !(s.result && s.result.suck);
+        const k = (e * 1.2 + b.userData.ph) % 1;
+        b.position.set(su.x + Math.sin(i * 1.9 + e * 3) * 0.12, 0.45 + k * (su.top - fh - 0.45), Math.cos(i * 2.1) * 0.12);
+      });
+      // 集まらない気体がにげていく
+      const leaking = (s.running || (s.result && s.result.done)) && s.result && s.result.leak;
+      leak.forEach((b, i) => {
+        b.visible = !!leaking && s.running;
+        if (!b.visible) return;
+        b.material.color.set(gas.color || 0xbcd2e6); b.material.opacity = 0.5;
+        const k = (e * 0.6 + b.userData.ph) % 1, a = i * 2.39;
+        const dir = s.result.leak;  // 1: 上へにげる / -1: 下へこぼれる
+        b.position.set(su.x + Math.cos(a) * (0.2 + k * 0.9), su.mouth + dir * (0.1 + k * 1.6), Math.sin(a) * (0.2 + k * 0.9));
+      });
+    };
+    frame(1.7, 3.6, new THREE.Vector3(0.1, 0.25, 1));
+  },
+  html() {
+    const s = state.pr, gas = GASES.find(x => x.id === s.gas);
+    const heavy = gas.M > 29;
+    let h = `<div class="ctl"><p class="use">気体をえらんで、正しい集め方で集めよう。</p>
+      <div class="row">${GASES.map(x => `<button type="button" class="btn" data-gas="${x.id}" aria-pressed="${s.gas === x.id}">${x.f} ${esc(x.name)}</button>`).join('')}</div>
+      <table class="gtab"><tr><th>水への溶けやすさ</th><td>${SOL_TXT[gas.sol]}</td></tr>
+      <tr><th>空気とくらべて</th><td>分子量 ${gas.M}（空気は平均 約29）→ <b>${heavy ? '空気より重い' : '空気より軽い'}</b></td></tr>
+      <tr><th>つくり方</th><td>${esc(gas.gen)}</td></tr></table>
+      <div class="row">${Object.entries(METHOD).map(([k, n]) => `<button type="button" class="btn" data-method="${k}" aria-pressed="${s.method === k}">${n}</button>`).join('')}</div>
+      <button type="button" class="btn main" data-a="collect" ${s.running ? 'disabled' : ''}>気体を発生させて集める</button>`;
+    if (s.result && s.result.done) {
+      h += `<div class="verdict ${s.result.level === 'ok' ? 'ok' : s.result.level === 'mid' ? '' : 'ng'}">${s.result.msg}</div>`;
+      if (s.result.level !== 'ng') h += `<button type="button" class="btn" data-a="gtest">集めた気体を確かめる</button>`;
+    }
+    h += `<div class="purpose"><b>集め方の決め方</b>① 水に溶けにくい → <b>水上置換</b><br>② 水に溶けやすく、空気より軽い → <b>上方置換</b><br>③ 水に溶けやすく、空気より重い → <b>下方置換</b></div></div>`;
+    return h;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'gas') { s.gas = v; s.result = null; s.running = false; }
+    if (a === 'method') { s.method = v; s.result = null; s.running = false; R.tick && R.tick(0); frame(1.7, 3.6, new THREE.Vector3(0.1, 0.25, 1)); }
+    if (a === 'collect') {
+      const gas = GASES.find(x => x.id === s.gas), m = s.method, heavy = gas.M > 29;
+      let r;
+      if (gas.ok.includes(m)) {
+        r = { level: 'ok', msg: `集められた！ ${gas.name}は${SOL_TXT[gas.sol]}${m === 'water' ? 'ので水上置換がよい。空気がまざらず、どれだけたまったかも見える。' : heavy ? '、空気より重いので、びんの底からたまっていく。' : '、空気より軽いので、びんの上からたまっていく。'}` };
+        if (gas.id === 'co2') r.msg += m === 'water' ? ' （CO₂は少し水に溶けるが、水上置換でも集められる。）' : ' （CO₂は水上置換でも集められる。）';
+        markDone('p-gas');
+      } else if (m === 'water') {
+        r = { level: 'ng', suck: true, msg: `${gas.name}は${SOL_TXT[gas.sol]}ので、出てきた気体が水に溶けてしまい、集まらない。水が管に吸い上げられて（逆流して）フラスコに入る危険もある。` };
+      } else if (m === 'up' && heavy) {
+        r = { level: 'ng', leak: -1, msg: `${gas.name}は空気より重い（分子量${gas.M} > 29）ので、口が下を向いたびんからこぼれ落ちてしまう。` };
+      } else if (m === 'down' && !heavy) {
+        r = { level: 'ng', leak: 1, msg: `${gas.name}は空気より軽い（分子量${gas.M} < 29）ので、口が上を向いたびんから上へにげてしまう。` };
+      } else {
+        r = { level: 'mid', msg: `一応集まるが、${gas.name}は水に溶けにくいので、<b>水上置換</b>がいちばんよい。上方・下方置換では空気がまざりやすく、どれだけたまったかも見えない。` };
+      }
+      s.result = r; s.running = true; s.t0 = performance.now();
+    }
+    if (a === 'gtest') toast(GASES.find(x => x.id === s.gas).test, 'ok');
+    renderCard();
+  },
+};
+
+// ---------- 水の電気分解 ----------
+PR['p-elec'] = {
+  init() {
+    const g = R.group;
+    const s = { on: false, naoh: false, volt: 0.6, h: 0, last: 0 };
+    state.pr = s;
+    const base = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.16, 1.4), solid(0x3a4049)); base.position.y = 0.08; g.add(base);
+    g.add(contactShadow(4.5, 2.2, 0.5));
+    const rod = cyl(0.05, 0.05, 6.6, metal(0xc7ccd3), 16); rod.position.set(0, 3.3, -0.55); g.add(rod);
+    [1.0, 4.4].forEach(y => { const arm = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.06, 0.06), metal(0x8f969f, 0.3)); arm.position.set(0, y, -0.32); g.add(arm); });
+    const TOP = 4.7, BOT = 0.9;
+    [-0.9, 0.9].forEach(x => {
+      const tb = shell([[0, BOT], [0.2, BOT], [0.2, TOP], [0.06, TOP + 0.15], [0.06, TOP + 0.35], [0.08, TOP + 0.4]], 0.025);
+      tb.position.x = x; g.add(tb);
+      const cock = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.07, 0.08), solid(0x2b5fbf)); cock.position.set(x, TOP + 0.25, 0); g.add(cock);
+      const el = cyl(0.05, 0.05, 0.55, metal(0xd7dbe0, 0.6), 12); el.position.set(x, BOT + 0.35, 0); g.add(el);
+    });
+    const center = shell([[0.08, BOT], [0.08, 4.9], [0.45, 5.3], [0.45, 5.9], [0.5, 5.95]], 0.025); g.add(center);
+    const bridge = cyl(0.14, 0.14, 1.8, glassMat({ opacity: 0.3 }), 16); bridge.rotation.z = Math.PI / 2; bridge.position.y = BOT - 0.05; g.add(bridge);
+    // 電源装置とコード
+    const box = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.8), solid(0xdfe3e8)); box.position.set(2.9, 0.45, 0.3); g.add(box);
+    const panel = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.6, 0.02), solid(0x2c3440)); panel.position.set(2.9, 0.5, 0.71); g.add(panel);
+    const dial = cyl(0.13, 0.13, 0.08, solid(0xc23b3b), 20); dial.rotation.x = Math.PI / 2; dial.position.set(2.65, 0.5, 0.75); g.add(dial);
+    const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), new THREE.MeshBasicMaterial({ color: 0x334433 })); lamp.position.set(3.15, 0.6, 0.74); g.add(lamp);
+    g.add(tubePath([[-0.9, BOT + 0.05, 0], [-0.9, 0.35, 0.45], [0.8, 0.25, 0.75], [2.45, 0.35, 0.72]], 0.035, solid(0x1d1f23)));
+    g.add(tubePath([[0.9, BOT + 0.05, 0], [0.9, 0.4, 0.4], [2.0, 0.42, 0.65], [2.5, 0.55, 0.72]], 0.035, solid(0xc62828)));
+    // 液と気体
+    const liqMat = liquidMat(0xbfe3f5, 0.5), gasMat = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, depthWrite: false });
+    const mkCol = m => { const c = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 1, 24), m); g.add(c); return c; };
+    const liqL = mkCol(liqMat), liqR = mkCol(liqMat), gasL = mkCol(gasMat), gasR = mkCol(gasMat);
+    const res = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 1, 12), liqMat); g.add(res);
+    const resBulb = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 1, 24), liqMat); g.add(resBulb);
+    const bubL = bubbleSet(16, 0xffffff, 0.04), bubR = bubbleSet(8, 0xffffff, 0.045);
+    bubL.concat(bubR).forEach(b => g.add(b));
+    const mL = h => (h / 0.17).toFixed(1);
+    const LH = addLabel('', () => new THREE.Vector3(-0.9, TOP + 0.6, 0)), LO = addLabel('', () => new THREE.Vector3(0.9, TOP + 0.6, 0));
+    const LC = addLabel('陰極（−）', () => new THREE.Vector3(-0.9, BOT + 0.2, 0.25)), LA = addLabel('陽極（＋）', () => new THREE.Vector3(0.9, BOT + 0.2, 0.25));
+    const LP = addLabel('電源装置', () => new THREE.Vector3(2.9, 1.05, 0.3)); [LC, LA, LP].forEach(L => { L.part = true; L.el.hidden = !state.parts; });
+    s.vol = () => [Number(mL(s.h)), Number(mL(s.h / 2))];
+    R.tick = t => {
+      const dt = s.last ? Math.min(0.1, t - s.last) : 0; s.last = t;
+      const working = s.on && s.naoh;
+      if (working && s.h < 3.3) { s.h = Math.min(3.3, s.h + dt * s.volt * 0.32); if (Math.floor(s.h * 20) !== Math.floor((s.h - dt * s.volt * 0.32) * 20)) syncElec(); }
+      lamp.material.color.set(s.on ? 0xff3b30 : 0x334433);
+      const hL = s.h, hR = s.h / 2;
+      const setCol = (c, x, y0, y1) => { const hh = Math.max(0.001, y1 - y0); c.scale.y = hh; c.position.set(x, y0 + hh / 2, 0); c.visible = y1 - y0 > 0.002; };
+      setCol(liqL, -0.9, BOT + 0.02, TOP - hL); setCol(gasL, -0.9, TOP - hL, TOP);
+      setCol(liqR, 0.9, BOT + 0.02, TOP - hR); setCol(gasR, 0.9, TOP - hR, TOP);
+      const rise = (hL + hR) * 0.19 * 0.19 / (0.43 * 0.43);
+      setCol(res, 0, BOT, 5.0); setCol(resBulb, 0, 5.0, 5.05 + rise);
+      const animB = (arr, x, top, rate) => arr.forEach((b, i) => {
+        b.visible = working;
+        const k = (t * rate + b.userData.ph) % 1;
+        b.position.set(x + Math.sin(i * 2.1) * 0.08, BOT + 0.55 + k * (top - BOT - 0.55), Math.cos(i * 1.3) * 0.08);
+      });
+      animB(bubL, -0.9, TOP - hL, 0.9 * s.volt + 0.2); animB(bubR, 0.9, TOP - hR, 0.6 * s.volt + 0.15);
+      LH.el.textContent = `水素 ${mL(hL)} mL`; LO.el.textContent = `酸素 ${mL(hR)} mL`;
+    };
+    frame(3.0, 3.6, new THREE.Vector3(0.25, 0.15, 1));
+  },
+  html() {
+    const s = state.pr, [vh, vo] = s.vol();
+    return `<div class="ctl"><p class="use">水に電流を流して、陰極・陽極から出る気体を集めよう。</p>
+      <div class="row"><button type="button" class="btn" data-elyte="0" aria-pressed="${!s.naoh}">水だけ</button><button type="button" class="btn" data-elyte="1" aria-pressed="${s.naoh}">水酸化ナトリウムを少し溶かす</button></div>
+      <div class="row"><button type="button" class="btn main" data-a="power">${s.on ? '電源を切る' : '電源を入れる'}</button><button type="button" class="btn" data-a="ereset">はじめから</button></div>
+      <div class="sl"><label for="voltS">電圧</label><input id="voltS" type="range" min="0.2" max="1" step="0.1" value="${s.volt}"><output>${Math.round(s.volt * 12)} V</output></div>
+      <div class="elecv"><span>陰極（水素）<b id="eH">${vh.toFixed(1)}</b> mL</span><span>陽極（酸素）<b id="eO">${vo.toFixed(1)}</b> mL</span><span>体積の比 <b>${vo > 0.05 ? (vh / vo).toFixed(1) : '—'} : 1</b></span></div>
+      <div class="row"><button type="button" class="btn" data-a="testH">陰極の気体にマッチの火を近づける</button><button type="button" class="btn" data-a="testO">陽極の気体に火のついた線香を入れる</button></div>
+      <div class="purpose"><b>反応式</b>2H₂O → 2H₂ + O₂<br>水素と酸素の分子の数の比が 2：1 なので、同じ温度・圧力では体積の比も 2：1 になる。</div>
+      <p class="note">発展：陰極 2H₂O + 2e⁻ → H₂ + 2OH⁻ ／ 陽極 4OH⁻ → O₂ + 2H₂O + 4e⁻</p></div>`;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'elyte') { s.naoh = v === '1'; }
+    if (a === 'power') {
+      s.on = !s.on;
+      if (s.on && !s.naoh) toast('純粋な水はほとんど電気を通さないので、気体はほとんど出ない。水酸化ナトリウムを少し溶かして電気を通しやすくする。', 'ng');
+    }
+    if (a === 'volt') s.volt = v;
+    if (a === 'ereset') { s.h = 0; s.on = false; }
+    if (a === 'testH') { if (s.h < 0.4) toast('まだ気体が少ない。もう少し集めてから。', 'info'); else { toast('ポンッ！と音を立てて燃えた → 陰極から出たのは水素。', 'ok'); markDone('p-elec'); } }
+    if (a === 'testO') { if (s.h < 0.8) toast('まだ気体が少ない。もう少し集めてから。', 'info'); else toast('線香が炎を上げて激しく燃えた → 陽極から出たのは酸素。', 'ok'); }
+    renderCard();
+  },
+};
+function syncElec() {
+  const s = state.pr;
+  if (!s || !s.vol || !$('eH')) return;
+  const [vh, vo] = s.vol();
+  $('eH').textContent = vh.toFixed(1); $('eO').textContent = vo.toFixed(1);
+}
+
+// ---------- 炎色反応 ----------
+const FLAME_EL = [
+  ['Li', 'リチウム', '赤', 0xff2438], ['Na', 'ナトリウム', '黄', 0xffc400], ['K', 'カリウム', '赤紫', 0xb26bff],
+  ['Cu', '銅', '青緑', 0x14d0a2], ['Ca', 'カルシウム', '橙赤', 0xff6418], ['Sr', 'ストロンチウム', '紅（深赤）', 0xe0004f], ['Ba', 'バリウム', '黄緑', 0x9ad638],
+];
+PR['p-flame'] = {
+  init() {
+    const g = R.group;
+    const bm = MODELS.burner(); g.add(bm.g);
+    bm.flame.lit = true; bm.flame.size = 0.55; bm.flame.air = 0.92;
+    const wire = new THREE.Group();
+    const handle = glassRod(1.6, 0.06); wire.add(handle);
+    const pt = cyl(0.012, 0.012, 1.3, metal(0xe8e8ea, 0.7), 8); pt.position.y = -1.45; wire.add(pt);
+    const loop = new THREE.Mesh(new THREE.TorusGeometry(0.07, 0.014, 8, 20), metal(0xe8e8ea, 0.7)); loop.position.y = -2.14; wire.add(loop);
+    const drop = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), liquidMat(0xdfeef7, 0.8)); drop.position.y = -2.14; wire.add(drop);
+    g.add(wire);
+    const s = { bm, wire, drop, sample: null, inFlame: false, residue: null, quiz: null, qAnswer: null, k: 0 };
+    state.pr = s;
+    const LW = addLabel('白金線', () => new THREE.Vector3(s.wire.position.x + 0.55, s.wire.position.y - 1.0, 0)); LW.part = true; LW.el.hidden = !state.parts;
+    R.tick = t => {
+      s.k += ((s.inFlame ? 1 : 0) - s.k) * 0.12;
+      // 輪の位置が「炎の外」→「外炎の中」へ動くように、棒の位置を決める
+      const r = 0.5, L = 2.14, tx = 1.7 - 1.7 * s.k, ty = 3.55 + 0.35 * s.k;
+      wire.rotation.z = r;
+      wire.position.set(tx - L * Math.sin(r), ty + L * Math.cos(r), 0);
+      drop.visible = !!s.sample && !s.inFlame;
+      const el = s.inFlame && s.sample ? FLAME_EL.find(x => x[0] === s.sample) : null;
+      bm.flame.tint = el && s.k > 0.7 ? new THREE.Color(el[3]) : null;
+      bm.flame.update(t);
+    };
+    frame(2.8, 3.0, new THREE.Vector3(0.2, 0.15, 1));
+  },
+  html() {
+    const s = state.pr;
+    let h = `<div class="ctl"><p class="use">白金線に水溶液をつけて、ガスバーナーの炎に入れよう。</p>
+      <div class="row">${FLAME_EL.map(([sym, n]) => `<button type="button" class="btn" data-sample="${sym}" aria-pressed="${s.sample === sym && !s.quiz}">${sym}（${n}）</button>`).join('')}</div>
+      <div class="row"><button type="button" class="btn main" data-a="inflame">${s.inFlame ? '炎から出す' : '炎の中に入れる'}</button><button type="button" class="btn" data-a="wash">濃塩酸で洗って焼く</button><button type="button" class="btn" data-a="mystery">なぞの水溶液で当てっこ</button></div>`;
+    if (s.inFlame && s.sample && !s.quiz) { const el = FLAME_EL.find(x => x[0] === s.sample); h += `<div class="verdict ok">${el[1]}（${el[0]}）の炎色：<b>${el[2]}</b></div>`; }
+    if (s.quiz) {
+      h += `<p class="qtext">この炎の色の元素は？</p><div class="qchoices">${s.quiz.choices.map(sym => {
+        let cls = ''; if (s.qAnswer) cls = sym === s.quiz.ans ? 'right' : sym === s.qAnswer ? 'wrong' : 'dim';
+        return `<button type="button" class="qc ${cls}" data-fq="${sym}" ${s.qAnswer ? 'disabled' : ''}>${sym}</button>`;
+      }).join('')}</div>`;
+      if (s.qAnswer) { const el = FLAME_EL.find(x => x[0] === s.quiz.ans); h += `<p class="use">正解は ${el[0]}（${el[1]}）：${el[2]}色。</p>`; }
+    }
+    h += `<div class="purpose"><b>覚え方の例</b>リアカー（Li 赤）　なき（Na 黄）　K村（K 赤紫）　動力（Cu 緑）　借りる（Ca 橙）　とうするもくれない（Sr 紅）　馬力（Ba 黄緑）</div>
+      <table class="gtab">${FLAME_EL.map(([sym, n, c, col]) => `<tr><th><i class="sw" style="background:#${new THREE.Color(col).getHexString()}"></i>${sym} ${n}</th><td>${c}</td></tr>`).join('')}</table></div>`;
+    return h;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'sample') {
+      if (s.inFlame) { toast('白金線を炎から出してから、試料をつけよう。', 'info'); return; }
+      if (s.residue && s.residue !== v) toast('前の試料が残っていると色がまざる。先に「濃塩酸で洗って焼く」をしよう。', 'ng');
+      s.sample = v; s.residue = v; s.quiz = null; s.qAnswer = null;
+    }
+    if (a === 'inflame') { s.inFlame = !s.inFlame; if (s.inFlame && !s.sample) toast('何もつけていないので、炎の色は変わらない（洗ったあとはこの状態になればOK）。', 'info'); if (s.inFlame && s.sample) markDone('p-flame'); }
+    if (a === 'wash') { s.sample = null; s.residue = null; s.inFlame = false; toast('濃塩酸で洗い、炎に入れて色がつかなくなるまで焼いた。これで次の試料を調べられる。', 'ok'); }
+    if (a === 'mystery') {
+      const ans = pick(FLAME_EL)[0];
+      s.quiz = { ans, choices: shuffle([ans, ...shuffle(FLAME_EL.map(x => x[0]).filter(x => x !== ans)).slice(0, 3)]) };
+      s.qAnswer = null; s.sample = ans; s.residue = ans; s.inFlame = true;
+    }
+    if (a === 'fq') s.qAnswer = v;
+    renderCard();
+  },
+};
+
+// ---------- 中和滴定 ----------
+PR['p-titr'] = {
+  init() {
+    const g = R.group;
+    g.add(makeStand(8.6, 7.5, 1.35));
+    const t = new THREE.Group();
+    const inner = [[0.015, -0.5], [0.04, -0.2], [0.04, 0.3], [0.11, 0.42], [0.11, 6.4], [0.13, 6.46]];
+    t.add(shell(inner, 0.022));
+    t.add(ticks(0.133, 0.8, 6.0, 50, 10, '#24303f', i => String(50 - i)));
+    const cock = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.07, 0.09), solid(0x2b5fbf)); cock.position.y = 0.05; t.add(cock);
+    t.position.set(0, 2.0, 0); g.add(t);
+    const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.3, 0.32), solid(0x2f343b)); clamp.position.set(0, 7.5, 0); g.add(clamp);
+    const tile = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.03, 1.6), solid(0xffffff)); tile.position.y = 0.17; g.add(tile);
+    const fl = MODELS.erlen().g; fl.scale.setScalar(0.45); fl.position.y = 0.19; g.add(fl);
+    let flLiq = null; fl.children.forEach(c => { if (c.renderOrder === 1) flLiq = c; });
+    flLiq.material.color.set(0xf3f6f8); flLiq.material.opacity = 0.45;
+    const conc = Math.round((0.08 + Math.random() * 0.045) * 1000) / 1000;
+    const s = { t, v: 0, flow: false, conc, veq: conc * 10.0 / 0.1, liq: null, lastV: -1, last: 0, answer: null, flLiq, drops: [] };
+    state.pr = s;
+    const drops = bubbleSet(6, 0xbfe0f5, 0.045); drops.forEach(d => { d.material = liquidMat(0x9fd3f2, 0.85); g.add(d); });
+    s.drops = drops; s.dropT = -1;
+    const LB = addLabel('ビュレット（NaOH 0.100 mol/L）', () => new THREE.Vector3(0.15, 6.8, 0)); LB.part = true;
+    const LF = addLabel('塩酸 10.0 mL ＋ フェノールフタレイン', () => new THREE.Vector3(0.4, 1.2, 0.3)); LF.part = true;
+    [LB, LF].forEach(L => { L.el.hidden = !state.parts; });
+    R.tick = tt => {
+      const dt = s.last ? Math.min(0.1, tt - s.last) : 0; s.last = tt;
+      if (s.flow) { s.v = Math.min(50, s.v + dt * 1.2); s.dropT = performance.now(); if (Math.floor(s.v * 10) !== Math.floor((s.v - dt * 1.2) * 10)) syncTitr(); }
+      if (Math.abs(s.v - s.lastV) > 0.015) {
+        if (s.liq) { t.remove(s.liq); s.liq.geometry.dispose(); }
+        s.liq = liquid([[0.03, -0.45], [0.03, 0.3], [0.1, 0.42], [0.1, 6.3]], 6.0 - s.v * 5.2 / 50, 0x7fc0ea, 0.02); t.add(s.liq);
+        s.lastV = s.v;
+        const d = s.v - s.veq;
+        flLiq.material.color.set(d < -0.05 ? 0xf3f6f8 : d < 0.15 ? 0xf7c3dc : d < 0.6 ? 0xee7fb5 : 0xd63384);
+        flLiq.material.opacity = d < -0.05 ? 0.45 : 0.62;
+      }
+      const k = (performance.now() - s.dropT) / 380;
+      drops.forEach((dr, i) => {
+        const kk = k - i * 0.0;
+        dr.visible = i === 0 && kk >= 0 && kk < 1;
+        dr.position.set(0, 1.5 - kk * 0.95, 0);
+      });
+    };
+    frame(3.6, 4.2, new THREE.Vector3(0.3, 0.1, 1));
+  },
+  html() {
+    const s = state.pr, d = s.v - s.veq;
+    let h = `<div class="ctl"><p class="use">濃度がわからない塩酸 10.0 mL を、0.100 mol/L の水酸化ナトリウム水溶液で滴定しよう。うすい赤色が消えなくなったら終点。</p>
+      <div class="elecv"><span>ビュレットの読み <b id="tV">${s.v.toFixed(2)}</b> mL</span></div>
+      <div class="row"><button type="button" class="btn" data-a="add1" ${s.flow ? 'disabled' : ''}>＋1 mL</button><button type="button" class="btn" data-a="add01" ${s.flow ? 'disabled' : ''}>1滴（0.05 mL）</button>
+      <button type="button" class="btn ${s.flow ? 'main' : ''}" data-a="flow">${s.flow ? 'コックを閉じる' : 'コックを開いて流す'}</button><button type="button" class="btn" data-a="treset">はじめから</button></div>`;
+    if (d >= -0.05 && d < 0.15) h += `<div class="verdict ok">終点！ ふり混ぜてもうすい赤色が消えない。滴下量は ${s.v.toFixed(2)} mL。</div>`;
+    else if (d >= 0.15) h += `<div class="verdict ng">入れすぎ（終点を過ぎて赤くなりすぎた）。「はじめから」でやり直そう。終点の近くは1滴ずつ。</div>`;
+    if (d >= -0.05 && d < 0.6) {
+      h += `<p class="use">塩酸の濃度を計算しよう：<br>c × 10.0 mL = 0.100 mol/L × ${s.v.toFixed(2)} mL</p>
+        <div class="readin"><input id="tAns" type="number" step="0.001" inputmode="decimal" placeholder="例 0.095" aria-label="塩酸の濃度"><span>mol/L</span><button type="button" class="btn main" data-a="tjudge">答え合わせ</button></div>`;
+      if (s.answer) h += `<div class="verdict ${s.answer.ok ? 'ok' : 'ng'}">${s.answer.ok ? '正解！' : 'ちがうよ。'} 本当の濃度は ${s.conc.toFixed(3)} mol/L。（あなた：${s.answer.v} mol/L）</div>`;
+    }
+    h += `<div class="purpose"><b>中和の関係</b>酸の H⁺ の物質量 ＝ 塩基の OH⁻ の物質量<br>（酸の価数）×（濃度）×（体積） ＝（塩基の価数）×（濃度）×（体積）</div></div>`;
+    return h;
+  },
+  act(a) {
+    const s = state.pr;
+    if (a === 'add1') { s.v = Math.min(50, s.v + 1); s.dropT = performance.now(); if (s.v > s.veq - 1.2 && s.v < s.veq) toast('もうすぐ終点。ここからは1滴ずつ入れよう。', 'info'); }
+    if (a === 'add01') { s.v = Math.min(50, s.v + 0.05); s.dropT = performance.now(); }
+    if (a === 'flow') s.flow = !s.flow;
+    if (a === 'treset') { clearScene(); this.init(); }
+    if (a === 'tjudge') {
+      const v = parseFloat($('tAns').value);
+      if (!isFinite(v)) { toast('濃度を入力しよう。', 'info'); return; }
+      const ok = Math.abs(v - s.conc) / s.conc < 0.03;
+      s.answer = { ok, v };
+      if (ok) markDone('p-titr');
+    }
+    renderCard();
+  },
+};
+function syncTitr() {
+  const s = state.pr; if (!s || !$('tV')) return;
+  $('tV').textContent = s.v.toFixed(2);
+  const d = s.v - s.veq;
+  if (d >= -0.05 && !s.stoppedMsg) { s.stoppedMsg = true; s.flow = false; renderCard(); toast(d < 0.15 ? 'うすい赤色が消えなくなった。終点！' : '入れすぎた！ 一気に流すと終点を通りすぎる。', d < 0.15 ? 'ok' : 'ng'); }
+}
+
+// ---------- 蒸留 ----------
+PR['p-distill'] = {
+  init() {
+    const g = R.group;
+    const s = { therm: 'liquid', stone: false, water: 'top', amount: 'full', seal: true, running: false, t0: 0, result: null };
+    state.pr = s;
+    const FX = -2.2, FY = 2.25;
+    const stand = makeStand(6.2, 4.6, 1.6); stand.position.set(FX - 0.25, 0, -0.5); g.add(stand);
+    const bm = MODELS.burner(); bm.g.scale.setScalar(0.55); bm.g.position.set(FX, 0.0, 0); g.add(bm.g);
+    bm.g.children.forEach(c => { if (c.geometry && c.geometry.type === 'PlaneGeometry') c.visible = false; });
+    bm.flame.lit = true; bm.flame.size = 0.4; bm.flame.air = 0.9;
+    // 枝付きフラスコ
+    const fm = MODELS.roundflask(); const fg = fm.g; fg.scale.setScalar(0.7); fg.position.set(FX, FY, 0); g.add(fg);
+    fg.children.forEach(c => {
+      if (c.renderOrder === 1) c.visible = false;
+      if (c.geometry && (c.geometry.type === 'TorusGeometry' || c.geometry.type === 'PlaneGeometry')) c.visible = false;
+    });
+    const stones = fg.children.filter(c => c.geometry && c.geometry.type === 'DodecahedronGeometry');
+    const gauze = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.03, 1.4), solid(0x9aa1aa)); gauze.position.set(FX, FY + 0.03, 0); g.add(gauze);
+    const NECK_TOP = FY + 3.98 * 0.7;
+    const st = rubberStopper(0.26, 0.21, 0.3); st.position.set(FX, NECK_TOP + 0.08, 0); g.add(st);
+    const armA = new THREE.Vector3(FX + 0.2, FY + 3.3 * 0.7, 0), armB = new THREE.Vector3(-1.0, FY + 1.75, 0);
+    g.add(tubePath([[armA.x, armA.y], [armA.x + 0.25, armA.y - 0.1], [armB.x, armB.y]], 0.06, glassMat({ opacity: 0.45 })));
+    // 温度計
+    const thermo = new THREE.Group();
+    const tb = cyl(0.04, 0.04, 2.6, glassMat({ opacity: 0.5, color: 0xffffff }), 12); tb.position.y = 1.3; thermo.add(tb);
+    const red = cyl(0.012, 0.012, 1.6, new THREE.MeshBasicMaterial({ color: 0xd32f2f }), 6); red.position.y = 0.8; thermo.add(red);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 10), new THREE.MeshBasicMaterial({ color: 0xd32f2f })); thermo.add(bulb);
+    g.add(thermo);
+    // リービッヒ冷却器
+    const cA = armB.clone(), cB = new THREE.Vector3(2.3, 1.95, 0);
+    const inner = cyl(0.06, 0.06, cA.distanceTo(cB), glassMat({ opacity: 0.45 }), 12); placeBetween(inner, cA, cB); g.add(inner);
+    const jA = cA.clone().lerp(cB, 0.1), jB = cA.clone().lerp(cB, 0.9);
+    const jacket = cyl(0.22, 0.22, jA.distanceTo(jB), glassMat({ opacity: 0.3 }), 24); placeBetween(jacket, jA, jB); g.add(jacket);
+    const jw = cyl(0.2, 0.2, jA.distanceTo(jB), liquidMat(0x8fc9ef, 0.28), 24); placeBetween(jw, jA, jB); g.add(jw);
+    const portLow = cA.clone().lerp(cB, 0.84), portHigh = cA.clone().lerp(cB, 0.16);
+    g.add(tubePath([[portLow.x, portLow.y - 0.15], [portLow.x, portLow.y - 0.6], [portLow.x + 0.4, portLow.y - 1.1]], 0.05, solid(0xd25b2a)));
+    g.add(tubePath([[portHigh.x, portHigh.y + 0.15], [portHigh.x, portHigh.y + 0.6], [portHigh.x - 0.3, portHigh.y + 1.0]], 0.05, solid(0xd25b2a)));
+    const stand2 = makeStand(3.4, 2.8, 1.1); stand2.position.set(0.9, 0, -0.5); g.add(stand2);
+    // アダプターと受け器
+    const ad = new THREE.Vector3(2.75, 1.45, 0);
+    g.add(tubePath([[cB.x, cB.y], [ad.x - 0.15, ad.y + 0.2], [ad.x, ad.y]], 0.06, glassMat({ opacity: 0.45 })));
+    const rc = MODELS.erlen(); rc.g.scale.setScalar(0.42); rc.g.position.set(2.75, 0, 0); g.add(rc.g);
+    let rcLiq = null; rc.g.children.forEach(c => { if (c.renderOrder === 1) rcLiq = c; });
+    rcLiq.material.color.set(0xeaf6ff);
+    const seal = rubberStopper(0.2, 0.16, 0.18); seal.position.set(2.75, 3.32 * 0.42 + 0.05, 0); g.add(seal);
+    // 中の液
+    const fLiq = new THREE.Group(); fg.add(fLiq);
+    const flows = bubbleSet(10, 0x8fc9ef, 0.05); flows.forEach(f => g.add(f));
+    const vapor = bubbleSet(8, 0xffffff, 0.05); vapor.forEach(f => g.add(f));
+    const drip = bubbleSet(3, 0xd8ecf8, 0.05); drip.forEach(f => g.add(f));
+    const labels = [['枝付きフラスコ', () => new THREE.Vector3(FX - 0.9, FY + 0.9, 0)], ['温度計', () => new THREE.Vector3(FX + 0.15, NECK_TOP + 1.6, 0)],
+      ['リービッヒ冷却器', () => cA.clone().lerp(cB, 0.5).add(new THREE.Vector3(0, 0.45, 0))], ['冷却水', () => portLow.clone().add(new THREE.Vector3(0.45, -1.15, 0))], ['受け器', () => new THREE.Vector3(3.3, 1.0, 0)]];
+    labels.forEach(([n, f]) => { const L = addLabel(n, f); L.part = true; L.el.hidden = !state.parts; });
+    let builtAmt = null;
+    R.tick = tt => {
+      if (builtAmt !== s.amount) {
+        while (fLiq.children.length) { const c = fLiq.children.pop(); c.geometry.dispose(); }
+        const ins = []; for (let k = 0; k <= 18; k++) { const a = -Math.PI / 2 + (Math.PI * 0.8) * k / 18; ins.push([Math.cos(a) * 1.22, 1.32 + Math.sin(a) * 1.22]); }
+        fLiq.add(liquid(ins, s.amount === 'full' ? 2.2 : 1.2, 0xd9a3c7));
+        builtAmt = s.amount;
+      }
+      stones.forEach(x => { x.visible = s.stone; });
+      const by = s.therm === 'branch' ? armA.y : FY + 0.75;
+      thermo.position.set(FX, by, 0);
+      seal.visible = s.seal;
+      bm.flame.update(tt);
+      const e = s.running ? (performance.now() - s.t0) / 1000 : 0;
+      const dir = s.water === 'bottom' ? 1 : -1;
+      flows.forEach((f, i) => {
+        f.visible = true;
+        const k = (tt * 0.25 + f.userData.ph) % 1;
+        const p = dir > 0 ? 0.88 - k * 0.76 : 0.12 + k * 0.76;
+        const pos = cA.clone().lerp(cB, p);
+        f.position.set(pos.x, pos.y + Math.sin(i * 2.4) * 0.12 + (s.water === 'top' ? -0.06 : 0), Math.cos(i * 2.4) * 0.12);
+      });
+      jw.scale.x = jw.scale.z = s.water === 'top' ? 0.7 : 1;
+      jw.material.opacity = s.water === 'top' ? 0.16 : 0.3;
+      const good = s.result && s.result.ok;
+      vapor.forEach((v, i) => {
+        v.visible = s.running;
+        const k = (e * 0.5 + v.userData.ph) % 1;
+        const p = k < 0.4 ? new THREE.Vector3(FX, FY + 1.6 + k / 0.4 * 0.75, 0) : armA.clone().lerp(cB, (k - 0.4) / 0.6);
+        v.position.set(p.x + Math.sin(i) * 0.05, p.y, Math.cos(i) * 0.05);
+        v.material.opacity = 0.35;
+      });
+      drip.forEach((d, i) => {
+        d.visible = s.running && good;
+        const k = (e * 0.9 + d.userData.ph) % 1;
+        d.position.set(ad.x, ad.y - k * 0.9, 0);
+      });
+      rcLiq.scale.y = good && s.running ? Math.min(1.6, 0.4 + e * 0.15) : 0.4;
+      rcLiq.visible = good && (s.running || (s.result && s.result.done));
+      if (s.running && e > 6) { s.running = false; s.result.done = true; renderCard(); }
+    };
+    frame(2.6, 4.2, new THREE.Vector3(0.1, 0.2, 1));
+  },
+  html() {
+    const s = state.pr;
+    const opt = (k, val, label) => `<button type="button" class="btn" data-set="${k}:${val}" aria-pressed="${String(s[k]) === String(val)}">${label}</button>`;
+    let h = `<div class="ctl"><p class="use">ワイン（エタノールと水の混合物）からエタノールを取り出す。装置を正しく組んで「加熱する」を押そう。</p>
+      <p class="note">温度計の球部の位置</p><div class="row">${opt('therm', 'liquid', '液の中')}${opt('therm', 'branch', '枝の付け根の高さ')}</div>
+      <p class="note">沸騰石</p><div class="row">${opt('stone', false, '入れない')}${opt('stone', true, '入れる')}</div>
+      <p class="note">冷却水の向き</p><div class="row">${opt('water', 'top', '上から入れて下から出す')}${opt('water', 'bottom', '下から入れて上から出す')}</div>
+      <p class="note">液の量</p><div class="row">${opt('amount', 'full', '球の8分目')}${opt('amount', 'half', '半分以下')}</div>
+      <p class="note">受け器の口</p><div class="row">${opt('seal', true, 'ゴム栓でふさぐ')}${opt('seal', false, 'ふさがない（アルミはくでかるくおおう）')}</div>
+      <button type="button" class="btn main" data-a="dheat" ${s.running ? 'disabled' : ''}>加熱する</button>`;
+    if (s.result && (s.result.done || !s.result.ok)) h += `<div class="verdict ${s.result.ok ? 'ok' : 'ng'}">${s.result.msg}</div>`;
+    return h + '</div>';
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'set') { const [k, val] = v.split(':'); s[k] = val === 'true' ? true : val === 'false' ? false : val; s.result = null; s.running = false; }
+    if (a === 'dheat') {
+      const bad = [];
+      if (s.therm !== 'branch') bad.push('温度計の球部は、枝の付け根の高さにする（出ていく蒸気の温度をはかるため。液の中では液の温度になってしまう）');
+      if (!s.stone) bad.push('沸騰石を入れないと、突沸（急に激しく沸騰する）して危険');
+      if (s.water !== 'bottom') bad.push('冷却水は下から入れて上から出す（上から入れると冷却器の中に水が満たされず、よく冷えない）');
+      if (s.amount !== 'half') bad.push('液はフラスコの半分以下にする（多いと、沸騰した液が枝に入ってしまう）');
+      if (s.seal) bad.push('受け器をゴム栓で密閉すると、中の圧力が上がって装置が破裂する危険がある');
+      s.result = bad.length ? { ok: false, msg: 'このままでは危ない・うまくいかない：' + bad.join('。') + '。' } : { ok: true, msg: 'うまく蒸留できた！ 沸点の低いエタノール（78 ℃）が先に気体になり、冷却器で冷やされて液体にもどり、受け器にたまる。' };
+      if (!bad.length) { s.running = true; s.t0 = performance.now(); markDone('p-distill'); }
+    }
+    renderCard();
+  },
+};
+
+const EXP_INFO = {
+  'p-gas': {
+    purpose: '実験でつくった気体を、空気とまざらないように集めるため。気体の「水への溶けやすさ」と「空気より重いか軽いか」で、集め方を選ぶ。集めた気体の性質を調べる実験の第一歩。',
+    steps: [
+      ['水に溶けにくい気体（H₂・O₂・N₂ など）は水上置換', '水を満たしたびんに気体を入れて水を追い出すので、空気がまざらず純粋に集められる。どれだけたまったかも目で見える。'],
+      ['水に溶けやすく空気より軽い気体（NH₃）は上方置換', '軽い気体は上にたまるので、口を下に向けたびんの奥まで管を入れて集める。'],
+      ['水に溶けやすく空気より重い気体（HCl・Cl₂・CO₂）は下方置換', '重い気体は下にたまるので、口を上に向けたびんの底まで管を入れて集める。'],
+      ['空気より重いか軽いかは、分子量を 29 とくらべる', '空気は N₂（28）と O₂（32）が約4：1でまざっているので、平均の分子量は約29。'],
+      ['最初に出てくる気体は集めない', 'はじめは装置の中にあった空気がまざって出てくるので、しばらく出してから集める。'],
+    ],
+    mistakes: ['アンモニアを水上置換で集めようとする（水にとても溶ける）。', '上方置換・下方置換で、管をびんの奥まで入れない。', 'CO₂ を上方置換にする（空気より重い）。', '水上置換で、びんに空気が残ったまま始める。'],
+    danger: ['水上置換で加熱をやめるときは、先に管を水から出す。先に火を消すと、水が吸い上げられて（逆流）熱いフラスコが割れる。', '塩素・塩化水素・アンモニアは有毒・刺激性。換気をよくし、においは手であおいでかぐ。', '水素は空気とまざると爆発しやすい。集める前に火を近づけない。'],
+  },
+  'p-elec': {
+    purpose: '水が水素と酸素の化合物であることを確かめる。電気のエネルギーで水を分解し、出てくる気体の種類と体積の比（2：1）を調べる。',
+    steps: [
+      ['水に少量の水酸化ナトリウムを溶かす', '純粋な水はほとんど電気を通さない。電解質を溶かすと電気が流れやすくなる（水酸化ナトリウム自体は変化しない）。'],
+      ['装置に液を満たし、上のコックを閉じる', '気体がたまったとき、液が押し下げられて量を読めるようにする。空気が入っていると体積が正しく読めない。'],
+      ['電源装置につなぎ、電流を流す', '陰極（−極）から水素、陽極（＋極）から酸素が出る。'],
+      ['たまった気体の体積をくらべる', '水素：酸素 ＝ 2：1。反応式 2H₂O → 2H₂ + O₂ の係数の比と同じになる。'],
+      ['気体を確かめる', '陰極の気体にマッチの火を近づけるとポンと燃える（水素）。陽極の気体に火のついた線香を入れると激しく燃える（酸素）。'],
+    ],
+    mistakes: ['陰極と陽極を逆に覚える（「陰極から水素」は、＋の電気をもつ H⁺ が−極に引きよせられるとイメージする）。', '体積の比を 1：2 と逆にする。', '純粋な水のまま電流を流して、気体が出ないと思いこむ。'],
+    danger: ['水酸化ナトリウム水溶液は皮ふや目をいためる。保護めがねをかけ、ついたらすぐ大量の水で洗う。', '水素と酸素が混ざった気体に火を近づけると爆発する。それぞれ別に確かめる。', '電源を入れたまま電極にさわらない。'],
+  },
+  'p-flame': {
+    purpose: 'アルカリ金属や銅などの元素は、炎の中で特有の色を出す。この色で、水溶液にどの元素がふくまれているかを調べられる（花火の色も炎色反応）。',
+    steps: [
+      ['白金線を濃塩酸で洗い、炎に入れて色が出なくなるまで焼く', '前の試料が残っていると色がまざって、正しく判断できない。白金は炎の色をつけず、さびにくい。'],
+      ['白金線の先（輪）に試料の水溶液をつける', '輪にすると液がたまりやすい。'],
+      ['ガスバーナーの外炎（青い炎）に入れる', '青い炎は色がついていないので、元素の色がよく見える。赤い炎だと色がわかりにくい。'],
+      ['色を観察する', 'Li 赤、Na 黄、K 赤紫、Cu 青緑、Ca 橙赤、Sr 紅、Ba 黄緑。'],
+    ],
+    mistakes: ['前の試料をきれいに洗わずに次を調べる。', 'Na の黄色はとても強いので、少しでもまざると他の色が見えなくなる（K を見るときは青いコバルトガラスごしに見る：発展）。', 'Ca（橙赤）と Sr（紅）、Cu（青緑）と Ba（黄緑）をとりちがえる。'],
+    danger: ['濃塩酸は刺激が強い。保護めがねをかけ、においを直接かがない。', '炎に入れた白金線はとても熱い。持ち手のガラス部分以外にさわらない。'],
+  },
+  'p-titr': {
+    purpose: '濃度のわからない酸（または塩基）の濃度を、濃度のわかっている塩基（または酸）とちょうど中和させて求める。食酢の酢酸の濃度を調べるなど、身近な分析にも使われる。',
+    steps: [
+      ['ホールピペットで、濃度不明の塩酸を正確に 10.0 mL とり、三角フラスコに入れる', 'ホールピペットは決まった体積を正確にとれる。'],
+      ['指示薬（フェノールフタレイン）を2〜3滴加える', '中和点をこえて塩基性になると、無色からうすい赤色に変わる。'],
+      ['ビュレットを NaOH 水溶液で共洗いしてから入れ、目盛りを読む', '水でぬれたまま入れると、うすまって濃度が変わる。先端の気泡も追い出しておく。'],
+      ['三角フラスコをふり混ぜながら、少しずつ滴下する', '混ぜないと、一部だけ赤くなって終点をまちがえる。'],
+      ['終点の近くは1滴ずつ。うすい赤色が消えなくなったら終点', '終点の近くでは1滴でpHが大きく変わる。'],
+      ['滴下した体積から濃度を計算する', '酸の価数×濃度×体積 ＝ 塩基の価数×濃度×体積。'],
+    ],
+    mistakes: ['ビュレットの目盛りを下から読む（上が0）。', '一気に流して終点を通りすぎる。', '三角フラスコを共洗いしてしまう（三角フラスコは水でぬれていてもよい。酸の物質量は変わらないから）。', '計算で体積の単位（mL と L）をそろえない。'],
+    danger: ['水酸化ナトリウム水溶液や酸が目に入ると危険。保護めがねをかける。', 'ビュレットに液を入れるときは、目の高さより低い位置でろうとを使う。'],
+  },
+  'p-distill': {
+    purpose: '液体の混合物を、沸点のちがいを利用して分ける。ワインからエタノールを取り出したり、海水から純粋な水を取り出したりできる。',
+    steps: [
+      ['液は枝付きフラスコの半分以下にし、沸騰石を入れる', '多いと沸騰した液が枝から流れ出る。沸騰石は突沸（急な激しい沸騰）を防ぐ。'],
+      ['温度計の球部を、枝の付け根の高さにする', 'はかりたいのは「出ていく蒸気」の温度。液の中に入れると液の温度になってしまう。'],
+      ['冷却水は、冷却器の下から入れて上から出す', '下から入れると冷却器の中が水で満たされ、よく冷える。上から入れると水がすぐ流れ落ちて、すき間ができる。'],
+      ['受け器（三角フラスコ）は密閉しない（アルミはくでかるくおおう）', '密閉すると中の圧力が上がって破裂する。アルミはくで蒸発やごみを防ぐ。'],
+      ['ゆっくり加熱し、温度計を見ながら集める', '沸点の低い成分（エタノール 78 ℃）が先に出てくる。温度が上がりはじめたら受け器をかえる。'],
+    ],
+    mistakes: ['温度計を液の中に入れてしまう。', '冷却水を上から入れる。', '沸騰石を入れ忘れ、加熱中にあわてて入れる（突沸の危険。一度冷ましてから入れる）。'],
+    danger: ['エタノールは燃えやすい。受け器を炎の近くに置かない。', '装置を密閉しない。', '加熱をやめたあとも、しばらくは冷却水を流しておく。'],
+  },
+};
+Object.assign(INFO, EXP_INFO);
+PRACTICES.forEach(p => { p.grp = '基本操作'; });
+PRACTICES.push(
+  { id: 'p-gas', name: '気体の集め方（置換）', icon: '気', item: null, grp: '実験' },
+  { id: 'p-elec', name: '水の電気分解', icon: '電', item: null, grp: '実験' },
+  { id: 'p-flame', name: '炎色反応', icon: '色', item: 'burner', grp: '実験' },
+  { id: 'p-titr', name: '中和滴定', icon: '滴', item: 'burette', grp: '実験' },
+  { id: 'p-distill', name: '蒸留', icon: '蒸', item: 'roundflask', grp: '実験' },
+);
+SAFETY_Q.push(
+  ['アンモニアは上方置換で集める。', true, '水にとても溶けやすく、空気より軽い（分子量17）から。'],
+  ['二酸化炭素は上方置換で集める。', false, '空気より重い（分子量44）ので、下方置換（または水上置換）。'],
+  ['水素は水上置換で集める。', true, '水に溶けにくいので水上置換がよい。'],
+  ['塩化水素は水上置換で集める。', false, '水にとても溶けやすい。空気より重いので下方置換。'],
+  ['水上置換で気体を発生させながら加熱したあとは、先に火を消してから管を水から出す。', false, '先に管を水から出す。火を先に消すと水が逆流する。'],
+  ['水の電気分解では、陰極から酸素が出る。', false, '陰極から水素、陽極から酸素。体積の比は 2：1。'],
+  ['水の電気分解では、水酸化ナトリウムを少し溶かす。', true, '純粋な水は電気をほとんど通さないから。'],
+  ['ナトリウムの炎色反応は黄色である。', true, 'Li 赤、Na 黄、K 赤紫、Cu 青緑、Ca 橙赤、Sr 紅、Ba 黄緑。'],
+  ['銅の炎色反応は赤色である。', false, '銅は青緑色。'],
+  ['中和滴定で、ビュレットは水でぬれたまま使ってよい。', false, '使う液で共洗いする。水でぬれていると液がうすまる。'],
+  ['蒸留では、温度計の球部を液の中に入れる。', false, '枝の付け根の高さにする。出ていく蒸気の温度をはかるため。'],
+  ['蒸留の冷却水は、冷却器の下から入れて上から出す。', true, '冷却器の中が水で満たされ、よく冷える。'],
+);
+
 function quizStart(kind) {
   const qs = [];
   for (let i = 0; i < 10; i++) {
@@ -1265,7 +1915,8 @@ function renderLib() {
     });
     lib.innerHTML = h;
   } else if (state.mode === 'practice') {
-    lib.innerHTML = '<div class="grp">操作の練習</div>' + PRACTICES.map(p => `<button type="button" class="item" data-goto="${p.id}" aria-current="${state.id === p.id}"><span class="ic">${p.icon}</span>${esc(p.name)}${done.has(p.id) ? '<span class="done">✓</span>' : ''}</button>`).join('')
+    let last = '';
+    lib.innerHTML = PRACTICES.map(p => (p.grp !== last ? `<div class="grp">${(last = p.grp) === '実験' ? '実験' : '基本操作の練習'}</div>` : '') + `<button type="button" class="item" data-goto="${p.id}" aria-current="${state.id === p.id}"><span class="ic">${p.icon}</span>${esc(p.name)}${done.has(p.id) ? '<span class="done">✓</span>' : ''}</button>`).join('')
       + `<p class="note" style="margin:10px 4px">クリア ${PRACTICES.filter(p => done.has(p.id)).length} / ${PRACTICES.length}</p>`;
   } else {
     lib.innerHTML = '<div class="grp">クイズ</div>' + [['name', '器具の名前あて'], ['safety', '安全な使い方 ○×'], ['mix', 'ミックス']].map(([k, n]) => `<button type="button" class="item" data-quiz="${k}" aria-current="${state.quiz && state.quiz.kind === k}"><span class="ic">Q</span>${n}</button>`).join('');
@@ -1321,6 +1972,10 @@ document.addEventListener('click', ev => {
     if (a.dataset.a === 'qnext') { state.quiz.i++; state.quiz.picked = null; if (state.quiz.i >= 10) renderCard(); else quizShow(); return; }
     PR[state.id].act(a.dataset.a); return;
   }
+  for (const [attr, act] of [['data-gas', 'gas'], ['data-method', 'method'], ['data-elyte', 'elyte'], ['data-sample', 'sample'], ['data-fq', 'fq']]) {
+    const b = t.closest('[' + attr + ']');
+    if (b && state.pr) { PR[state.id].act(act, b.getAttribute(attr)); return; }
+  }
   const eye = t.closest('[data-eye]');
   if (eye) { PR[state.id].act('eye', eye.dataset.eye); return; }
   const opt = t.closest('[data-opt]');
@@ -1330,13 +1985,13 @@ document.addEventListener('click', ev => {
 });
 document.addEventListener('input', ev => {
   const id = ev.target.id, v = +ev.target.value;
-  const map = { gasS: 'gas', airS: 'air', amtS: 'amt', wickS: 'wick', fillS: 'fill', tubeS: 'amt' };
+  const map = { gasS: 'gas', airS: 'air', amtS: 'amt', wickS: 'wick', fillS: 'fill', tubeS: 'amt', voltS: 'volt' };
   if (map[id] && state.pr) {
     PR[state.id].act(map[id], v);
     const el = $(id); if (el) el.focus();
   }
 });
-document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.id === 'readV') PR['p-cylinder'].act('judge'); });
+document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.id === 'readV') PR['p-cylinder'].act('judge'); if (ev.key === 'Enter' && ev.target.id === 'tAns') PR['p-titr'].act('tjudge'); });
 $('btnParts').addEventListener('click', () => {
   state.parts = !state.parts;
   $('btnParts').setAttribute('aria-pressed', String(state.parts));
