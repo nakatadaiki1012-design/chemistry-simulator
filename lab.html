@@ -8,7 +8,7 @@
 <meta name="description" content="化学の実験器具を3Dで見て、使い方を練習できるアプリ">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Lexend:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 /* レイアウト：左に器具の棚、右に3Dの実験台。説明と操作パネルは実験台の中 */
 :root {
@@ -205,6 +205,63 @@ ul.caution.danger li b.x { background: #b7791f; }
   .back { padding: 0 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+/* ===== 見た目：理科の実験ノート（紙・墨・緑青・朱） ===== */
+:root {
+  --bg: #f1ede4; --panel: #fbf9f4; --glass: rgba(251, 249, 244, 0.97); --ink: #24282b; --muted: #6d6b63; --line: #d6d0c2; --chip: #ebe6da;
+  --accent: #2c6352; --accent-ink: #fbf9f4; --warm: #b8502c; --ring: #8a8a80; --stage-1: #faf8f2; --stage-2: #e4dfd3;
+  --bench-1: #faf8f2; --bench-2: #e4dfd3;
+  --ok: #2c6352; --ng: #b8502c; --red: #c0392b; --blue: #2f5f9e; --stamp: #c0392b;
+  --font-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --font-data: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18201c; --panel: #1f2924; --glass: rgba(31, 41, 36, 0.97); --ink: #ebe8dd; --muted: #a3a89b; --line: #36443c; --chip: #28342e;
+    --accent: #8cc5a6; --accent-ink: #18201c; --warm: #eda26b; --ring: #9aa293; --stage-1: #26332d; --stage-2: #121915;
+    --bench-1: #26332d; --bench-2: #121915; --ok: #8cc5a6; --ng: #eda26b; --red: #f07a6a; --blue: #8fb5e8; --stamp: #f07a6a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18201c; --panel: #1f2924; --glass: rgba(31, 41, 36, 0.97); --ink: #ebe8dd; --muted: #a3a89b; --line: #36443c; --chip: #28342e;
+  --accent: #8cc5a6; --accent-ink: #18201c; --warm: #eda26b; --ring: #9aa293; --stage-1: #26332d; --stage-2: #121915;
+  --bench-1: #26332d; --bench-2: #121915; --ok: #8cc5a6; --ng: #eda26b; --red: #f07a6a; --blue: #8fb5e8; --stamp: #f07a6a;
+}
+/* 紙の方眼（うすく） */
+body { background-color: var(--bg); background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 24px 24px; background-position: -1px -1px; }
+body::before { content: ""; position: fixed; inset: 0; background: var(--bg); opacity: .82; pointer-events: none; z-index: -1; }
+/* 影・すりガラスをやめて、細い線で区切る */
+.card, .panel, .lib, .stage-wrap { box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.top { border-bottom: 1.5px solid var(--ink) !important; background: var(--panel); }
+.brand { font-family: var(--font-display); font-weight: 800; letter-spacing: .04em; }
+.brand b { color: var(--warm) !important; }
+h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display); letter-spacing: .02em; }
+/* 選ばれているものは、塗りつぶしではなく下線・枠で */
+.secnav button[aria-current="true"], .modes button[aria-current="true"] { background: transparent !important; color: var(--ink) !important; box-shadow: inset 0 -2.5px 0 var(--warm) !important; border-radius: 0 !important; }
+.modes { background: transparent !important; padding: 0 !important; }
+.labnav, .back { border-radius: 3px !important; border-color: var(--ink) !important; color: var(--ink) !important; }
+.pbtn, .btn, .qset, .card-btn, .cat, .item, .seqo, .ls-choice, .qc, .tgl, .ibtn, .qtest, .ls-trybtn, .tabs button, .ls-tabs button, .ctabs button, .seg button, .subnav button, .tools button, .chips button { border-radius: 4px !important; }
+.pbtn.big, .btn.main, .headbtn { box-shadow: 2px 2px 0 var(--ink) !important; }
+.pbtn.big:active, .btn.main:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink) !important; }
+.pill, .lbl, .lbl-mol, .lbl-sep, .lbl-phase, .ph-badge, .cat, .bchip { border-radius: 3px !important; }
+.tabs, .ls-tabs, .ls-course, .ctabs { border-radius: 0 !important; background: transparent !important; border-bottom: 1px solid var(--line); padding: 0 !important; }
+.tabs button[aria-selected="true"], .ls-tabs button[aria-selected="true"], .ls-course button[aria-selected="true"], .ctabs button[aria-selected="true"] { background: transparent !important; box-shadow: inset 0 -2.5px 0 var(--accent) !important; border-radius: 0 !important; color: var(--ink) !important; }
+.point, .purpose, .verdict, .ls-exam { border-radius: 2px !important; }
+.ls-exam { background: transparent !important; border: 0 !important; border-left: 3px double var(--warm) !important; }
+.ls-exam h3 { color: var(--warm) !important; }
+.ls-pass-bar, .qprog { border-radius: 0 !important; height: 6px !important; }
+.ls-pass-bar i, .qprog i { background: var(--accent) !important; }
+.ls-score b { color: var(--accent) !important; font-family: var(--font-data); }
+.ls-choice.right { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--accent-ink) !important; }
+.ls-choice.wrong { border-color: var(--warm) !important; color: var(--warm) !important; }
+.qset.hot { border-color: var(--warm) !important; }
+.qset.hot b { color: var(--warm) !important; }
+/* 合格のはんこ */
+.stamp { display: inline-grid; place-items: center; font-family: var(--font-display); font-weight: 800; color: var(--stamp); border: 2px solid var(--stamp); border-radius: 50%; line-height: 1; transform: rotate(-12deg); }
+.stamp.s { width: 26px; height: 26px; font-size: 11px; border-width: 1.5px; vertical-align: -6px; margin-left: 4px; }
+.stamp.l { width: 76px; height: 76px; font-size: 22px; border-width: 3px; margin: 4px 0 10px; box-shadow: inset 0 0 0 3px var(--panel), inset 0 0 0 4.5px var(--stamp); }
+.ls-medal { display: none; }
 </style>
 </head>
 <body>

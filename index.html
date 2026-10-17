@@ -8,7 +8,7 @@
 <meta name="description" content="化学基礎の授業で使える、分子・結合・電子殻を立体で見られるアプリ">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Lexend:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 /* レイアウト：左に分子の棚、右に立体ステージ。説明カードはステージの中（狭い画面では下からのシート） */
 :root {
@@ -555,6 +555,63 @@ body.present { --card-w: 460px; }
 }
 @media (max-width: 480px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mol-name { font-size: 20px; } }
 @media (prefers-reduced-motion: reduce) { .shell .bar i { transition: none; } }
+/* ===== 見た目：理科の実験ノート（紙・墨・緑青・朱） ===== */
+:root {
+  --bg: #f1ede4; --panel: #fbf9f4; --glass: rgba(251, 249, 244, 0.97); --ink: #24282b; --muted: #6d6b63; --line: #d6d0c2; --chip: #ebe6da;
+  --accent: #2c6352; --accent-ink: #fbf9f4; --warm: #b8502c; --ring: #8a8a80; --stage-1: #faf8f2; --stage-2: #e4dfd3;
+  --bench-1: #faf8f2; --bench-2: #e4dfd3;
+  --ok: #2c6352; --ng: #b8502c; --red: #c0392b; --blue: #2f5f9e; --stamp: #c0392b;
+  --font-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --font-data: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18201c; --panel: #1f2924; --glass: rgba(31, 41, 36, 0.97); --ink: #ebe8dd; --muted: #a3a89b; --line: #36443c; --chip: #28342e;
+    --accent: #8cc5a6; --accent-ink: #18201c; --warm: #eda26b; --ring: #9aa293; --stage-1: #26332d; --stage-2: #121915;
+    --bench-1: #26332d; --bench-2: #121915; --ok: #8cc5a6; --ng: #eda26b; --red: #f07a6a; --blue: #8fb5e8; --stamp: #f07a6a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18201c; --panel: #1f2924; --glass: rgba(31, 41, 36, 0.97); --ink: #ebe8dd; --muted: #a3a89b; --line: #36443c; --chip: #28342e;
+  --accent: #8cc5a6; --accent-ink: #18201c; --warm: #eda26b; --ring: #9aa293; --stage-1: #26332d; --stage-2: #121915;
+  --bench-1: #26332d; --bench-2: #121915; --ok: #8cc5a6; --ng: #eda26b; --red: #f07a6a; --blue: #8fb5e8; --stamp: #f07a6a;
+}
+/* 紙の方眼（うすく） */
+body { background-color: var(--bg); background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 24px 24px; background-position: -1px -1px; }
+body::before { content: ""; position: fixed; inset: 0; background: var(--bg); opacity: .82; pointer-events: none; z-index: -1; }
+/* 影・すりガラスをやめて、細い線で区切る */
+.card, .panel, .lib, .stage-wrap { box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.top { border-bottom: 1.5px solid var(--ink) !important; background: var(--panel); }
+.brand { font-family: var(--font-display); font-weight: 800; letter-spacing: .04em; }
+.brand b { color: var(--warm) !important; }
+h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display); letter-spacing: .02em; }
+/* 選ばれているものは、塗りつぶしではなく下線・枠で */
+.secnav button[aria-current="true"], .modes button[aria-current="true"] { background: transparent !important; color: var(--ink) !important; box-shadow: inset 0 -2.5px 0 var(--warm) !important; border-radius: 0 !important; }
+.modes { background: transparent !important; padding: 0 !important; }
+.labnav, .back { border-radius: 3px !important; border-color: var(--ink) !important; color: var(--ink) !important; }
+.pbtn, .btn, .qset, .card-btn, .cat, .item, .seqo, .ls-choice, .qc, .tgl, .ibtn, .qtest, .ls-trybtn, .tabs button, .ls-tabs button, .ctabs button, .seg button, .subnav button, .tools button, .chips button { border-radius: 4px !important; }
+.pbtn.big, .btn.main, .headbtn { box-shadow: 2px 2px 0 var(--ink) !important; }
+.pbtn.big:active, .btn.main:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--ink) !important; }
+.pill, .lbl, .lbl-mol, .lbl-sep, .lbl-phase, .ph-badge, .cat, .bchip { border-radius: 3px !important; }
+.tabs, .ls-tabs, .ls-course, .ctabs { border-radius: 0 !important; background: transparent !important; border-bottom: 1px solid var(--line); padding: 0 !important; }
+.tabs button[aria-selected="true"], .ls-tabs button[aria-selected="true"], .ls-course button[aria-selected="true"], .ctabs button[aria-selected="true"] { background: transparent !important; box-shadow: inset 0 -2.5px 0 var(--accent) !important; border-radius: 0 !important; color: var(--ink) !important; }
+.point, .purpose, .verdict, .ls-exam { border-radius: 2px !important; }
+.ls-exam { background: transparent !important; border: 0 !important; border-left: 3px double var(--warm) !important; }
+.ls-exam h3 { color: var(--warm) !important; }
+.ls-pass-bar, .qprog { border-radius: 0 !important; height: 6px !important; }
+.ls-pass-bar i, .qprog i { background: var(--accent) !important; }
+.ls-score b { color: var(--accent) !important; font-family: var(--font-data); }
+.ls-choice.right { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--accent-ink) !important; }
+.ls-choice.wrong { border-color: var(--warm) !important; color: var(--warm) !important; }
+.qset.hot { border-color: var(--warm) !important; }
+.qset.hot b { color: var(--warm) !important; }
+/* 合格のはんこ */
+.stamp { display: inline-grid; place-items: center; font-family: var(--font-display); font-weight: 800; color: var(--stamp); border: 2px solid var(--stamp); border-radius: 50%; line-height: 1; transform: rotate(-12deg); }
+.stamp.s { width: 26px; height: 26px; font-size: 11px; border-width: 1.5px; vertical-align: -6px; margin-left: 4px; }
+.stamp.l { width: 76px; height: 76px; font-size: 22px; border-width: 3px; margin: 4px 0 10px; box-shadow: inset 0 0 0 3px var(--panel), inset 0 0 0 4.5px var(--stamp); }
+.ls-medal { display: none; }
 </style>
 </head>
 <body>
@@ -2785,7 +2842,7 @@ function neutAdd(v) {
 }
 
 // ===== タイムアタック =====
-LIB.push({ id: 'ta-60', cat: 'quiz', kind: 'ta', name: 'タイムアタック（60秒）', f: '⏱', en: '3Dを見て、すばやく答えよう' });
+LIB.push({ id: 'ta-60', cat: 'quiz', kind: 'ta', name: 'タイムアタック（60秒）', f: '60秒', en: '3Dを見て、すばやく答えよう' });
 const TA_TYPES = ['name', 'formula', 'shape', 'polar', 'state', 'hbond'];
 function taStart() {
   leaveQuiz();
@@ -3066,7 +3123,7 @@ function lessonCardHTML() {
     ${st.lab ? `<p><a class="pbtn ghost ls-lab" href="${labURL(st.lab)}" target="_blank" rel="noopener">実験ラボでやってみる ↗</a></p>` : ''}
     ${last && typeof EXAM !== 'undefined' && EXAM[l.id] ? `<div class="ls-exam"><h3>テスト・入試に出るポイント</h3><ul>${EXAM[l.id].map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}`;
   }
-  const quizBtn = l.drillOnly ? '' : `<button type="button" class="pbtn big" data-act="lsquiz">確認テストへ（${LESSON_QUIZ[l.id].length}問）${lessonPass.has(l.id) ? ' 🏅' : ''}</button>`;
+  const quizBtn = l.drillOnly ? '' : `<button type="button" class="pbtn big" data-act="lsquiz">確認テストへ（${LESSON_QUIZ[l.id].length}問）${lessonPass.has(l.id) ? '（合格ずみ）' : ''}</button>`;
   return `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">${l.drillOnly ? '計算ドリル' : '授業 ' + esc(l.no)}</span><span class="pill">${esc(l.name)}</span></div>
     <h2 class="ls-title">${esc(st.title)}</h2></div></div>
     ${tabs.length > 1 ? `<div class="ls-tabs" role="tablist">${tabs.map(([k, n]) => `<button type="button" role="tab" data-ltab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div>` : ''}
@@ -3074,6 +3131,7 @@ function lessonCardHTML() {
     ${l.steps.length > 1 ? `<div class="ls-dots">${l.steps.map((_, k) => `<i class="${k === i ? 'on' : k < i ? 'done' : ''}"></i>`).join('')}<span>${i + 1} / ${l.steps.length}</span></div>` : ''}
     <div class="ls-nav">${l.steps.length > 1 ? `<button type="button" class="pbtn ghost" data-act="lsprev" ${i === 0 ? 'disabled' : ''}>← 前へ</button>` : ''}
     ${!last ? '<button type="button" class="pbtn big" data-act="lsnext">次へ →</button>' : quizBtn}</div>
+    ${last && !l.drillOnly ? `<p class="note"><button type="button" class="linkbtn" data-act="lsqskip">テストをとばして${next ? `次の授業 ${esc(next.no)} へ` : '終わる'} →</button></p>` : ''}
     ${last && next && !l.drillOnly ? `<p class="note">${lessonPass.has(l.id) ? `合格ずみ。<button type="button" class="linkbtn" data-go="${next.id}">次の授業 ${esc(next.no)} へ →</button>` : `${PASS_LINE}問以上正解で合格。合格をためていこう！`}</p>` : ''}
     <button type="button" class="pbtn ghost" data-act="lsexit">${l.drillOnly ? 'ドリルをやめる' : '授業モードをやめる'}</button></div>`;
 }
@@ -3242,7 +3300,7 @@ function lsQuizHTML() {
     const next = LESSONS[LESSONS.indexOf(l) + 1];
     return head + `<h2 class="ls-title">${ok ? '合格！' : 'もう少し！'}</h2></div></div>
       <div class="card-body"><p class="ls-text">${n} 問中 <b>${quiz.score}</b> 問正解。${ok ? '' : `${PASS_LINE} 問以上で合格。`}</p>
-      ${ok ? `<div class="ls-medal">🏅 ${esc(l.no)} 合格</div>` : ''}
+      ${ok ? '<div class="stamp l">合格</div>' : ''}
       <p class="note">合格した授業 ${lessonPass.size} / ${LESSONS.length}</p>
       <div class="ls-pass-bar"><i style="width:${lessonPass.size / LESSONS.length * 100}%"></i></div>
       <div class="ls-nav">${ok && next ? `<button type="button" class="pbtn big" data-go="${next.id}">次の授業 ${esc(next.no)} →</button>` : `<button type="button" class="pbtn big" data-act="lsqretry">もう一度テスト</button>`}</div>
@@ -3255,7 +3313,8 @@ function lsQuizHTML() {
     <div class="ls-choices">${q.choices.map((c, k) => `<button type="button" class="ls-choice${p !== null ? (c === q.a ? ' right' : c === p ? ' wrong' : ' dim') : ''}" data-act="lsqpick" data-k="${k}" ${p !== null ? 'disabled' : ''}>${esc(c)}</button>`).join('')}</div>
     ${p !== null ? `<div class="point"><h3>${p === q.a ? '正解！' : '答え：' + esc(q.a)}</h3><p>${esc(q.ex)}</p></div>
       <div class="ls-nav"><button type="button" class="pbtn big" data-act="lsqnext">${quiz.i === n - 1 ? '結果を見る' : '次の問題 →'}</button></div>` : ''}
-    <div class="ls-dots">${quiz.qs.map((_, k) => `<i class="${k === quiz.i ? 'on' : k < quiz.i ? 'done' : ''}"></i>`).join('')}<span>${quiz.i + 1} / ${n}　正解 ${quiz.score}</span></div></div>`;
+    <div class="ls-dots">${quiz.qs.map((_, k) => `<i class="${k === quiz.i ? 'on' : k < quiz.i ? 'done' : ''}"></i>`).join('')}<span>${quiz.i + 1} / ${n}　正解 ${quiz.score}</span></div>
+    <button type="button" class="pbtn ghost" data-act="lsqskip">テストをとばす</button></div>`;
 }
 // ===== 授業モード：化学（学習指導要領「化学」の順） =====
 LESSON_PARTS[0].name = '化学基礎　第1編　物質の構成';
@@ -3559,7 +3618,7 @@ function drillCheck(p, v) {
 function drillNew(types) { const t = dpick(types); return { t, p: DRILLS[t].gen(), input: '', res: null }; }
 function drillHTML(d, stat) {
   const p = d.p;
-  return `<div class="drill"><div class="drill-h"><b>計算練習</b><span>${esc(DRILLS[d.t].name)}</span>${stat ? `<span class="drill-st">正解 ${stat.ok} / ${stat.n}${stat.streak > 1 ? `　🔥${stat.streak}連続` : ''}</span>` : ''}</div>
+  return `<div class="drill"><div class="drill-h"><b>計算練習</b><span>${esc(DRILLS[d.t].name)}</span>${stat ? `<span class="drill-st">正解 ${stat.ok} / ${stat.n}${stat.streak > 1 ? `　${stat.streak}問連続` : ''}</span>` : ''}</div>
     <p class="drill-q">${p.q}</p>
     <div class="drill-in"><input id="drillIn" type="text" inputmode="decimal" autocomplete="off" placeholder="${p.sci ? '例 1.2×10^5 または 1.2e5' : '答えを入力'}" value="${esc(d.input)}" ${d.res ? 'disabled' : ''}><span>${esc(p.unit || '')}</span>
     ${d.res ? '' : '<button type="button" class="pbtn" data-act="drillgo">答え合わせ</button>'}</div>
@@ -5879,7 +5938,7 @@ function showLessonMenu() {
     <p class="note">学習指導要領（${CN[course]}）の順に並んでいます。大きな文字の説明と3Dで、1画面ずつ進めます。プロジェクターに映すときは、右上のボタンで全画面に。</p>
     <div class="ls-score"><span>${CN[course]}の合格</span><b>${passN}</b><span>/ ${list.length}</span></div><div class="ls-pass-bar"><i style="width:${passN / list.length * 100}%"></i></div>
     ${(() => { const nx = list.find(l => !lessonDone.has(l.id)); return nx ? `<button type="button" class="qset hot" data-go="${nx.id}"><b>${list.some(l => lessonDone.has(l.id)) ? '続きから' : '最初から'}：${esc(nx.no)}　${esc(nx.name)}</b><span>→</span></button>` : '<p class="note">全部の授業を見終わりました！</p>'; })()}
-    ${LESSON_PARTS.map((pt, pi) => [pt, pi]).filter(([, pi]) => (pi < 2 ? 'kiso' : 'kagaku') === course).map(([pt, pi]) => `<h3 class="ls-part">${esc(pt.name)}</h3>` + pt.chaps.map((ch, ci) => `<h4 class="ls-chap">${esc(ch)}</h4><div class="qsets">${LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<div class="ls-row"><button type="button" class="qset" data-go="${l.id}"><b><span class="ls-no">${esc(l.no)}</span>${esc(l.name)}${lessonPass.has(l.id) ? ' <i class="ls-medal-s" title="合格">🏅</i>' : lessonDone.has(l.id) ? ' <i class="ls-ok">✓</i>' : ''}</b><span>${l.steps.length}画面</span></button><button type="button" class="qtest" data-lstest="${l.id}" title="確認テストだけをする">テスト</button></div>`).join('')}</div>`).join('')).join('')}</div>`;
+    ${LESSON_PARTS.map((pt, pi) => [pt, pi]).filter(([, pi]) => (pi < 2 ? 'kiso' : 'kagaku') === course).map(([pt, pi]) => `<h3 class="ls-part">${esc(pt.name)}</h3>` + pt.chaps.map((ch, ci) => `<h4 class="ls-chap">${esc(ch)}</h4><div class="qsets">${LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<div class="ls-row"><button type="button" class="qset" data-go="${l.id}"><b><span class="ls-no">${esc(l.no)}</span>${esc(l.name)}${lessonPass.has(l.id) ? ' <i class="stamp s" title="合格">合格</i>' : lessonDone.has(l.id) ? ' <i class="ls-ok">✓</i>' : ''}</b><span>${l.steps.length}画面</span></button><button type="button" class="qtest" data-lstest="${l.id}" title="確認テストだけをする">テスト</button></div>`).join('')}</div>`).join('')).join('')}</div>`;
   $('card').classList.remove('collapsed'); state.cardOpen = true;
 }
 function renderTabs() {
@@ -5913,12 +5972,12 @@ function renderGrid() {
   if (state.sec === 'lesson') {
     const cur2 = id => !!(state.lesson && state.lesson.l.id === id);
     const course = state.lesson ? state.lesson.l.course : state.lessonCourse || 'kiso';
-    grid.innerHTML = LESSON_PARTS.map((pt, pi) => (pi < 2 ? 'kiso' : 'kagaku') !== course ? '' : pt.chaps.map((ch, ci) => `<p class="ls-gh">${esc(pt.name.split('　').slice(0, 2).join(' '))} ${esc(ch.replace('　', ' '))}</p>` + LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<button type="button" class="card-btn wide" data-id="${l.id}" aria-current="${cur2(l.id)}"><span class="f">${esc(l.no)}　${esc(l.name)}</span><span class="n">${lessonPass.has(l.id) ? '🏅 合格　' : lessonDone.has(l.id) ? '<b class="done">✓</b>' : ''}${l.steps.length}画面</span></button>`).join('')).join('')).join('');
+    grid.innerHTML = LESSON_PARTS.map((pt, pi) => (pi < 2 ? 'kiso' : 'kagaku') !== course ? '' : pt.chaps.map((ch, ci) => `<p class="ls-gh">${esc(pt.name.split('　').slice(0, 2).join(' '))} ${esc(ch.replace('　', ' '))}</p>` + LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<button type="button" class="card-btn wide" data-id="${l.id}" aria-current="${cur2(l.id)}"><span class="f">${esc(l.no)}　${esc(l.name)}</span><span class="n">${lessonPass.has(l.id) ? '<i class="stamp s">合格</i>　' : lessonDone.has(l.id) ? '<b class="done">✓</b>' : ''}${l.steps.length}画面</span></button>`).join('')).join('')).join('');
     return;
   }
   if (state.sec === 'quiz') {
-    grid.innerHTML = `<button type="button" class="card-btn wide" data-id="ta-60" aria-current="${!!state.ta}"><span class="f">⏱ タイムアタック</span><span class="n">60秒で何問答えられる？</span></button>`
-      + DRILL_SETS.map(d => `<button type="button" class="card-btn wide" data-id="${d.id}" aria-current="${!!(state.lesson && state.lesson.l.id === d.id)}"><span class="f">✏️ ${esc(d.name)}</span><span class="n">計算ドリル</span></button>`).join('')
+    grid.innerHTML = `<button type="button" class="card-btn wide" data-id="ta-60" aria-current="${!!state.ta}"><span class="f">タイムアタック</span><span class="n">60秒で何問答えられる？</span></button>`
+      + DRILL_SETS.map(d => `<button type="button" class="card-btn wide" data-id="${d.id}" aria-current="${!!(state.lesson && state.lesson.l.id === d.id)}"><span class="f">${esc(d.name)}</span><span class="n">計算ドリル</span></button>`).join('')
       + QUIZ_SETS.map(q => `<button type="button" class="card-btn wide" data-id="${q.id}" aria-current="${!state.ta && state.quiz && state.quiz.set.id === q.id}"><span class="f">${esc(q.name)}</span><span class="n">10問</span></button>`).join('');
     return;
   }
@@ -6277,7 +6336,7 @@ function showQuizMenu() {
   if (R) { clearView(); buildMolView(); R.controls.autoRotate = true; fitCamera(); }
   const best = id => { try { return +(localStorage.getItem(BEST_KEY + ':' + id) || 0); } catch (err) { return 0; } };
   $('card').innerHTML = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill">クイズ</span></div><h2 class="mol-name">どのクイズにする？</h2></div></div>
-    <div class="card-body"><p class="note">1回10問。答えると、3Dの模型と説明で答えを確かめられる。</p><div class="qsets"><button type="button" class="qset hot" data-go="ta-60"><b>⏱ タイムアタック（60秒）</b><span>ベスト ${best('ta')} 問</span></button>${QUIZ_SETS.map(q => `<button type="button" class="qset" data-go="${q.id}"><b>${esc(q.name)}</b><span>最高 ${best(q.id)} / 10</span></button>`).join('')}</div></div>`;
+    <div class="card-body"><p class="note">1回10問。答えると、3Dの模型と説明で答えを確かめられる。</p><div class="qsets"><button type="button" class="qset hot" data-go="ta-60"><b>タイムアタック（60秒）</b><span>ベスト ${best('ta')} 問</span></button>${QUIZ_SETS.map(q => `<button type="button" class="qset" data-go="${q.id}"><b>${esc(q.name)}</b><span>最高 ${best(q.id)} / 10</span></button>`).join('')}</div></div>`;
   $('card').classList.remove('collapsed');
   state.cardOpen = true;
 }
@@ -6511,6 +6570,7 @@ function bindUI() {
     if (a === 'drillgo' || a === 'drillshow') { drillAnswer(a === 'drillshow'); return; }
     if (a === 'drillnext') { const L = state.lesson; L.drill = drillNew(lessonDrillTypes(L.l, L.l.steps[L.i])); renderCard(); const x = $('drillIn'); if (x) x.focus(); return; }
     if (a === 'lsnext') { state.lesson.i++; lessonGo(); return; }
+    if (a === 'lsqskip') { const L = state.lesson, nx = LESSONS[LESSONS.indexOf(L.l) + 1]; if (nx) selectEntry(LIB.find(x => x.id === nx.id)); else { lessonExit(); goSection('lesson'); } return; }
     if (a === 'lsquiz' || a === 'lsqretry') { lsQuizStart(); renderCard(); return; }
     if (a === 'lsqpick') { const qz = state.lesson.quiz, q = qz.qs[qz.i]; qz.picked = q.choices[+act.dataset.k]; if (qz.picked === q.a) qz.score++; renderCard(); return; }
     if (a === 'lsqnext') { const qz = state.lesson.quiz; qz.i++; qz.picked = null; renderCard(); if (qz.i >= qz.qs.length) renderGrid(); return; }
