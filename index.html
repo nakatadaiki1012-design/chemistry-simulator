@@ -445,6 +445,24 @@ details.more p { margin: 4px 0 0; line-height: 1.65; }
 .ls-no { display: inline-block; min-width: 2.6em; font-family: var(--font-data); color: var(--accent); }
 .ls-ok { font-style: normal; color: var(--ok, #1f8a5b); }
 .ls-lab { display: inline-flex; text-decoration: none; }
+.ls-q { font-size: 21px; font-weight: 700; line-height: 1.6; margin: 6px 0 12px; text-wrap: pretty; }
+.ls-choices { display: grid; gap: 8px; margin-bottom: 12px; }
+.ls-choice { text-align: left; border: 1.5px solid var(--line); background: var(--panel); border-radius: 12px; padding: 11px 14px; font-size: 17px; font-weight: 700; color: var(--ink); }
+.ls-choice:not(:disabled):hover { border-color: var(--accent); }
+.ls-choice.right { background: #1f8a5b; border-color: #1f8a5b; color: #fff; }
+.ls-choice.wrong { border-color: #d33a2c; color: #d33a2c; }
+.ls-choice.dim { opacity: .5; }
+.ls-medal { font-size: 26px; font-weight: 800; font-family: var(--font-display); color: #b7791f; margin: 4px 0 10px; }
+.ls-pass-bar { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; margin: 4px 0 12px; }
+.ls-pass-bar i { display: block; height: 100%; background: linear-gradient(90deg, #e0a526, #b7791f); }
+.ls-score { display: flex; align-items: baseline; gap: 6px; font-size: 13px; color: var(--muted); }
+.ls-score b { font-size: 26px; font-family: var(--font-data); color: #b7791f; }
+.ls-row { display: flex; gap: 6px; }
+.ls-row .qset { flex: 1; }
+.qtest { flex: none; border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 0 10px; font-size: 12.5px; font-weight: 700; color: var(--accent); }
+.qtest:hover { border-color: var(--accent); }
+.ls-medal-s { font-style: normal; }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
 /* 授業モード */
 body.present .app { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage"; }
 body.present .lib { display: none; }
@@ -2964,6 +2982,7 @@ function lessonGo() {
   setTimeout(() => R && fitCamera(), 60);
 }
 function lessonCardHTML() {
+  if (state.lesson.quiz) return lsQuizHTML();
   const { l, i } = state.lesson, st = l.steps[i], last = i === l.steps.length - 1;
   const next = LESSONS[LESSONS.indexOf(l) + 1];
   if (last) lessonMarkDone(l.id);
@@ -2973,10 +2992,190 @@ function lessonCardHTML() {
     ${st.lab ? `<p><a class="pbtn ghost ls-lab" href="${labURL(st.lab)}" target="_blank" rel="noopener">実験ラボでやってみる ↗</a></p>` : ''}
     <div class="ls-dots">${l.steps.map((_, k) => `<i class="${k === i ? 'on' : k < i ? 'done' : ''}"></i>`).join('')}<span>${i + 1} / ${l.steps.length}</span></div>
     <div class="ls-nav"><button type="button" class="pbtn ghost" data-act="lsprev" ${i === 0 ? 'disabled' : ''}>← 前へ</button>
-    ${!last ? '<button type="button" class="pbtn big" data-act="lsnext">次へ →</button>' : next ? `<button type="button" class="pbtn big" data-go="${next.id}">次の授業 ${esc(next.no)} →</button>` : '<button type="button" class="pbtn big" data-act="lsexit">おわり</button>'}</div>
-    ${last && next ? `<p class="note">次は「${esc(next.no)}　${esc(next.name)}」</p>` : ''}
+    ${!last ? '<button type="button" class="pbtn big" data-act="lsnext">次へ →</button>' : `<button type="button" class="pbtn big" data-act="lsquiz">確認テストへ（${LESSON_QUIZ[l.id].length}問）${lessonPass.has(l.id) ? ' 🏅' : ''}</button>`}</div>
+    ${last && next ? `<p class="note">${lessonPass.has(l.id) ? `合格ずみ。<button type="button" class="linkbtn" data-go="${next.id}">次の授業 ${esc(next.no)} へ →</button>` : `${PASS_LINE}問以上正解で合格。合格をためていこう！（合格 ${lessonPass.size} / ${LESSONS.length}）`}</p>` : ''}
     <p class="note">キーボードの ← → でも進めます。右上のボタンで全画面にできます。</p>
     <button type="button" class="pbtn ghost" data-act="lsexit">授業モードをやめる</button></div>`;
+}
+// ===== 授業ごとの確認テスト（4問・3問以上で合格） =====
+// [問題, 正解, [まちがいの選択肢 3つ], 解説]
+const LESSON_QUIZ = {
+  'ls-pure': [
+    ['純物質はどれ？', '水（蒸留水）', ['空気', '海水', 'ワイン'], '1種類の物質だけでできているのが純物質。空気・海水・ワインは混合物。'],
+    ['沸点のちがいを利用して、液体の混合物を分ける方法は？', '蒸留', ['ろ過', '再結晶', '昇華法'], '加熱して先に気体になった成分を、冷やして集める。'],
+    ['ろ過で分けられるものはどれ？', '泥水の、泥と水', ['食塩水の、食塩と水', '水とエタノール', 'ヨウ素と砂'], '溶けている食塩はろ紙を通りぬける。ろ過は「溶けていない固体」と液体を分ける。'],
+    ['少量の不純物をふくむ固体を、溶解度のちがいを利用して純粋にする方法は？', '再結晶', ['抽出', '蒸留', 'クロマトグラフィー'], '熱い水に溶かして冷やすと、目的の物質だけが結晶になる。'],
+  ],
+  'ls-elem': [
+    ['単体はどれ？', '酸素 O₂', ['水 H₂O', '二酸化炭素 CO₂', '塩化ナトリウム NaCl'], '1種類の元素だけでできている純物質が単体。'],
+    ['同素体の組み合わせはどれ？', 'ダイヤモンドと黒鉛', ['水と氷', '¹²C と ¹³C', '酸素と窒素'], '同じ元素の単体で性質がちがうもの。水と氷は状態のちがい、¹²C と ¹³C は同位体。'],
+    ['同素体がふつう存在しない元素はどれ？', '窒素 N', ['硫黄 S', '炭素 C', '酸素 O'], '同素体があるのは S・C・O・P（スコップ）。'],
+    ['炎色反応で黄色を示す元素は？', 'Na', ['Li', 'Cu', 'K'], 'Li 赤、Na 黄、K 赤紫、Cu 青緑。'],
+  ],
+  'ls-state': [
+    ['固体が液体を経ずに直接気体になる変化を何という？', '昇華', ['蒸発', '融解', '凝縮'], 'ドライアイスやヨウ素で起こる。'],
+    ['液体が気体になる変化は？', '蒸発', ['凝固', '融解', '凝縮'], '気体が液体になるのが凝縮、液体が固体になるのが凝固。'],
+    ['粒子の熱運動がいちばん激しい状態は？', '気体', ['固体', '液体', 'どれも同じ'], '気体では粒子がばらばらに飛び回る。'],
+    ['状態変化について正しいものは？', '分子そのものは変わらない', ['別の物質に変わる', '原子の種類が変わる', '質量が変わる'], '状態変化は物理変化。化学変化とのちがいに注意。'],
+  ],
+  'ls-atom': [
+    ['原子番号が表しているものは？', '陽子の数', ['中性子の数', '質量数', '価電子の数'], '原子では、陽子の数＝電子の数。'],
+    ['質量数は何の和？', '陽子の数＋中性子の数', ['陽子の数＋電子の数', '中性子の数＋電子の数', '陽子・中性子・電子の数'], '電子はとても軽いので、質量数にはふくめない。'],
+    ['同位体の説明として正しいものは？', '陽子の数が同じで、中性子の数がちがう原子', ['同じ元素でできた、性質のちがう単体', '中性子の数が同じで、陽子の数がちがう原子', '電子の数がちがう原子'], '同じ元素の同位体は、化学的な性質がほぼ同じ。'],
+    ['¹²C の中性子の数は？', '6', ['12', '0', '18'], '質量数 12 − 陽子 6 ＝ 中性子 6。'],
+  ],
+  'ls-shell': [
+    ['L殻に入る電子の最大数は？', '8', ['2', '18', '32'], 'K殻 2、L殻 8、M殻 18（n番目の殻は 2n² 個）。'],
+    ['Na の電子配置は？', 'K2 L8 M1', ['K2 L9', 'K2 L8 M2', 'K1 L8 M2'], 'Na は原子番号11。K2 L8 M2 は Mg。'],
+    ['貴ガスが反応しにくいのはなぜ？', '最外殻の電子配置が安定だから', ['原子がとても小さいから', '電子をもたないから', '陽子をもたないから'], 'He は K殻 2個、Ne・Ar は最外殻 8個で安定。'],
+    ['周期表の同じ族の元素の性質がにているのはなぜ？', '価電子の数が同じだから', ['質量が同じだから', '中性子の数が同じだから', '原子番号が同じだから'], '化学的な性質は、おもに価電子で決まる。'],
+  ],
+  'ls-ion': [
+    ['ナトリウムがなりやすいイオンは？', 'Na⁺', ['Na⁻', 'Na²⁺', 'Na²⁻'], '価電子1個を失って、ネオンと同じ電子配置になる。'],
+    ['Cl⁻ と同じ電子配置の貴ガスは？', 'アルゴン Ar', ['ネオン Ne', 'ヘリウム He', 'クリプトン Kr'], 'Cl（K2 L8 M7）が電子を1個受け取ると K2 L8 M8。'],
+    ['Mg²⁺ ができるとき、Mg 原子に起こることは？', '電子を2個失う', ['電子を2個受け取る', '陽子を2個受け取る', '中性子を2個失う'], 'イオンになるときに変わるのは電子の数だけ。'],
+    ['多原子イオンはどれ？', '硫酸イオン SO₄²⁻', ['ナトリウムイオン Na⁺', '塩化物イオン Cl⁻', '酸化物イオン O²⁻'], '複数の原子のまとまり全体が電荷をもつイオン。'],
+  ],
+  'ls-ionic': [
+    ['イオン結合は、どんな力による結びつき？', '陽イオンと陰イオンの静電気的な引力', ['原子どうしが電子対を共有する力', '自由電子による結びつき', '分子どうしの弱い引力'], 'クーロン力ともいう。'],
+    ['塩化ナトリウムを NaCl と表す式を何という？', '組成式', ['分子式', '構造式', '電子式'], 'イオン結晶には分子がないので、イオンの数の比で表す。'],
+    ['イオン結晶の性質として正しいものは？', '水溶液は電気を通す', ['固体でも電気をよく通す', '融点がとても低い', 'たたくと広がる（展性）'], '固体ではイオンが動けないが、水溶液や融解液ではイオンが動ける。'],
+    ['イオン結合でできている物質はどれ？', '塩化ナトリウム', ['水', 'ダイヤモンド', '銅'], '金属元素と非金属元素の組み合わせが多い。'],
+  ],
+  'ls-cov': [
+    ['共有結合の説明として正しいものは？', '原子どうしが価電子を出し合い、電子対を共有する', ['陽イオンと陰イオンが引き合う', '自由電子が全体を動き回る', '分子どうしが引き合う'], '非金属元素どうしの結合。'],
+    ['窒素分子 N₂ の結合は？', '三重結合', ['単結合', '二重結合', '配位結合'], 'N≡N。電子対を3組共有する。'],
+    ['水分子 H₂O の O 原子がもつ非共有電子対は何組？', '2組', ['0組', '1組', '4組'], '共有電子対2組＋非共有電子対2組。'],
+    ['配位結合をふくむイオンはどれ？', 'アンモニウムイオン NH₄⁺', ['ナトリウムイオン Na⁺', '塩化物イオン Cl⁻', '酸化物イオン O²⁻'], 'NH₃ の非共有電子対を H⁺ が受け取ってできる。'],
+  ],
+  'ls-shape': [
+    ['メタン CH₄ の形は？', '正四面体形', ['平面正方形', '直線形', '三角錐形'], '4組の電子対がいちばん離れる向き（109.5°）。'],
+    ['アンモニア NH₃ の形は？', '三角錐形', ['正四面体形', '折れ線形', '平面三角形'], '電子対は4組、うち1組が非共有電子対。'],
+    ['水 H₂O の形は？', '折れ線形', ['直線形', '三角錐形', '正四面体形'], '非共有電子対が2組あり、約104.5°。'],
+    ['二酸化炭素 CO₂ の形は？', '直線形', ['折れ線形', '平面三角形', '正四面体形'], '二重結合を1つのかたまりと数えると、かたまりは2つ。'],
+  ],
+  'ls-polar': [
+    ['電気陰性度とは？', '共有電子対を引きつける強さ', ['電子を1個取り去るのに必要なエネルギー', '原子の大きさ', '価電子の数'], '大きいほど電子を強く引きつける。'],
+    ['極性分子はどれ？', '水 H₂O', ['二酸化炭素 CO₂', 'メタン CH₄', '四塩化炭素 CCl₄'], '折れ線形なので、結合の極性が打ち消し合わない。'],
+    ['CO₂ が無極性分子なのはなぜ？', '直線形で、結合の極性が打ち消し合うから', ['C=O 結合に極性がないから', '分子が小さいから', '二重結合だから'], 'C=O 結合そのものには極性がある。'],
+    ['電気陰性度がいちばん大きい元素は？', 'F', ['O', 'Cl', 'N'], 'フッ素が最大。周期表の右上ほど大きい（貴ガスをのぞく）。'],
+  ],
+  'ls-hbond': [
+    ['分子どうしで水素結合をつくるのはどれ？', '水 H₂O', ['メタン CH₄', '硫化水素 H₂S', '二酸化炭素 CO₂'], 'F・O・N に結合した H が、となりの分子の F・O・N と引き合う。'],
+    ['水の沸点が硫化水素よりずっと高いのはなぜ？', '水分子どうしが水素結合で引き合うから', ['水の分子量が大きいから', '水の共有結合が強いから', '水がイオン結合でできているから'], '分子量は H₂S（34）の方が大きいのに、水の沸点の方が高い。'],
+    ['分子間力について正しいものは？', '共有結合よりずっと弱い', ['共有結合より強い', '水素結合は共有結合の一種', '無極性分子にははたらかない'], '無極性分子にもファンデルワールス力ははたらく。'],
+    ['エタノールの沸点がジメチルエーテルより高いのはなぜ？', '–OH があり、水素結合をつくるから', ['分子量が大きいから', '分子式がちがうから', '炭素原子が多いから'], '2つは分子式 C₂H₆O が同じ（異性体）。'],
+  ],
+  'ls-cryst': [
+    ['共有結合の結晶はどれ？', 'ダイヤモンド', ['ドライアイス', '塩化ナトリウム', '銅'], 'すべての原子が共有結合で立体的につながる。'],
+    ['黒鉛が電気を通すのはなぜ？', '層の中を動ける電子があるから', ['陽イオンと陰イオンがあるから', '分子間力が強いから', '4本の共有結合でつながっているから'], 'C 原子は3本の共有結合をつくり、残りの価電子が層にそって動ける。'],
+    ['分子結晶の性質は？', 'やわらかく、融点が低い', ['かたく、融点がとても高い', '電気をよく通す', 'たたくと広がる'], '分子どうしは弱い分子間力で集まっている。'],
+    ['ドライアイスで CO₂ 分子どうしを結びつけている力は？', '分子間力', ['共有結合', 'イオン結合', '金属結合'], '分子の中は共有結合、分子どうしは分子間力。'],
+  ],
+  'ls-metal': [
+    ['金属結合で原子を結びつけているものは？', '自由電子', ['非共有電子対', '陰イオン', '水素結合'], '陽イオンのまわりを自由電子が動き回る。'],
+    ['金属が電気をよく通すのはなぜ？', '自由電子が動けるから', ['陽イオンが動けるから', 'イオン結晶だから', '分子間力が弱いから'], '熱をよく伝えるのも自由電子のはたらき。'],
+    ['金属の、たたくとうすく広がる性質を何という？', '展性', ['延性', '揮発性', '潮解性'], '引っぱるとのびる性質は延性。'],
+    ['金属の物質（銅など）はどう表す？', 'Cu のように元素記号で表す', ['Cu₂ のような分子式', 'Cu²⁺ のようなイオン式', '構造式'], '金属結晶には分子がないので、組成式（元素記号）で表す。'],
+  ],
+  'ls-amass': [
+    ['原子量の基準は？', '¹²C 1個の質量を 12 とする', ['¹H 1個の質量を 1 とする', '¹⁶O 1個の質量を 16 とする', '水 1 g を 1 とする'], '原子の相対的な質量で、単位はない。'],
+    ['H₂O の分子量は？（H＝1.0、O＝16）', '18', ['17', '10', '34'], '1.0×2＋16＝18。'],
+    ['CO₂ の分子量は？（C＝12、O＝16）', '44', ['28', '32', '22'], '12＋16×2＝44。'],
+    ['NaCl の式量は？（Na＝23、Cl＝35.5）', '58.5', ['23', '35.5', '117'], 'イオン結晶は分子量ではなく式量という。'],
+  ],
+  'ls-mol': [
+    ['1 mol にふくまれる粒子の数は？', '6.0×10²³ 個', ['6.0×10²² 個', '22.4 個', '1.0×10²³ 個'], 'アボガドロ定数 6.0×10²³ /mol。'],
+    ['水 36 g は何 mol？（H₂O＝18）', '2.0 mol', ['0.50 mol', '18 mol', '36 mol'], '36 g ÷ 18 g/mol ＝ 2.0 mol。'],
+    ['標準状態（0 ℃、1.013×10⁵ Pa）で、気体 1 mol の体積は？', '22.4 L', ['1.0 L', '11.2 L', '44.8 L'], '気体の種類に関係ない。'],
+    ['標準状態で、酸素 11.2 L は何 mol？', '0.50 mol', ['1.0 mol', '2.0 mol', '0.25 mol'], '11.2 L ÷ 22.4 L/mol ＝ 0.50 mol。'],
+  ],
+  'ls-conc': [
+    ['水 90 g に塩化ナトリウム 10 g を溶かした水溶液の質量パーセント濃度は？', '10 %', ['11 %', '9.0 %', '90 %'], '10 g ÷（90＋10）g × 100 ＝ 10 %。溶液全体の質量で割る。'],
+    ['モル濃度の単位は？', 'mol/L', ['g/L', '%', 'mol/g'], '溶液 1 L あたりの溶質の物質量。'],
+    ['0.10 mol/L の NaCl 水溶液 500 mL にふくまれる NaCl は？', '0.050 mol', ['0.10 mol', '0.20 mol', '5.0 mol'], '0.10 mol/L × 0.500 L ＝ 0.050 mol。'],
+    ['正確なモル濃度の溶液をつくるときに使う器具は？', 'メスフラスコ', ['ビーカー', '三角フラスコ', '試験管'], '溶かしたあと、標線まで水を加えて全体の体積を合わせる。'],
+  ],
+  'ls-rx': [
+    ['水素の燃焼の正しい化学反応式は？', '2H₂ + O₂ → 2H₂O', ['H₂ + O₂ → H₂O', 'H₂ + O₂ → 2H₂O', '2H₂ + 2O₂ → 2H₂O'], '左右で H は4個、O は2個ずつ。'],
+    ['化学反応式で、左辺と右辺で必ず等しいものは？', '原子の種類と数', ['分子の数', '物質の種類', '気体の体積'], '原子は組みかわるだけで、なくなったり増えたりしない。'],
+    ['CH₄ + □O₂ → CO₂ + 2H₂O の □ に入る数は？', '2', ['1', '3', '4'], '右辺の O は 2＋2＝4個なので、O₂ は2個。'],
+    ['反応の前後で質量の総和が変わらないという法則は？', '質量保存の法則', ['定比例の法則', '倍数比例の法則', 'アボガドロの法則'], 'ラボアジエが発見した。'],
+  ],
+  'ls-qty': [
+    ['化学反応式の係数の比が表すのは？', '物質量（mol）の比', ['質量の比', '分子量の比', '密度の比'], '気体どうしなら、同じ温度・圧力での体積の比にもなる。'],
+    ['CH₄ + 2O₂ → CO₂ + 2H₂O で、メタン 1 mol からできる水は？', '2 mol', ['1 mol', '3 mol', '4 mol'], '係数の比 CH₄：H₂O ＝ 1：2。'],
+    ['C₃H₈ + 5O₂ → 3CO₂ + 4H₂O で、プロパン 2 mol に必要な酸素は？', '10 mol', ['5 mol', '2.5 mol', '7 mol'], '2 × 5 ＝ 10 mol。'],
+    ['2H₂ + O₂ → 2H₂O で、水素 4.0 g（H₂＝2.0）からできる水は？（H₂O＝18）', '36 g', ['18 g', '4.0 g', '72 g'], 'H₂ 2.0 mol → H₂O 2.0 mol ＝ 36 g。'],
+  ],
+  'ls-acid': [
+    ['アレーニウスの定義で、酸とは？', '水に溶けて H⁺ を出す物質', ['水に溶けて OH⁻ を出す物質', 'H⁺ を受け取る物質', '電子を受け取る物質'], '塩基は水に溶けて OH⁻ を出す物質。'],
+    ['2価の酸はどれ？', '硫酸 H₂SO₄', ['塩酸 HCl', '硝酸 HNO₃', '酢酸 CH₃COOH'], '1分子から H⁺ を2個出せる。'],
+    ['弱酸はどれ？', '酢酸', ['塩酸', '硫酸', '硝酸'], '水溶液中で一部しか電離しない。'],
+    ['NH₃ + H₂O ⇄ NH₄⁺ + OH⁻ で、H⁺ を受け取っている塩基は？', 'NH₃', ['H₂O', 'NH₄⁺', 'OH⁻'], 'ブレンステッドの定義：H⁺ を受け取るものが塩基。'],
+  ],
+  'ls-ph': [
+    ['中性の水溶液の pH は？（25 ℃）', '7', ['0', '1', '14'], '7 より小さいと酸性、大きいと塩基性。'],
+    ['pH 3 の水溶液の H⁺ の濃度は、pH 5 の水溶液の何倍？', '100 倍', ['2 倍', '10 倍', '1/100 倍'], 'pH が 1 小さいと H⁺ の濃度は 10 倍。2 小さいので 100 倍。'],
+    ['BTB 溶液は酸性で何色？', '黄色', ['緑色', '青色', '赤色'], '中性で緑色、塩基性で青色。'],
+    ['フェノールフタレインが赤色になるのは？', '塩基性', ['酸性', '中性', 'どれでも'], 'pH 約 8.3 以上で赤色。'],
+  ],
+  'ls-neut': [
+    ['中和反応で、酸と塩基からできるものは？', '塩と水', ['酸素', '水素', '塩基だけ'], 'HCl + NaOH → NaCl + H₂O。'],
+    ['0.10 mol/L の塩酸 10 mL をちょうど中和する、0.10 mol/L の NaOH 水溶液は？', '10 mL', ['5.0 mL', '20 mL', '1.0 mL'], '1価どうし、同じ濃度なので同じ体積。'],
+    ['0.10 mol/L の硫酸 10 mL をちょうど中和する、0.10 mol/L の NaOH 水溶液は？', '20 mL', ['10 mL', '5.0 mL', '40 mL'], '2×0.10×10 ＝ 1×0.10×V より V ＝ 20 mL。'],
+    ['中和滴定で、液を少しずつ滴下するのに使う器具は？', 'ビュレット', ['メスシリンダー', 'ホールピペット', 'こまごめピペット'], 'ホールピペットは、決まった体積を正確にはかりとるのに使う。'],
+  ],
+  'ls-redox': [
+    ['物質が酸素と結びつく変化は？', '酸化', ['還元', '中和', '分解'], '酸素を失う変化が還元。'],
+    ['CuO + H₂ → Cu + H₂O で、還元された物質は？', 'CuO', ['H₂', 'Cu', 'H₂O'], 'CuO は酸素を失った。H₂ は酸化された。'],
+    ['電子を失う変化は？', '酸化', ['還元', '中和', '電離'], '電子を受け取る変化が還元。'],
+    ['H₂S の S の酸化数は？', '−2', ['0', '+2', '+4'], 'H は +1。(+1)×2 ＋ x ＝ 0 より x ＝ −2。'],
+  ],
+  'ls-metalion': [
+    ['亜鉛を塩酸に入れると発生する気体は？', '水素', ['酸素', '塩素', '二酸化炭素'], 'Zn + 2HCl → ZnCl₂ + H₂。'],
+    ['塩酸に溶けない金属はどれ？', '銅', ['亜鉛', '鉄', 'マグネシウム'], '銅は水素よりイオン化傾向が小さい。'],
+    ['イオン化傾向がいちばん大きい金属は？', 'K', ['Mg', 'Zn', 'Cu'], 'K Ca Na Mg Al Zn Fe Ni Sn Pb (H₂) Cu Hg Ag Pt Au。'],
+    ['硫酸銅(II)水溶液に亜鉛板を入れると？', '亜鉛の表面に銅が出てくる', ['何も起こらない', '亜鉛が出てくる', '水素が発生する'], 'Zn の方がイオン化傾向が大きいので、Zn がイオンになり Cu²⁺ が Cu になる。'],
+  ],
+  'ls-life': [
+    ['食品に入っているビタミンC のはたらきは？', '酸化防止剤（還元剤）', ['漂白剤', '乾燥剤', '中和剤'], '自分が先に酸化されて、食品が酸化されるのを防ぐ。'],
+    ['塩素系漂白剤と酸性の洗剤をまぜると発生する、有毒な気体は？', '塩素', ['酸素', '水素', '二酸化炭素'], '「まぜるな危険」の表示がある。'],
+    ['鉄の製錬で、鉄鉱石（酸化鉄）に起こる変化は？', '還元', ['酸化', '中和', '昇華'], '一酸化炭素などで酸素をうばって鉄を取り出す。'],
+    ['酸化剤とは？', '相手を酸化し、自分は還元される物質', ['相手を還元し、自分は酸化される物質', '相手を中和する物質', '自分が分解する物質'], '還元剤は、相手を還元し自分は酸化される。'],
+  ],
+};
+const LESSON_PASS_KEY = 'molecule-lab:lessonPass';
+let lessonPass = new Set();
+try { lessonPass = new Set(JSON.parse(localStorage.getItem(LESSON_PASS_KEY) || '[]')); } catch (e) { /* 保存できなくても動く */ }
+const PASS_LINE = 3;
+function lsQuizStart() {
+  const l = state.lesson.l;
+  state.lesson.quiz = { i: 0, score: 0, picked: null, qs: shuffle(LESSON_QUIZ[l.id]).map(([q, a, w, ex]) => ({ q, a, ex, choices: shuffle([a].concat(w)) })) };
+}
+function lsQuizHTML() {
+  const { l, quiz } = state.lesson, n = quiz.qs.length;
+  const head = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">確認テスト ${esc(l.no)}</span><span class="pill">${esc(l.name)}</span></div>`;
+  if (quiz.i >= n) {
+    const ok = quiz.score >= PASS_LINE;
+    if (ok && !lessonPass.has(l.id)) { lessonPass.add(l.id); try { localStorage.setItem(LESSON_PASS_KEY, JSON.stringify([...lessonPass])); } catch (e) { /* 無視 */ } }
+    const next = LESSONS[LESSONS.indexOf(l) + 1];
+    return head + `<h2 class="ls-title">${ok ? '合格！' : 'もう少し！'}</h2></div></div>
+      <div class="card-body"><p class="ls-text">${n} 問中 <b>${quiz.score}</b> 問正解。${ok ? '' : `${PASS_LINE} 問以上で合格。`}</p>
+      ${ok ? `<div class="ls-medal">🏅 ${esc(l.no)} 合格</div>` : ''}
+      <p class="note">合格した授業 ${lessonPass.size} / ${LESSONS.length}</p>
+      <div class="ls-pass-bar"><i style="width:${lessonPass.size / LESSONS.length * 100}%"></i></div>
+      <div class="ls-nav">${ok && next ? `<button type="button" class="pbtn big" data-go="${next.id}">次の授業 ${esc(next.no)} →</button>` : `<button type="button" class="pbtn big" data-act="lsqretry">もう一度テスト</button>`}</div>
+      <div class="ls-nav"><button type="button" class="pbtn ghost" data-act="lsqback">授業を見直す</button>${ok ? '<button type="button" class="pbtn ghost" data-act="lsqretry">もう一度テスト</button>' : ''}</div>
+      <button type="button" class="pbtn ghost" data-act="lsexit">授業モードをやめる</button></div>`;
+  }
+  const q = quiz.qs[quiz.i], p = quiz.picked;
+  return head + `<h2 class="ls-title">第 ${quiz.i + 1} 問</h2></div></div>
+    <div class="card-body"><p class="ls-q">${esc(q.q)}</p>
+    <div class="ls-choices">${q.choices.map((c, k) => `<button type="button" class="ls-choice${p !== null ? (c === q.a ? ' right' : c === p ? ' wrong' : ' dim') : ''}" data-act="lsqpick" data-k="${k}" ${p !== null ? 'disabled' : ''}>${esc(c)}</button>`).join('')}</div>
+    ${p !== null ? `<div class="point"><h3>${p === q.a ? '正解！' : '答え：' + esc(q.a)}</h3><p>${esc(q.ex)}</p></div>
+      <div class="ls-nav"><button type="button" class="pbtn big" data-act="lsqnext">${quiz.i === n - 1 ? '結果を見る' : '次の問題 →'}</button></div>` : ''}
+    <div class="ls-dots">${quiz.qs.map((_, k) => `<i class="${k === quiz.i ? 'on' : k < quiz.i ? 'done' : ''}"></i>`).join('')}<span>${quiz.i + 1} / ${n}　正解 ${quiz.score}</span></div></div>`;
 }
 // ===== 物質の分離・元素の検出（粒子が動くようすを見る） =====
 const SEP_LIST = [
@@ -4690,8 +4889,9 @@ function showLessonMenu() {
   if (R) { clearView(); buildMolView(); R.controls.autoRotate = true; fitCamera(); }
   $('card').innerHTML = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">授業モード</span></div><h2 class="mol-name">どの授業をする？</h2></div></div>
     <div class="card-body"><p class="note">学習指導要領（化学基礎）の順に並んでいます。大きな文字の説明と3Dで、1画面ずつ進めます。プロジェクターに映すときは、右上のボタンで全画面に。</p>
+    <div class="ls-score"><span>合格した授業</span><b>${lessonPass.size}</b><span>/ ${LESSONS.length}</span></div><div class="ls-pass-bar"><i style="width:${lessonPass.size / LESSONS.length * 100}%"></i></div>
     ${(() => { const nx = LESSONS.find(l => !lessonDone.has(l.id)); return nx ? `<button type="button" class="qset hot" data-go="${nx.id}"><b>${lessonDone.size ? '続きから' : '最初から'}：${esc(nx.no)}　${esc(nx.name)}</b><span>→</span></button>` : '<p class="note">全部の授業を見終わりました！</p>'; })()}
-    ${LESSON_PARTS.map((pt, pi) => `<h3 class="ls-part">${esc(pt.name)}</h3>` + pt.chaps.map((ch, ci) => `<h4 class="ls-chap">${esc(ch)}</h4><div class="qsets">${LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<button type="button" class="qset" data-go="${l.id}"><b><span class="ls-no">${esc(l.no)}</span>${esc(l.name)}${lessonDone.has(l.id) ? ' <i class="ls-ok">✓</i>' : ''}</b><span>${l.steps.length}画面</span></button>`).join('')}</div>`).join('')).join('')}</div>`;
+    ${LESSON_PARTS.map((pt, pi) => `<h3 class="ls-part">${esc(pt.name)}</h3>` + pt.chaps.map((ch, ci) => `<h4 class="ls-chap">${esc(ch)}</h4><div class="qsets">${LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<div class="ls-row"><button type="button" class="qset" data-go="${l.id}"><b><span class="ls-no">${esc(l.no)}</span>${esc(l.name)}${lessonPass.has(l.id) ? ' <i class="ls-medal-s" title="合格">🏅</i>' : lessonDone.has(l.id) ? ' <i class="ls-ok">✓</i>' : ''}</b><span>${l.steps.length}画面</span></button><button type="button" class="qtest" data-lstest="${l.id}" title="確認テストだけをする">テスト</button></div>`).join('')}</div>`).join('')).join('')}</div>`;
   $('card').classList.remove('collapsed'); state.cardOpen = true;
 }
 function renderTabs() {
@@ -4724,7 +4924,7 @@ function renderGrid() {
   grid.className = 'grid';
   if (state.sec === 'lesson') {
     const cur2 = id => !!(state.lesson && state.lesson.l.id === id);
-    grid.innerHTML = LESSON_PARTS.map((pt, pi) => pt.chaps.map((ch, ci) => `<p class="ls-gh">${pi === 0 ? '第1編' : '第2編'} ${esc(ch.replace('　', ' '))}</p>` + LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<button type="button" class="card-btn wide" data-id="${l.id}" aria-current="${cur2(l.id)}"><span class="f">${esc(l.no)}　${esc(l.name)}</span><span class="n">${lessonDone.has(l.id) ? '<b class="done">✓</b>' : ''}${l.steps.length}画面</span></button>`).join('')).join('')).join('');
+    grid.innerHTML = LESSON_PARTS.map((pt, pi) => pt.chaps.map((ch, ci) => `<p class="ls-gh">${pi === 0 ? '第1編' : '第2編'} ${esc(ch.replace('　', ' '))}</p>` + LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<button type="button" class="card-btn wide" data-id="${l.id}" aria-current="${cur2(l.id)}"><span class="f">${esc(l.no)}　${esc(l.name)}</span><span class="n">${lessonPass.has(l.id) ? '🏅 合格　' : lessonDone.has(l.id) ? '<b class="done">✓</b>' : ''}${l.steps.length}画面</span></button>`).join('')).join('')).join('');
     return;
   }
   if (state.sec === 'quiz') {
@@ -5265,6 +5465,8 @@ function bindUI() {
   $('card').addEventListener('click', ev => {
     const go = ev.target.closest('[data-go]');
     if (go) { selectEntry(LIB.find(e => e.id === go.dataset.go)); return; }
+    const lt = ev.target.closest('[data-lstest]');
+    if (lt) { const l = LESSONS.find(x => x.id === lt.dataset.lstest); selectEntry(LIB.find(e => e.id === l.id)); lsQuizStart(); renderCard(); return; }
     const ind = ev.target.closest('[data-ind]');
     if (ind) { state.ind = ind.dataset.ind; clearView(); buildPhView(); renderCard(); return; }
     const phv = ev.target.closest('[data-phv]');
@@ -5302,6 +5504,10 @@ function bindUI() {
     const a = act.dataset.act;
     if (a === 'tastart') { taStart(); return; }
     if (a === 'lsnext') { state.lesson.i++; lessonGo(); return; }
+    if (a === 'lsquiz' || a === 'lsqretry') { lsQuizStart(); renderCard(); return; }
+    if (a === 'lsqpick') { const qz = state.lesson.quiz, q = qz.qs[qz.i]; qz.picked = q.choices[+act.dataset.k]; if (qz.picked === q.a) qz.score++; renderCard(); return; }
+    if (a === 'lsqnext') { const qz = state.lesson.quiz; qz.i++; qz.picked = null; renderCard(); if (qz.i >= qz.qs.length) renderGrid(); return; }
+    if (a === 'lsqback') { state.lesson.quiz = null; state.lesson.i = 0; lessonGo(); return; }
     if (a === 'lsprev') { state.lesson.i--; lessonGo(); return; }
     if (a === 'lsexit') { const l = state.lesson; lessonExit(); goSection('lesson'); return; }
     if (a === 'heat' || a === 'cool') { const d = a === 'heat' ? 1 : -1; state.phaseAnim = state.phaseAnim === d ? 0 : d; syncPhaseUI(); return; }
@@ -5383,7 +5589,7 @@ function bindUI() {
     else { w.classList.toggle('is-max'); done(); }
   });
   document.addEventListener('keydown', ev => {
-    if (state.lesson && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) {
+    if (state.lesson && !state.lesson.quiz && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) {
       const l = state.lesson;
       if (ev.key === 'ArrowRight' && l.i < l.l.steps.length - 1) { l.i++; lessonGo(); }
       if (ev.key === 'ArrowLeft' && l.i > 0) { l.i--; lessonGo(); }
