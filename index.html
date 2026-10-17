@@ -113,7 +113,7 @@ sub, sup { font-size: 0.68em; line-height: 0; }
 }
 .card-btn:hover { border-color: var(--accent); }
 .card-btn[aria-current="true"] { border-color: var(--accent); background: var(--chip); box-shadow: inset 0 0 0 1px var(--accent); }
-.card-btn .f { font-family: var(--font-data); font-weight: 600; font-size: 16px; }
+.card-btn .f { font-family: var(--font-data); font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-btn .n { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card-btn.atom .f { font-size: 20px; display: flex; align-items: baseline; gap: 6px; }
 .card-btn .z { font-size: 11px; color: var(--muted); font-weight: 400; }
@@ -290,6 +290,78 @@ sub, sup { font-size: 0.68em; line-height: 0; }
 .hub > .hb:last-child { grid-column: 3; }
 .calc-steps { margin: 0 0 6px; padding-left: 20px; font-size: 13px; line-height: 1.7; font-variant-numeric: tabular-nums; }
 .calc-steps b { color: var(--accent); }
+/* 化学反応式 */
+.lbl-rx { font-size: 18px; color: var(--ink); background: var(--glass); border: 1px solid var(--line); border-radius: 8px; padding: 1px 9px; }
+.lbl-rx .cf, .eq .cf, .coef b { color: var(--warm); }
+.lbl-rx .cf { margin-right: 2px; font-size: 20px; }
+.lbl-plus, .lbl-arrow { font-size: 28px; color: var(--muted); font-family: var(--font-data); }
+.lbl-arrow { font-size: 40px; color: var(--accent); }
+.eq { font-size: 18px; }
+.eq .ok { color: var(--ok); }
+.coefs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.coef { display: inline-flex; align-items: center; gap: 4px; background: var(--chip); border-radius: 10px; padding: 3px 6px; }
+.coef button { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); font-size: 16px; line-height: 1; }
+.coef button:not(:disabled):hover { border-color: var(--accent); }
+.coef b { font-family: var(--font-data); font-size: 18px; min-width: 1.2em; text-align: center; }
+.coef span { font-family: var(--font-data); font-weight: 600; margin-left: 2px; }
+.coef-arrow { font-size: 20px; color: var(--accent); padding: 0 2px; }
+.atomtab { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.atomtab th, .atomtab td { padding: 3px 4px; }
+.atomtab thead th { font-size: 11px; color: var(--muted); font-weight: 500; text-align: center; }
+.atomtab tbody th { text-align: left; white-space: nowrap; }
+.atomtab tbody th .dot { width: 10px; height: 10px; margin-right: 4px; vertical-align: -1px; }
+.atomtab td { width: 40%; }
+.atomtab td:nth-child(2) { text-align: right; }
+.atomtab td b { font-family: var(--font-data); font-size: 15px; margin: 0 4px; }
+.atomtab .bar { display: inline-block; width: calc(100% - 30px); height: 8px; background: var(--chip); border-radius: 999px; overflow: hidden; vertical-align: middle; }
+.atomtab td:nth-child(2) .bar { direction: rtl; }
+.atomtab .bar i { display: block; height: 100%; background: var(--muted); border-radius: 999px; }
+.atomtab .eqok .bar i { background: var(--ok); }
+.atomtab .eqng .bar i { background: var(--warm); }
+.atomtab td.mk { width: 1.5em; text-align: center; font-weight: 700; color: var(--muted); }
+.atomtab .eqok td.mk { color: var(--ok); }
+.atomtab .eqng td.mk { color: var(--warm); }
+.verdict { border-radius: 10px; padding: 8px 10px; margin: 6px 0 8px; font-weight: 700; font-size: 14px; background: var(--chip); border-left: 4px solid var(--warm); }
+.verdict.good { border-left-color: var(--ok); color: var(--ok); }
+.verdict.mid { border-left-color: var(--accent); }
+.pbtn.big { font-size: 16px; padding: 9px 18px; margin: 2px 0 8px; }
+.hintline { background: var(--chip); border-radius: 8px; padding: 6px 8px; color: var(--ink); }
+/* 分子をつくる */
+.selrow { font-size: 13px; margin: 2px 0 6px; }
+.selrow b { font-family: var(--font-data); font-size: 16px; color: var(--warm); }
+.palette { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 6px; }
+.palette button { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 6px 2px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-family: var(--font-data); font-weight: 600; font-size: 17px; }
+.palette button .dot { width: 18px; height: 18px; }
+.palette button small { font-size: 10px; color: var(--muted); font-weight: 400; font-family: var(--font-body); }
+.palette button:hover { border-color: var(--accent); }
+.tools { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 4px; }
+.tools button { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 3px 11px; font-size: 12.5px; }
+.tools button:hover { border-color: var(--accent); }
+.lbl-atom .free { display: inline-block; margin-left: 2px; font-size: 10px; line-height: 15px; min-width: 15px; text-align: center; border-radius: 999px; background: var(--warm); color: #fff; text-shadow: none; vertical-align: super; }
+/* クイズ */
+.qprog { height: 5px; border-radius: 999px; background: var(--chip); margin: 8px 0 6px; overflow: hidden; }
+.qprog i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+.qtext { font-size: 17px; line-height: 1.55; margin: 2px 0 0; text-wrap: pretty; }
+.qtext .blank { color: var(--warm); }
+.qchoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin: 6px 0 8px; }
+.qc { border: 1.5px solid var(--line); background: var(--panel); border-radius: 10px; padding: 9px 8px; font-size: 15px; font-weight: 700; min-height: 46px; }
+.qc:not(:disabled):hover { border-color: var(--accent); }
+.qc.right { border-color: var(--ok); background: var(--ok); color: #fff; }
+.qc.wrong { border-color: var(--warm); color: var(--warm); }
+.qc.dim { opacity: .5; }
+.pill.fire { background: var(--warm); color: #fff; }
+.qsets { display: flex; flex-direction: column; gap: 6px; }
+.qset { display: flex; justify-content: space-between; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 10px 12px; text-align: left; }
+.qset:hover { border-color: var(--accent); }
+.qset span { font-size: 12px; color: var(--muted); white-space: nowrap; }
+/* 身近なもの */
+.where { font-size: 13px; margin: 0 0 6px; }
+.where b { display: inline-block; font-size: 11px; background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 0 8px; margin-right: 6px; }
+details.more { margin-top: 8px; font-size: 13.5px; }
+details.more summary { cursor: pointer; color: var(--accent); font-weight: 700; font-size: 13px; }
+details.more p { margin: 4px 0 0; line-height: 1.65; }
+.card-btn.wide { grid-column: 1 / -1; }
+.card-btn .done { color: var(--ok); margin-right: 4px; }
 .fallback { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted); }
 
 @media (max-width: 1180px) {
@@ -473,6 +545,7 @@ function parseSmiles(s) {
   let prev = -1, order = 1, i = 0;
   while (i < s.length) {
     const ch = s[i];
+    if (ch === '.') { prev = -1; order = 1; i++; continue; }  // 別々の粒子（イオンなど）
     if (ch === '(') { stack.push(prev); i++; continue; }
     if (ch === ')') { prev = stack.pop(); i++; continue; }
     if (ch === '-' || ch === '=' || ch === '#') { order = ch === '-' ? 1 : ch === '=' ? 2 : 3; i++; continue; }
@@ -727,21 +800,32 @@ function buildMolecule(def) {
     for (let i = 1; i < n; i++) if (nb[i].length > nb[root].length) root = i;
     P[root] = [0, 0, 0];
   }
-  const queue = P.map((p, i) => (p ? i : -1)).filter(i => i >= 0);
-  while (queue.length) {
-    const p = queue.shift();
-    for (const { j, o } of nb[p]) {
-      if (P[j]) continue;
-      let base = [0, 0, 0];
-      for (const { j: m } of nb[p]) if (P[m] && m !== j) base = vadd(base, vnorm(vsub(P[p], P[m])));
-      if (ringCenter && vlen(vsub(P[p], ringCenter)) > 0.1) base = vadd(base, vnorm(vsub(P[p], ringCenter)));
-      const jitter = ring && ring.includes(p) ? 0.15 : 0.9;
-      const dir = vlen(base) < 1e-6 ? runit() : vnorm(vadd(vnorm(base), vmul(runit(), jitter)));
-      P[j] = vadd(P[p], vmul(dir, bondLength(atoms[p].el, atoms[j].el, o)));
-      queue.push(j);
+  const grow = queue => {
+    while (queue.length) {
+      const p = queue.shift();
+      for (const { j, o } of nb[p]) {
+        if (P[j]) continue;
+        let base = [0, 0, 0];
+        for (const { j: m } of nb[p]) if (P[m] && m !== j) base = vadd(base, vnorm(vsub(P[p], P[m])));
+        if (ringCenter && vlen(vsub(P[p], ringCenter)) > 0.1) base = vadd(base, vnorm(vsub(P[p], ringCenter)));
+        const jitter = ring && ring.includes(p) ? 0.15 : 0.9;
+        const dir = vlen(base) < 1e-6 ? runit() : vnorm(vadd(vnorm(base), vmul(runit(), jitter)));
+        P[j] = vadd(P[p], vmul(dir, bondLength(atoms[p].el, atoms[j].el, o)));
+        queue.push(j);
+      }
     }
+  };
+  grow(P.map((p, i) => (p ? i : -1)).filter(i => i >= 0));
+  // つながっていない粒子（イオンなど）は、となりに並べて置く
+  for (let guard = 0; guard < n; guard++) {
+    const rest = atoms.map((_, i) => i).filter(i => !P[i]);
+    if (!rest.length) break;
+    let root = rest[0];
+    rest.forEach(i => { if (nb[i].length > nb[root].length) root = i; });
+    const xmax = Math.max(...P.filter(Boolean).map(p => p[0]));
+    P[root] = [xmax + 3.0, 0, 0];
+    grow([root]);
   }
-  for (let i = 0; i < n; i++) if (!P[i]) P[i] = vmul(runit(), 2);
 
   // 非共有電子対（ローンペア）
   const lps = [];
@@ -845,7 +929,20 @@ function buildMolecule(def) {
     const { c, eig } = spread([...flatAtoms].map(i => P[i]));
     const nrm = eig[2].vec;
     const proj = p => vsub(p, vmul(nrm, vdot(vsub(p, c), nrm)));
-    flatAtoms.forEach(i => { P[i] = proj(P[i]); });
+    // 環の外へのびる部分（置換基）は、つけ根の原子と同じだけまとめて動かす
+    const moved = new Set();
+    flatAtoms.forEach(i => {
+      const d = vsub(proj(P[i]), P[i]);
+      if (ringSet.has(i)) { P[i] = vadd(P[i], d); moved.add(i); return; }
+      const st = [i];
+      while (st.length) {
+        const k = st.pop();
+        if (moved.has(k) || ringSet.has(k)) continue;
+        moved.add(k); P[k] = vadd(P[k], d);
+        lps.forEach(l => { if (l.owner === k) l.p = vadd(l.p, d); });
+        nb[k].forEach(({ j }) => { if (!moved.has(j) && !ringSet.has(j)) st.push(j); });
+      }
+    });
     lps.forEach(l => { if (ringSet.has(l.owner)) l.p = proj(l.p); });
   }
   const mol = { atoms, bonds, nb, pos: P, lps };
@@ -939,8 +1036,18 @@ function analyze(mol) {
   const pairs = bonds.reduce((s, b) => s + b.o, 0);
   const lone = atoms.reduce((s, a) => s + a.lp, 0);
   const centers = atoms.map((_, i) => i).filter(i => nb[i].length >= 2);
+  // つながりの数（イオンからなる物質は粒子が分かれている）
+  const comp = new Array(atoms.length).fill(-1);
+  let nComp = 0;
+  atoms.forEach((_, s) => {
+    if (comp[s] >= 0) return;
+    const st = [s]; comp[s] = nComp;
+    while (st.length) { const u = st.pop(); nb[u].forEach(({ j }) => { if (comp[j] < 0) { comp[j] = nComp; st.push(j); } }); }
+    nComp++;
+  });
   let shape, keyAngle = null;
-  if (atoms.length === 1) shape = '単原子';
+  if (nComp > 1) shape = 'イオンの組み合わせ';
+  else if (atoms.length === 1) shape = '単原子';
   else if (atoms.length === 2) shape = '直線形';
   else if (centers.length === 1) {
     const c = centers[0];
@@ -970,7 +1077,8 @@ function analyze(mol) {
   atoms.forEach((a, i) => { if (a.charge) mu = vsub(mu, vmul(pos[i], a.charge * 0.5)); });
   const muLen = vlen(mu);
   let polarity, polarNote;
-  if (charge !== 0) { polarity = 'イオン'; polarNote = '電荷をもつイオンなので、極性分子・無極性分子には分類しません。'; }
+  if (nComp > 1) { polarity = 'イオン結合'; polarNote = '陽イオンと陰イオンがイオン結合でできた物質。実際には、たくさんのイオンが交互に並んだ結晶になっている（ここでは組成式の1組だけを表示）。'; }
+  else if (charge !== 0) { polarity = 'イオン'; polarNote = '電荷をもつイオンなので、極性分子・無極性分子には分類しません。'; }
   else if (atoms.length === 1) { polarity = '無極性'; polarNote = '原子1個なので、かたよりはありません。'; }
   else if (muLen > 0.1) {
     polarity = '極性分子';
@@ -980,7 +1088,7 @@ function analyze(mol) {
     polarNote = polarBonds ? '一つ一つの結合には極性がありますが、対称な形なので分子全体では打ち消し合っています。'
       : '電気陰性度の差がほとんどない結合だけでできているので、電子のかたよりがありません。';
   }
-  return { counts, charge, pairs, lone, shape, keyAngle, delta, mu, muLen, polarity, polarNote, mass: massOf(counts) };
+  return { nComp, counts, charge, pairs, lone, shape, keyAngle, delta, mu, muLen, polarity, polarNote, mass: massOf(counts) };
 }
 
 // ===== 電子殻（K・L・M・N殻）への電子の入り方：原子番号20までの化学基礎の範囲 =====
@@ -1002,6 +1110,7 @@ function valenceElectrons(Z) {
 // ===== 分子の一覧（授業で使う代表的なもの） =====
 // smiles: 原子のつながり方。結晶は crystal で作り方を指定する。
 const CATS = [
+  { id: 'daily', name: '身近なもの' },
   { id: 'elem', name: '単体' },
   { id: 'basic', name: '身近な分子' },
   { id: 'organic', name: '有機化合物' },
@@ -1011,16 +1120,121 @@ const CATS = [
   { id: 'atom', name: '原子と電子殻' },
 ];
 const LIB = [
+  // --- 身近なもの ---
+  { id: 'glucose', cat: 'daily', name: 'ブドウ糖（グルコース）', en: 'glucose', smiles: 'OCC1OC(O)C(O)C(O)C1O', bond: '共有結合', alias: ['グルコース', 'ぶどう糖'],
+    where: '果物・はちみつ・点滴・血液（血糖）',
+    desc: '果物やはちみつにふくまれる甘い物質で、体を動かすエネルギーのもと。ご飯やパンのデンプンも、消化されるとブドウ糖になる。植物は光合成でブドウ糖をつくる。',
+    props: [['分子量', '180'], ['融点', '146 ℃']],
+    point: '5個のC原子と1個のO原子でできた環（六員環）をもつ。–OH（ヒドロキシ基）が5個もあるので水によく溶ける。',
+    more: '体の中ではブドウ糖が酸素と反応して CO₂ と H₂O になり、そのときのエネルギーで生きている（呼吸）。光合成のちょうど逆向きの反応。' },
+  { id: 'sucrose', cat: 'daily', name: 'スクロース（砂糖）', en: 'sucrose', smiles: 'OCC1OC(OC2(CO)OC(CO)C(O)C2O)C(O)C(O)C1O', bond: '共有結合', alias: ['砂糖', 'ショ糖'],
+    where: '砂糖・お菓子・ジュース',
+    desc: '砂糖の主成分。サトウキビやテンサイ（砂糖大根）からつくる。ブドウ糖と果糖が1分子ずつ結びついた形（二糖）。',
+    props: [['分子量', '342'], ['水への溶けやすさ', '20 ℃の水100 gに約200 g']],
+    point: '環を2つもつ大きな分子。–OH が8個あり、水分子と水素結合するので、水にとてもよく溶ける。',
+    more: '砂糖を強く加熱すると分子がこわれてカラメルになり、さらに加熱すると炭素が残って黒くこげる。' },
+  { id: 'citric', cat: 'daily', name: 'クエン酸', en: 'citric acid', smiles: 'OC(=O)CC(O)(C(=O)O)CC(=O)O', bond: '共有結合',
+    where: 'レモン・梅干し・掃除用の洗剤',
+    desc: 'レモンや梅干しのすっぱさのもと。水あかや電気ポットの汚れ（炭酸カルシウムなど）を溶かすので、掃除にも使われる。',
+    props: [['分子量', '192'], ['水溶液', '弱い酸性']],
+    point: 'カルボキシ基 –COOH を3つもつ酸。–COOH が H⁺ を出すので酸性を示す。',
+    more: '塩素系漂白剤（次亜塩素酸ナトリウム）と混ぜると有毒な塩素が発生するので危険（「まぜるな危険」）。' },
+  { id: 'vitc', cat: 'daily', name: 'ビタミンC（アスコルビン酸）', en: 'ascorbic acid', smiles: 'OCC(O)C1OC(=O)C(O)=C1O', bond: '共有結合', alias: ['アスコルビン酸'],
+    where: '野菜・果物・お茶・ジュースの酸化防止剤',
+    desc: '野菜や果物にふくまれるビタミン。自分が酸化されやすいので、ほかの物質が酸化されるのを防ぐ（酸化防止剤）。食品の成分表示に「ビタミンC」とよく書かれている。',
+    props: [['分子量', '176']],
+    point: '5個の原子でできた環をもつ。C=C二重結合のまわりの –OH が、酸化されやすい部分。' },
+  { id: 'caffeine', cat: 'daily', name: 'カフェイン', en: 'caffeine', smiles: 'CN1C=NC2=C1C(=O)N(C)C(=O)N2C', bond: '共有結合',
+    where: 'コーヒー・緑茶・紅茶・エナジードリンク',
+    desc: 'コーヒーやお茶にふくまれ、眠気をおさえるはたらきがある。とりすぎると、ねむれなくなったり体調をくずしたりする。',
+    props: [['分子量', '194']],
+    point: '環が2つくっついた形。N原子を4個ふくむ。' },
+  { id: 'aspirin', cat: 'daily', name: 'アスピリン', en: 'aspirin (acetylsalicylic acid)', smiles: 'CC(=O)OC1=CC=CC=C1C(=O)O', bond: '共有結合', alias: ['アセチルサリチル酸'],
+    where: '解熱鎮痛剤（かぜ薬・頭痛薬）',
+    desc: '熱を下げたり痛みをおさえたりする薬。100年以上前から使われている、世界でもっとも有名な薬の一つ。',
+    props: [['分子量', '180']],
+    point: 'ベンゼン環に、カルボキシ基 –COOH と、エステルの部分 –OCOCH₃ がついている。' },
+  { id: 'naphthalene', cat: 'daily', name: 'ナフタレン', en: 'naphthalene', smiles: 'C1=CC=C2C=CC=CC2=C1', bond: '共有結合',
+    where: '衣類の防虫剤',
+    desc: '特有のにおいのある白い結晶。固体から直接気体になる（昇華）ので、防虫剤として使われる。',
+    props: [['分子量', '128'], ['融点', '81 ℃']],
+    point: 'ベンゼン環が2つつながった平面分子。分子間力が弱いので昇華しやすい。' },
+  { id: 'menthol', cat: 'daily', name: 'メントール', en: 'menthol', smiles: 'CC(C)C1CCC(C)CC1O', bond: '共有結合',
+    where: 'ミント（ハッカ）・ガム・湿布',
+    desc: 'ハッカ（ミント）の成分。皮ふや口の中の「冷たさを感じるセンサー」を刺激するので、すーっと冷たく感じる。',
+    props: [['分子量', '156']],
+    point: 'シクロヘキサンの環に –OH などがついている。環はいす形に折れ曲がっている。' },
+  { id: 'acetone', cat: 'daily', name: 'アセトン', en: 'acetone', smiles: 'CC(=O)C', rational: 'CH3COCH3', bond: '共有結合',
+    where: 'マニキュアの除光液',
+    desc: '特有のにおいのある無色の液体。水にも油にもよく溶けるので、除光液や溶剤に使われる。燃えやすい。',
+    props: [['沸点', '56 ℃']],
+    point: 'C=O（カルボニル基）をもつ。O原子に電子がかたよった極性分子。' },
+  { id: 'ethylacetate', cat: 'daily', name: '酢酸エチル', en: 'ethyl acetate', smiles: 'CC(=O)OCC', rational: 'CH3COOC2H5', bond: '共有結合',
+    where: '接着剤・除光液・果物の香り',
+    desc: '果物のような甘い香りのする液体。接着剤や塗料の溶剤に使われる。酢酸とエタノールからつくられるエステル。',
+    props: [['沸点', '77 ℃']],
+    point: 'エステル結合 –COO– をもつ。いろいろなエステルが果物や花の香りのもとになっている。' },
+  { id: 'glycerol', cat: 'daily', name: 'グリセリン', en: 'glycerol', smiles: 'OCC(O)CO', rational: 'C3H5(OH)3', bond: '共有結合',
+    where: '化粧水・ハンドクリーム・せっけん',
+    desc: '甘みのあるとろりとした液体。水と結びつきやすいので、化粧品の保湿剤に使われる。油脂を分解するとできる。',
+    props: [['沸点', '290 ℃']],
+    point: '–OH を3つもつ。たくさんの水素結合をつくるので、ねばりけがあり沸点が高い。' },
+  { id: 'octane', cat: 'daily', name: 'オクタン', en: 'octane', smiles: 'CCCCCCCC', rational: 'CH3(CH2)6CH3', bond: '共有結合',
+    where: 'ガソリンの成分',
+    desc: 'ガソリンにふくまれる炭化水素。燃えると CO₂ と H₂O になり、そのときのエネルギーで車が走る。',
+    props: [['沸点', '126 ℃']],
+    point: '炭素8個がジグザグにつながった鎖。炭素が多いほど分子間力が大きくなり、沸点が高くなる（メタン→プロパン→ブタン→オクタン）。' },
+  { id: 'glycine', cat: 'daily', name: 'グリシン（アミノ酸）', en: 'glycine', smiles: 'NCC(=O)O', bond: '共有結合',
+    where: 'タンパク質の材料・調味料',
+    desc: 'いちばん簡単な形のアミノ酸。アミノ酸がたくさんつながるとタンパク質になる。ほんのり甘い。',
+    props: [['分子量', '75']],
+    point: 'アミノ基 –NH₂ とカルボキシ基 –COOH の両方をもつ。' },
+  { id: 'lactic', cat: 'daily', name: '乳酸', en: 'lactic acid', smiles: 'CC(O)C(=O)O', rational: 'CH3CH(OH)COOH', bond: '共有結合',
+    where: 'ヨーグルト・漬け物・はげしい運動のあとの筋肉',
+    desc: '乳酸菌が糖を分解してつくる酸。ヨーグルトのすっぱさのもと。',
+    props: [['分子量', '90']],
+    point: '–OH と –COOH をもつ。' },
+  { id: 'formic', cat: 'daily', name: 'ギ酸', en: 'formic acid', smiles: 'C(=O)O', rational: 'HCOOH', bond: '共有結合',
+    where: 'アリやハチの毒',
+    desc: 'アリやハチがもつ毒の成分で、さされるとピリピリ痛むもと。いちばん簡単なカルボン酸。',
+    props: [['沸点', '101 ℃']],
+    point: 'カルボキシ基 –COOH をもつ。酢酸よりCが1個少ない。' },
+  { id: 'helium', cat: 'daily', name: 'ヘリウム', en: 'helium', smiles: '[He]', bond: '（単原子分子）',
+    where: '風船・飛行船・声が変わるガス',
+    desc: '水素の次に軽い気体で、燃えないので風船や飛行船に使われる。吸うと声が高くなるのは、音が速く伝わるから（吸いすぎは危険）。',
+    props: [['沸点', '−269 ℃（すべての物質で最低）']],
+    point: '貴ガスは最外殻の電子が安定しているので、原子1個のまま分子としてふるまう（単原子分子）。' },
+  { id: 'naoh', cat: 'daily', name: '水酸化ナトリウム', en: 'sodium hydroxide', smiles: '[Na+].[OH-]', f: 'NaOH', bond: 'イオン結合',
+    where: 'せっけんづくり・パイプ用洗浄剤',
+    desc: '白い固体で、水によく溶けて強い塩基性を示す。皮ふや目をいためるので、あつかいに注意が必要。空気中の水分を吸って溶ける（潮解）。',
+    props: [['式量', '40'], ['水溶液', '強い塩基性']],
+    point: 'Na⁺ と OH⁻ がイオン結合した物質。OH⁻ の中の O–H は共有結合。' },
+  { id: 'caco3', cat: 'daily', name: '炭酸カルシウム', en: 'calcium carbonate', smiles: '[Ca+2].[O-]C([O-])=O', f: 'CaCO3', bond: 'イオン結合',
+    where: '石灰石・大理石・貝がら・卵の殻・チョーク',
+    desc: '石灰石や大理石、貝がらや卵の殻の主成分。塩酸をかけると二酸化炭素が発生する。セメントの原料にもなる。',
+    props: [['式量', '100']],
+    point: 'Ca²⁺ と CO₃²⁻ がイオン結合した物質。CO₃²⁻ の中の C–O は共有結合。' },
+  { id: 'nahco3', cat: 'daily', name: '炭酸水素ナトリウム（重曹）', en: 'sodium hydrogen carbonate', smiles: '[Na+].[O-]C(=O)O', f: 'NaHCO3', bond: 'イオン結合', alias: ['重曹', 'ベーキングパウダー'],
+    where: 'ベーキングパウダー・胃薬・掃除用の重曹',
+    desc: '加熱すると二酸化炭素を出すので、ケーキやパンをふくらませるのに使われる。水溶液は弱い塩基性。',
+    props: [['式量', '84']],
+    point: 'Na⁺ と HCO₃⁻ がイオン結合した物質。加熱すると 2NaHCO₃ → Na₂CO₃ + H₂O + CO₂ と分解する。' },
+  { id: 'naclo', cat: 'daily', name: '次亜塩素酸ナトリウム', en: 'sodium hypochlorite', smiles: '[Na+].[O-]Cl', f: 'NaClO', bond: 'イオン結合',
+    where: '塩素系漂白剤・プールの消毒',
+    desc: '強い酸化力で色素を分解したり菌をころしたりする。酸性の洗剤と混ぜると有毒な塩素が発生するので「まぜるな危険」と書かれている。',
+    props: [['式量', '74.5']],
+    point: 'Na⁺ と ClO⁻ がイオン結合した物質。' },
+
   // --- 単体 ---
-  { id: 'hydrogen', cat: 'elem', name: '水素', en: 'hydrogen', smiles: '[H][H]', bond: '共有結合（単結合）',
+  { id: 'hydrogen', more: '宇宙でいちばん多い元素。太陽は水素の核融合でかがやいている。', cat: 'elem', name: '水素', en: 'hydrogen', smiles: '[H][H]', bond: '共有結合（単結合）',
     desc: '無色・無臭で、すべての気体の中で最も軽い。燃えると水だけができるので、燃料電池などのクリーンな燃料として注目されている。',
     props: [['沸点', '−253 ℃'], ['特徴', '最も軽い気体']],
     point: '2個のH原子が価電子を1個ずつ出し合い、1組の共有電子対をつくる。いちばん単純な共有結合の例。' },
-  { id: 'nitrogen', cat: 'elem', name: '窒素', en: 'nitrogen', smiles: 'N#N', bond: '共有結合（三重結合）',
+  { id: 'nitrogen', more: '液体窒素（−196 ℃）は、ものを一瞬で凍らせる実験や、食品・細胞の保存に使われる。', cat: 'elem', name: '窒素', en: 'nitrogen', smiles: 'N#N', bond: '共有結合（三重結合）',
     desc: '空気の体積の約78%をしめる。三重結合がとても強いので反応しにくく、食品の袋に詰めて酸化を防ぐのに使われる。',
     props: [['沸点', '−196 ℃'], ['空気中の割合', '約78%（体積）']],
     point: '共有電子対3組の三重結合。それぞれのN原子に非共有電子対が1組ずつ残る。' },
-  { id: 'oxygen', cat: 'elem', name: '酸素', en: 'oxygen', smiles: 'O=O', bond: '共有結合（二重結合）',
+  { id: 'oxygen', more: '酸素に放電したり紫外線を当てたりすると、オゾン O₃ ができる。液体の酸素はうすい青色。', cat: 'elem', name: '酸素', en: 'oxygen', smiles: 'O=O', bond: '共有結合（二重結合）',
     desc: '空気の体積の約21%。ものが燃えるのを助け、生物の呼吸に欠かせない。',
     props: [['沸点', '−183 ℃'], ['空気中の割合', '約21%（体積）']],
     point: '共有電子対2組の二重結合。それぞれのO原子に非共有電子対が2組ずつある。' },
@@ -1034,23 +1248,23 @@ const LIB = [
     point: '共有電子対1組。それぞれのCl原子に非共有電子対が3組ずつある。' },
 
   // --- 身近な分子 ---
-  { id: 'water', f: 'H2O', cat: 'basic', name: '水', en: 'water', smiles: 'O', bond: '共有結合',
+  { id: 'water', more: '地球の表面の約7割は水。人の体重の約60%も水。水は温まりにくく冷めにくいので、海は気候をおだやかにしている。', f: 'H2O', cat: 'basic', name: '水', en: 'water', smiles: 'O', bond: '共有結合',
     desc: '生命に欠かせない物質。分子量18と小さいのに、沸点が100 ℃と高い。これは分子どうしが水素結合で強く引き合っているため。氷が水に浮くのも、水素結合でできるすき間の多い構造のため。',
     props: [['沸点', '100 ℃'], ['融点', '0 ℃'], ['結合角', '104.5°']],
     point: 'O原子の非共有電子対2組が結合を押すので、折れ線形になる。O–H結合の極性が打ち消し合わないので、水は極性分子。' },
-  { id: 'ammonia', f: 'NH3', cat: 'basic', name: 'アンモニア', en: 'ammonia', smiles: 'N', bond: '共有結合',
+  { id: 'ammonia', more: '世界中でつくられるアンモニアの多くは肥料になり、たくさんの人の食料を支えている。', f: 'NH3', cat: 'basic', name: 'アンモニア', en: 'ammonia', smiles: 'N', bond: '共有結合',
     desc: '刺激臭のある無色の気体。水に非常によく溶け、水溶液は弱い塩基性を示す。肥料の原料として大量につくられている（ハーバー・ボッシュ法）。',
     props: [['沸点', '−33 ℃'], ['結合角', '約107°']],
     point: 'N原子の上に非共有電子対が1組あるので、三角錐形。極性分子。この非共有電子対にH⁺が配位結合すると、アンモニウムイオン NH₄⁺ になる。' },
-  { id: 'methane', cat: 'basic', name: 'メタン', en: 'methane', smiles: 'C', bond: '共有結合',
+  { id: 'methane', more: '牛のゲップや、田んぼ・ごみ処分場からも発生する。CO₂ の20倍以上強い温室効果がある。', cat: 'basic', name: 'メタン', en: 'methane', smiles: 'C', bond: '共有結合',
     desc: '天然ガスや都市ガスの主成分。無色・無臭で、よく燃える。',
     props: [['沸点', '−161 ℃'], ['結合角', '109.5°']],
     point: '4組の共有電子対がおたがいに反発して最も離れた向きをとり、正四面体形になる。形が対称なので無極性分子。' },
-  { id: 'co2', cat: 'basic', name: '二酸化炭素', en: 'carbon dioxide', smiles: 'O=C=O', bond: '共有結合（二重結合）',
+  { id: 'co2', more: '空気中には約0.04%ふくまれる。植物は光合成で CO₂ を吸収し、ブドウ糖と酸素をつくる。消火器にも使われる（燃えない・空気より重い）。', cat: 'basic', name: '二酸化炭素', en: 'carbon dioxide', smiles: 'O=C=O', bond: '共有結合（二重結合）',
     desc: '無色・無臭の気体。固体はドライアイスで、−78.5 ℃で昇華する。水に少し溶けて弱い酸性を示す（炭酸水）。温室効果ガスの一つ。',
     props: [['昇華点', '−78.5 ℃'], ['結合角', '180°']],
     point: 'C=O結合には極性があるが、直線形で左右反対向きに打ち消し合うので、分子全体では無極性分子。「極性分子かどうかは形で決まる」代表例。' },
-  { id: 'hcl', f: 'HCl', cat: 'basic', name: '塩化水素', en: 'hydrogen chloride', smiles: 'Cl', bond: '共有結合',
+  { id: 'hcl', more: '胃液には約0.5%の塩酸がふくまれ、食べ物を消化しやすくし、細菌を殺している。', f: 'HCl', cat: 'basic', name: '塩化水素', en: 'hydrogen chloride', smiles: 'Cl', bond: '共有結合',
     desc: '刺激臭のある無色の気体。水に溶けたものが塩酸で、強い酸性を示す。胃液にも含まれる。',
     props: [['沸点', '−85 ℃'], ['水溶液', '塩酸（強酸）']],
     point: 'ClのほうがHより電気陰性度が大きいので、共有電子対はCl側にかたよる（Hがδ+、Clがδ−）。二原子分子の極性分子。' },
@@ -1078,7 +1292,7 @@ const LIB = [
     desc: '刺激臭のある有毒な気体。石炭や石油を燃やすと発生し、酸性雨の原因になる。漂白剤や、ワインの酸化防止剤にも使われる。',
     props: [['沸点', '−10 ℃'], ['結合角', '約119°']],
     point: 'S原子に非共有電子対が1組あるので折れ線形になり、極性分子。直線形の CO₂ と形を比べてみよう。' },
-  { id: 'co', f: 'CO', cat: 'basic', name: '一酸化炭素', en: 'carbon monoxide', smiles: '[C-]#[O+]', bond: '共有結合（三重結合）',
+  { id: 'co', more: 'ガス器具を換気の悪い部屋で使うと発生することがあるので、換気が大切。', f: 'CO', cat: 'basic', name: '一酸化炭素', en: 'carbon monoxide', smiles: '[C-]#[O+]', bond: '共有結合（三重結合）',
     desc: '無色・無臭で非常に有毒な気体。炭素をふくむ物質が不完全燃焼すると発生する。血液中のヘモグロビンと強く結びつき、酸素を運べなくする。',
     props: [['沸点', '−192 ℃']],
     point: 'CとOの間は三重結合で、そのうち1組はO原子の非共有電子対が配位結合したものとみなせる。' },
@@ -1113,7 +1327,7 @@ const LIB = [
     desc: '無色の液体で、燃料や工業原料に使われる。毒性が強く、飲むと失明や死亡の危険がある。',
     props: [['沸点', '65 ℃']],
     point: 'ヒドロキシ基 –OH をもつアルコール。–OH どうしが水素結合するので、分子量が同じくらいの炭化水素より沸点が高い。' },
-  { id: 'ethanol', cat: 'organic', name: 'エタノール', en: 'ethanol', smiles: 'CCO', rational: 'C2H5OH', bond: '共有結合',
+  { id: 'ethanol', more: '酵母（イースト菌）がブドウ糖を分解してつくる（アルコール発酵）。手指の消毒には約70〜80%のエタノールが使われる。', cat: 'organic', name: 'エタノール', en: 'ethanol', smiles: 'CCO', rational: 'C2H5OH', bond: '共有結合',
     desc: 'お酒にふくまれるアルコール。消毒用アルコールにも使われる。水とよく混ざる。',
     props: [['沸点', '78 ℃']],
     point: 'ジメチルエーテルと分子式（C₂H₆O）が同じ構造異性体。–OH どうしの水素結合があるので、沸点がずっと高い。' },
@@ -1125,11 +1339,11 @@ const LIB = [
     desc: '刺激臭のある気体。水溶液（ホルマリン）は生物標本の保存に使われる。シックハウス症候群の原因物質の一つ。',
     props: [['沸点', '−19 ℃']],
     point: 'C=O（カルボニル基）をもつ。4個の原子が同じ平面にある平面三角形。' },
-  { id: 'acetic', cat: 'organic', name: '酢酸', en: 'acetic acid', smiles: 'CC(=O)O', rational: 'CH3COOH', bond: '共有結合',
+  { id: 'acetic', more: '酢（す）は、エタノールを酢酸菌が酸化してつくる。', cat: 'organic', name: '酢酸', en: 'acetic acid', smiles: 'CC(=O)O', rational: 'CH3COOH', bond: '共有結合',
     desc: '食酢のすっぱさのもと（食酢には約3〜5%ふくまれる）。純粋な酢酸は冬に凍るので、氷酢酸とよばれる。',
     props: [['沸点', '118 ℃'], ['融点', '17 ℃']],
     point: 'カルボキシ基 –COOH をもつカルボン酸。水溶液は弱い酸性を示す（弱酸）。' },
-  { id: 'benzene', cat: 'organic', name: 'ベンゼン', en: 'benzene', smiles: 'C1=CC=CC=C1', bond: '共有結合',
+  { id: 'benzene', more: 'ベンゼン環をもつ物質はたくさんあり、アスピリン（薬）やスチレン（発泡スチロールの原料）などにもふくまれる。', cat: 'organic', name: 'ベンゼン', en: 'benzene', smiles: 'C1=CC=CC=C1', bond: '共有結合',
     desc: '特有のにおいのある無色の液体。プラスチックや医薬品など、多くの化学製品の原料。毒性がある。',
     props: [['沸点', '80 ℃'], ['結合角', '120°']],
     point: '6個のCが正六角形に並ぶ平面分子。単結合と二重結合を交互に描くが、実際は炭素どうしの結合はすべて同じ長さ（中間の状態）になっている。' },
@@ -1177,17 +1391,17 @@ const LIB = [
     point: '平面三角形。実際には3本のN–O結合は同じ長さになっている。' },
 
   // --- 結晶 ---
-  { id: 'nacl', cat: 'crystal', name: '塩化ナトリウム', en: 'sodium chloride', crystal: 'nacl', formula: 'NaCl', bond: 'イオン結合',
+  { id: 'nacl', more: '人の体にも約0.9%の塩分があり、生理食塩水の濃さと同じ。海水の塩分は約3.5%。', cat: 'crystal', name: '塩化ナトリウム', en: 'sodium chloride', crystal: 'nacl', formula: 'NaCl', bond: 'イオン結合',
     kind2: 'イオン結晶', lattice: '塩化ナトリウム型', coord: '6', perCell: 'Na⁺ 4個・Cl⁻ 4個',
     desc: '食塩の主成分。Na⁺ と Cl⁻ がクーロン力で引き合い、交互に並んだイオン結晶。かたいが、強い力を加えると割れやすい。固体は電気を通さないが、水溶液や融解液は電気を通す。',
     props: [['融点', '801 ℃'], ['配位数', '6'], ['単位格子中', 'Na⁺ 4個・Cl⁻ 4個']],
     point: '1個のNa⁺のまわりを6個のCl⁻がとりかこむ（配位数6）。「空間充填」にすると、大きいCl⁻のすき間に小さいNa⁺が入っているのがわかる。' },
-  { id: 'diamond', cat: 'crystal', name: 'ダイヤモンド', en: 'diamond', crystal: 'diamond', formula: 'C', bond: '共有結合',
+  { id: 'diamond', more: 'ダイヤモンドを空気中で強く熱すると、燃えて二酸化炭素になる（炭素だからこそ）。', cat: 'crystal', name: 'ダイヤモンド', en: 'diamond', crystal: 'diamond', formula: 'C', bond: '共有結合',
     kind2: '共有結合の結晶', lattice: 'ダイヤモンド型', coord: '4', perCell: '8個',
     desc: '天然で最もかたい物質。すべての価電子が共有結合に使われているので、電気を通さない。宝石のほか、研磨剤やカッターに使われる。',
     props: [['融点', '約3550 ℃'], ['配位数', '4'], ['単位格子中の原子', '8個']],
     point: '各C原子が4個のC原子と正四面体形に共有結合し、立体的な網目をつくる。黒鉛とは同素体。' },
-  { id: 'graphite', cat: 'crystal', name: '黒鉛（グラファイト）', en: 'graphite', crystal: 'graphite', formula: 'C', bond: '共有結合＋分子間力',
+  { id: 'graphite', more: '黒鉛の層を1枚だけはがしたものはグラフェンとよばれ、2010年にノーベル物理学賞の対象になった。', cat: 'crystal', name: '黒鉛（グラファイト）', en: 'graphite', crystal: 'graphite', formula: 'C', bond: '共有結合＋分子間力',
     kind2: '共有結合の結晶', lattice: '層状構造', coord: '3',
     desc: '鉛筆のしんや電池の電極に使われる。やわらかく、うすくはがれやすい。電気をよく通す。',
     props: [['層の間かく', '0.335 nm'], ['炭素間の距離', '0.142 nm']],
@@ -1251,11 +1465,14 @@ const LIB = [
 ];
 // 画面上部の切りかえ（大きな分類）
 const SECTIONS = [
-  { id: 'mol', name: '分子', cats: ['elem', 'basic', 'organic', 'ion'] },
+  { id: 'mol', name: '分子', cats: ['daily', 'basic', 'elem', 'organic', 'ion'] },
   { id: 'crystal', name: '結晶', cats: ['crystal'] },
   { id: 'atom', name: '原子と電子', cats: ['atom'] },
   { id: 'bond', name: '結合のしくみ', cats: ['bond'] },
   { id: 'mole', name: '物質量（mol）', cats: ['mole'] },
+  { id: 'reaction', name: '化学反応式', cats: ['reaction'] },
+  { id: 'build', name: '分子をつくる', cats: ['build'] },
+  { id: 'quiz', name: 'クイズ', cats: ['quiz'] },
 ];
 const secOf = cat => (SECTIONS.find(s => s.cats.includes(cat)) || SECTIONS[0]).id;
 
@@ -1464,6 +1681,16 @@ function getModel(e) {
     e.an = (e.crystal || e.custom)
       ? { counts: e.counts, charge: 0, mass: massOf(e.crystal ? e.counts : { H: 2, O: 1 }), delta: e.model.atoms.map(() => 0), mu: [0, 0, 0], muLen: 0 }
       : analyze(e.model);
+    // イオンからなる物質：陽イオンと、いちばん近い陰イオンの原子をイオン結合（点線）で結ぶ
+    if (e.an.nComp > 1) {
+      const m = e.model;
+      m.atoms.forEach((a, i) => {
+        if (a.charge <= 0) return;
+        let best = -1, bd = 1e9;
+        m.atoms.forEach((b, j) => { if (b.charge < 0) { const dd = vlen(vsub(m.pos[i], m.pos[j])); if (dd < bd) { bd = dd; best = j; } } });
+        if (best >= 0) m.bonds.push({ a: i, b: best, o: 1, style: 'contact' });
+      });
+    }
   }
   return e;
 }
@@ -1485,6 +1712,541 @@ function displayFormula(e) {
 }
 const fmtMass = m => (Number.isInteger(m) ? String(m) : m.toFixed(1));
 const chargeSup = c => (!c ? '' : (Math.abs(c) > 1 ? Math.abs(c) : '') + (c > 0 ? '+' : '−'));
+
+// ===== 化学反応式（係数をそろえるゲーム） =====
+// 物質の見た目: LIB の id / 'atom:元素' / 'ion:陽イオン,陰イオン'
+const REACTIONS = [
+  { id: 'rx-c-o2', name: '炭素の燃焼', left: [['C', 'atom:C']], right: [['CO2', 'co2']], ans: [1, 1, 1], level: 1,
+    lead: [['O2', 'oxygen']],
+    desc: '炭（炭素）が燃えると、空気中の酸素と結びついて二酸化炭素になる。',
+    point: '係数がすべて1でつり合う、いちばん簡単な反応式。左右で C原子1個・O原子2個。' },
+  { id: 'rx-h2o', name: '水素の燃焼', left: [['H2', 'hydrogen'], ['O2', 'oxygen']], right: [['H2O', 'water']], ans: [2, 1, 2], level: 1,
+    desc: '水素が酸素と結びついて水ができる。燃料電池や、ロケットの燃料にも使われる反応。',
+    point: 'O原子を左右でそろえるために H₂O を2個にすると、今度はH原子が足りなくなる。H₂ も2個にするとつり合う。' },
+  { id: 'rx-hcl', name: '塩化水素の生成', left: [['H2', 'hydrogen'], ['Cl2', 'chlorine']], right: [['HCl', 'hcl']], ans: [1, 1, 2], level: 1,
+    desc: '水素と塩素の混合気体に光を当てると、爆発的に反応して塩化水素ができる。',
+    point: 'H₂ も Cl₂ も2原子分子なので、HCl が2個できる。' },
+  { id: 'rx-co', name: '一酸化炭素の燃焼', left: [['CO', 'co'], ['O2', 'oxygen']], right: [['CO2', 'co2']], ans: [2, 1, 2], level: 2,
+    desc: '一酸化炭素は青い炎をあげて燃え、二酸化炭素になる。',
+    point: 'O₂ の2個のO原子を、CO 2個に1個ずつ分ける。' },
+  { id: 'rx-mgo', name: 'マグネシウムの燃焼', left: [['Mg', 'atom:Mg'], ['O2', 'oxygen']], right: [['MgO', 'ion:Mg,O']], ans: [2, 1, 2], level: 2,
+    desc: 'マグネシウムは強い白い光を出して燃え、白い酸化マグネシウムになる。',
+    point: '酸化マグネシウムは Mg²⁺ と O²⁻ からなるイオン結晶（組成式 MgO）。' },
+  { id: 'rx-nacl', name: 'ナトリウムと塩素の反応', left: [['Na', 'atom:Na'], ['Cl2', 'chlorine']], right: [['NaCl', 'ion:Na,Cl']], ans: [2, 1, 2], level: 2,
+    desc: 'ナトリウムを塩素の中で熱すると、はげしく反応して塩化ナトリウム（食塩）ができる。',
+    point: 'Na が電子を1個失い、Cl が電子を1個受け取って、イオン結合の NaCl になる。' },
+  { id: 'rx-h2o2', name: '過酸化水素の分解', left: [['H2O2', 'h2o2']], right: [['H2O', 'water'], ['O2', 'oxygen']], ans: [2, 2, 1], level: 2,
+    desc: 'オキシドールに酸化マンガン(IV)（触媒）を加えると、酸素がさかんに発生する。',
+    point: 'O原子の数に注目。左が偶数になるように H₂O₂ を2個にする。' },
+  { id: 'rx-elec', name: '水の電気分解', left: [['H2O', 'water']], right: [['H2', 'hydrogen'], ['O2', 'oxygen']], ans: [2, 2, 1], level: 2,
+    desc: '水に電流を流すと、陰極から水素、陽極から酸素が、体積比 2：1 で発生する。',
+    point: '水素の燃焼のちょうど逆の反応。係数の比 2：1 が、発生する気体の体積の比になる。' },
+  { id: 'rx-nh3', name: 'アンモニアの合成', left: [['N2', 'nitrogen'], ['H2', 'hydrogen']], right: [['NH3', 'ammonia']], ans: [1, 3, 2], level: 2,
+    desc: '窒素と水素からアンモニアをつくる（ハーバー・ボッシュ法）。肥料の原料として、世界中の食料を支えている反応。',
+    point: 'N原子2個 → NH₃ が2個。すると H原子が6個必要なので、H₂ は3個。' },
+  { id: 'rx-ch4', name: 'メタンの燃焼', left: [['CH4', 'methane'], ['O2', 'oxygen']], right: [['CO2', 'co2'], ['H2O', 'water']], ans: [1, 2, 1, 2], level: 3,
+    desc: '都市ガス（主成分メタン）が燃えると、二酸化炭素と水ができる。',
+    point: 'C → H → O の順にそろえるとよい。最後に、右側のO原子の数から O₂ の係数を決める。' },
+  { id: 'rx-c3h8', name: 'プロパンの燃焼', left: [['C3H8', 'propane'], ['O2', 'oxygen']], right: [['CO2', 'co2'], ['H2O', 'water']], ans: [1, 5, 3, 4], level: 3,
+    desc: 'LPガス（主成分プロパン）が燃える反応。家庭のガスコンロやカセットコンロで起きている。',
+    point: 'C3個 → CO₂ 3個、H8個 → H₂O 4個。右側のOは 6+4=10個なので、O₂ は5個。' },
+  { id: 'rx-etoh', name: 'エタノールの燃焼', left: [['C2H5OH', 'ethanol'], ['O2', 'oxygen']], right: [['CO2', 'co2'], ['H2O', 'water']], ans: [1, 3, 2, 3], level: 3,
+    desc: 'エタノール（アルコールランプの燃料）が燃える反応。',
+    point: 'エタノール自身にもO原子が1個あることに注意。右のO（4+3=7個）から1個を引いた6個を O₂ が出す。' },
+  { id: 'rx-photo', name: '光合成', left: [['CO2', 'co2'], ['H2O', 'water']], right: [['C6H12O6', 'glucose'], ['O2', 'oxygen']], ans: [6, 6, 1, 6], level: 3,
+    desc: '植物が光のエネルギーを使って、二酸化炭素と水からブドウ糖と酸素をつくる反応。',
+    point: 'ブドウ糖1個に C が6個あるので CO₂ は6個。H が12個なので H₂O は6個。最後に O をそろえる。' },
+];
+// 炭素の燃焼だけは O₂ を左に足す（表記を自然にするため）
+REACTIONS.forEach(r => {
+  if (r.lead) { r.left = r.left.concat(r.lead); delete r.lead; }
+  const side = list => list.map(s => s[0]).join(' + ');
+  LIB.push({ id: r.id, cat: 'reaction', kind: 'reaction', name: r.name, f: side(r.left) + ' → ' + side(r.right), rx: r,
+    desc: r.desc, point: r.point, en: ['', 'かんたん', 'ふつう', 'むずかしい'][r.level] });
+});
+
+function speciesTemplate(ref) {
+  if (ref.startsWith('atom:')) return { atoms: [{ el: ref.slice(5), p: [0, 0, 0] }], bonds: [] };
+  if (ref.startsWith('ion:')) {
+    const [a, b] = ref.slice(4).split(',');
+    const ra = EL[a].rc * 0.42 + 0.13, rb = EL[b].rc * 0.42 + 0.13;
+    return { atoms: [{ el: a, p: [-(ra + 0.15), 0, 0] }, { el: b, p: [rb + 0.15, 0, 0] }], bonds: [], ionic: true };
+  }
+  const src = getModel(LIB.find(x => x.id === ref)).model;
+  return { atoms: src.atoms.map((a, i) => ({ el: a.el, p: src.pos[i] })), bonds: src.bonds.filter(b => !b.style) };
+}
+function rxSpecies(r) { return r.left.map(s => ({ f: s[0], ref: s[1], side: 'L' })).concat(r.right.map(s => ({ f: s[0], ref: s[1], side: 'R' }))); }
+function rxCounts(r, coef) {
+  const L = {}, Rr = {};
+  rxSpecies(r).forEach((s, i) => {
+    const c = parseBody(s.f), t = s.side === 'L' ? L : Rr;
+    for (const el in c) t[el] = (t[el] || 0) + c[el] * coef[i];
+  });
+  const els = hillOrder(Object.assign({}, L, Rr));
+  return els.map(el => ({ el, L: L[el] || 0, R: Rr[el] || 0 }));
+}
+const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+function rxStatus(r, coef) {
+  const rows = rxCounts(r, coef);
+  const ok = rows.every(x => x.L === x.R) && coef.every(c => c > 0);
+  const g = coef.reduce((a, b) => gcd(a, b));
+  return { rows, ok, simplest: ok && g === 1 };
+}
+
+const SOLVED_KEY = 'molecule-lab:solved';
+function loadSet(key) { try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')); } catch (e) { return new Set(); } }
+function saveSet(key, set) { try { localStorage.setItem(key, JSON.stringify([...set])); } catch (e) { /* 無視 */ } }
+const solvedRx = loadSet(SOLVED_KEY);
+
+function buildReactionView() {
+  const e = state.entry, r = e.rx, g = R.group;
+  view.kind = 'reaction';
+  const st = state.rx;
+  const sp = rxSpecies(r);
+  const s = 0.75;
+  const mats = {};
+  const mat = (el, ghost) => {
+    const k = el + (ghost ? 'g' : '');
+    if (!mats[k]) mats[k] = phong(EL[el].c, ghost ? { transparent: true, opacity: 0.25, depthWrite: false } : {});
+    return mats[k];
+  };
+  const sides = { L: { atoms: [], bonds: [] }, R: { atoms: [], bonds: [] } };
+  let x = 0;
+  const cols = [];
+  let maxH = 0;
+  sp.forEach((spc, i) => {
+    const tpl = speciesTemplate(spc.ref);
+    const xs = tpl.atoms.map(a => a.p[0] * s), ys = tpl.atoms.map(a => a.p[1] * s);
+    const w = Math.max(...xs) - Math.min(...xs) + 1.0, h = Math.max(...ys) - Math.min(...ys) + 0.9;
+    const c = st.coef[i];
+    if (i > 0) x += (sp[i - 1].side !== spc.side) ? 2.6 : 1.3;
+    const cx = x + w / 2;
+    for (let k = 0; k < c; k++) {
+      const cy = (k - (c - 1) / 2) * (h + 0.35);
+      const base = new THREE.Vector3(cx, cy, 0);
+      const meshes = tpl.atoms.map(a => {
+        const m = new THREE.Mesh(R.SMALL, mat(a.el));
+        m.scale.setScalar((EL[a.el].rc * 0.42 + 0.13) * s * 1.35);
+        const p = new THREE.Vector3(a.p[0] * s, a.p[1] * s, a.p[2] * s).add(base);
+        m.position.copy(p); g.add(m);
+        sides[spc.side].atoms.push({ el: a.el, mesh: m, home: p.clone() });
+        return m;
+      });
+      tpl.bonds.forEach(b => {
+        const cyl = new THREE.Mesh(R.CYL, phong(BOND_STYLE[b.o] ? BOND_STYLE[b.o].color : '#8e9ab0'));
+        placeCyl(cyl, meshes[b.a].position, meshes[b.b].position, b.o > 1 ? 0.11 : 0.07);
+        g.add(cyl);
+        sides[spc.side].bonds.push(cyl);
+      });
+    }
+    maxH = Math.max(maxH, c * (h + 0.35));
+    cols.push({ cx, w, i, spc });
+    x += w;
+  });
+  const shift = -x / 2;
+  g.children.forEach(o => { o.position.x += shift; });
+  sides.L.atoms.concat(sides.R.atoms).forEach(a => { a.home.x += shift; });
+  const bottom = -Math.max(maxH / 2, 0.8) - 0.6;
+  cols.forEach((c, k) => {
+    const coef = st.coef[c.i];
+    addLabel('lbl-rx', `<b class="cf">${coef === 1 ? '' : coef}</b>${formulaHTML(c.spc.f)}`, () => new THREE.Vector3(c.cx + shift, bottom, 0));
+    const next = cols[k + 1];
+    if (next) {
+      const mx = (c.cx + c.w / 2 + next.cx - next.w / 2) / 2 + shift;
+      addLabel(next.spc.side !== c.spc.side ? 'lbl-arrow' : 'lbl-plus', next.spc.side !== c.spc.side ? '→' : '+', () => new THREE.Vector3(mx, 0, 0));
+    }
+  });
+  view.rxSides = sides;
+  view.rxWidth = x;
+  view.rxHeight = maxH;
+  // 反応のアニメーション：左の原子が、同じ元素の右の位置へ移動する
+  const pairs = [];
+  if (rxStatus(r, st.coef).ok) {
+    const byEl = side => {
+      const m = {};
+      sides[side].atoms.forEach(a => { (m[a.el] = m[a.el] || []).push(a); });
+      Object.values(m).forEach(list => list.sort((p, q) => p.home.x - q.home.x || p.home.y - q.home.y));
+      return m;
+    };
+    const Lm = byEl('L'), Rm = byEl('R'), rr = rng(3);
+    Object.keys(Lm).forEach(el => Lm[el].forEach((a, k) => pairs.push({ a, to: Rm[el][k].home, delay: rr() * 0.6 })));
+  }
+  view.tick = () => {
+    const ph = st.phase;
+    const tau = ph === 'anim' ? (performance.now() - st.t0) / 1000 : 0;
+    const showR = ph === 'edit' || (ph === 'anim' && tau > 3.0) || ph === 'done';
+    sides.R.atoms.forEach(a => { a.mesh.visible = showR; });
+    sides.R.bonds.forEach(b => { b.visible = showR; });
+    sides.L.bonds.forEach(b => { b.visible = ph === 'edit' || (ph === 'anim' && tau < 0.35); });
+    if (ph === 'edit') sides.L.atoms.forEach(a => { a.mesh.visible = true; a.mesh.position.copy(a.home); });
+    if (ph === 'anim' || ph === 'done') {
+      pairs.forEach(p => {
+        const q = ph === 'done' ? 1 : ease(phase(tau, 0.4 + p.delay, 2.4 + p.delay));
+        p.a.mesh.visible = q < 1 || !showR;
+        p.a.mesh.position.copy(p.a.home).lerp(p.to, q);
+        p.a.mesh.position.y += Math.sin(Math.PI * q) * 1.6;
+      });
+      if (ph === 'anim' && tau > 3.2) { st.phase = 'done'; renderCard(); }
+    }
+  };
+  renderLegend();
+}
+
+function rxCardHTML(e) {
+  const r = e.rx, st = state.rx, sp = rxSpecies(r);
+  const status = rxStatus(r, st.coef);
+  const eq = side => sp.map((s, i) => ({ s, i })).filter(x => x.s.side === side)
+    .map(x => `<span class="${status.ok ? 'ok' : ''}"><b class="cf">${st.coef[x.i] === 1 ? '' : st.coef[x.i]}</b>${formulaHTML(x.s.f)}</span>`).join(' + ');
+  let html = headHTML(e, `<span class="eq">${eq('L')} → ${eq('R')}</span>`) + '<div class="card-body">';
+  html += '<p class="note">＋・−で係数（分子の数）を変えて、左右の原子の数をそろえよう。</p><div class="coefs">';
+  sp.forEach((s, i) => {
+    if (i > 0 && sp[i - 1].side !== s.side) html += '<div class="coef-arrow">→</div>';
+    html += `<div class="coef"><button type="button" data-coef="${i}" data-d="-1" aria-label="${s.f}を減らす" ${st.phase !== 'edit' ? 'disabled' : ''}>−</button>
+      <b>${st.coef[i]}</b><button type="button" data-coef="${i}" data-d="1" aria-label="${s.f}を増やす" ${st.phase !== 'edit' ? 'disabled' : ''}>＋</button>
+      <span>${formulaHTML(s.f)}</span></div>`;
+  });
+  html += '</div><table class="atomtab"><thead><tr><th>原子</th><th>左</th><th></th><th>右</th></tr></thead><tbody>';
+  status.rows.forEach(x => {
+    const max = Math.max(x.L, x.R, 1);
+    html += `<tr class="${x.L === x.R ? 'eqok' : 'eqng'}"><th><i class="dot" style="background:${EL[x.el].c}"></i>${x.el}</th>
+      <td><span class="bar"><i style="width:${x.L / max * 100}%"></i></span><b>${x.L}</b></td><td class="mk">${x.L === x.R ? '＝' : '≠'}</td>
+      <td><b>${x.R}</b><span class="bar"><i style="width:${x.R / max * 100}%"></i></span></td></tr>`;
+  });
+  html += '</tbody></table>';
+  if (status.simplest) {
+    html += `<div class="verdict good">${st.phase === 'done' ? '反応が完了！ 原子の種類と数は、反応の前後で変わっていない。' : 'つり合った！ 左右で原子の数が同じになった。'}</div>`;
+    if (st.phase === 'edit') html += '<button type="button" class="pbtn big" data-act="react">反応させる</button>';
+    else if (st.phase === 'done') html += '<button type="button" class="pbtn ghost" data-act="rxreset">反応前にもどす</button> <button type="button" class="pbtn" data-act="rxnext">次の反応式へ</button>';
+  } else if (status.ok) {
+    html += '<div class="verdict mid">つり合っているけれど、係数はいちばん簡単な整数の比にしよう（全部を同じ数でわれるよ）。</div>';
+  } else {
+    const bad = status.rows.find(x => x.L !== x.R);
+    html += `<div class="verdict">${bad.el} 原子が 左${bad.L}個・右${bad.R}個 でちがう。</div>`;
+    html += `<button type="button" class="pbtn ghost" data-act="hint">ヒント</button>${st.hint ? `<p class="note hintline">${st.hint}</p>` : ''}`;
+  }
+  html += `<p class="desc">${esc(r.desc)}</p><div class="point"><h3>授業のポイント</h3><p>${esc(r.point)}</p></div>`;
+  html += `<p class="note">クリアした反応式：${solvedRx.size} / ${REACTIONS.length}</p></div>`;
+  return html;
+}
+function rxHint() {
+  const e = state.entry, r = e.rx, st = state.rx, sp = rxSpecies(r);
+  st.hints = (st.hints || 0) + 1;
+  const i = sp.findIndex((s, k) => st.coef[k] !== r.ans[k]);
+  if (i < 0) return;
+  st.hint = st.hints === 1
+    ? `まず、いちばん多くの物質にふくまれていない原子から数を合わせよう。${sp[i].f} に注目。`
+    : `${sp[i].f} の係数を ${r.ans[i]} にしてみよう。`;
+}
+
+// ===== 分子をつくろう（組み立てゲーム） =====
+const BUILD_VAL = { H: 1, C: 4, N: 3, O: 2, Cl: 1, F: 1, S: 2 };
+const MISSIONS = [
+  { id: 'b-free', name: '自由につくる', start: 'C', note: '原子をつないで、いろいろな分子をつくってみよう。一覧にある分子ができたら名前が出るよ。' },
+  { id: 'b-h2o', name: '水 H₂O をつくろう', target: 'H2O', start: 'O' },
+  { id: 'b-nh3', name: 'アンモニア NH₃', target: 'H3N', start: 'N' },
+  { id: 'b-ch4', name: 'メタン CH₄', target: 'CH4', start: 'C' },
+  { id: 'b-hcl', name: '塩化水素 HCl', target: 'ClH', start: 'Cl' },
+  { id: 'b-co2', name: '二酸化炭素 CO₂', target: 'CO2', start: 'C', hint: 'C と O の間を二重結合にしよう。' },
+  { id: 'b-n2', name: '窒素 N₂', target: 'N2', start: 'N', hint: 'N の手は3本。三重結合が必要。' },
+  { id: 'b-c2h4', name: 'エチレン C₂H₄', target: 'C2H4', start: 'C', hint: 'C=C の二重結合をつくろう。' },
+  { id: 'b-c2h2', name: 'アセチレン C₂H₂', target: 'C2H2', start: 'C', hint: 'C≡C の三重結合をつくろう。' },
+  { id: 'b-ch2o', name: 'ホルムアルデヒド CH₂O', target: 'CH2O', start: 'C' },
+  { id: 'b-ch3oh', name: 'メタノール CH₃OH', target: 'CH4O', start: 'C' },
+  { id: 'b-c2h6o', name: 'C₂H₆O を2種類つくろう', target: 'C2H6O', start: 'C', multi: 2, hint: 'O をどこにつなぐかで、ちがう物質（異性体）になる。' },
+  { id: 'b-c4h10', name: 'C₄H₁₀ を2種類つくろう', target: 'C4H10', start: 'C', multi: 2, hint: '炭素をまっすぐつなぐか、枝分かれさせるか。' },
+];
+const MISSION_F = { H3N: 'NH3', ClH: 'HCl', CH4O: 'CH3OH' };
+MISSIONS.forEach(m => LIB.push({ id: m.id, cat: 'build', kind: 'build', name: m.name, f: m.target ? (MISSION_F[m.target] || m.target) : '自由', mission: m }));
+const DONE_KEY = 'molecule-lab:missions';
+const doneMissions = loadSet(DONE_KEY);
+
+function bldFree(i) {
+  const b = state.bld;
+  return BUILD_VAL[b.atoms[i].el] - b.bonds.reduce((s, x) => s + (x.a === i || x.b === i ? x.o : 0), 0);
+}
+// 原子のつながり方の「指紋」：異性体を区別するため
+function graphSignature(atoms, bonds) {
+  const nb = atoms.map(() => []);
+  bonds.forEach(b => { if (b.style) return; nb[b.a].push([b.b, b.o]); nb[b.b].push([b.a, b.o]); });
+  let lab = atoms.map(a => a.el);
+  for (let it = 0; it < 4; it++) lab = lab.map((l, i) => l + '(' + nb[i].map(([j, o]) => o + lab[j]).sort().join(',') + ')');
+  return lab.sort().join('|');
+}
+const LIB_SIG = new Map();
+function identifyBuild() {
+  const b = state.bld;
+  const sig = graphSignature(b.atoms, b.bonds);
+  if (!LIB_SIG.size) LIB.forEach(e => { if (e.def && e.kind === 'mol' && e.cat !== 'bond') LIB_SIG.set(graphSignature(e.def.atoms, e.def.bonds), e); });
+  return LIB_SIG.get(sig) || null;
+}
+function bldRebuild(refit) {
+  const e = state.entry, b = state.bld;
+  e.def = { atoms: b.atoms.map(a => ({ el: a.el, charge: 0 })), bonds: b.bonds.map(x => ({ a: x.a, b: x.b, o: x.o })) };
+  e.model = buildMolecule(e.def);
+  e.an = analyze(e.model);
+  e.counts = e.an.counts;
+  state.selected = b.sel;
+  if (R) {
+    clearView(); buildMolView();
+    view.growStart = 0; view.grow = 1;
+    if (refit) fitCamera();
+  }
+  bldCheck();
+  renderCard();
+}
+function bldStart(e) {
+  state.bld = { atoms: [{ el: e.mission.start }], bonds: [], sel: 0, found: new Set(), msg: '' };
+}
+function bldCheck() {
+  const b = state.bld, m = state.entry.mission;
+  const free = b.atoms.reduce((s, _, i) => s + bldFree(i), 0);
+  b.complete = free === 0;
+  b.hit = b.complete ? identifyBuild() : null;
+  const key = hillString(countAtoms(b.atoms), 0);
+  b.success = false;
+  if (b.complete && m.target && key === m.target) {
+    if (m.multi) { if (b.hit) b.found.add(b.hit.id); b.success = b.found.size >= m.multi; } else b.success = true;
+    if (b.success && !doneMissions.has(m.id)) { doneMissions.add(m.id); saveSet(DONE_KEY, doneMissions); }
+  }
+}
+function bldAction(act, el) {
+  const b = state.bld;
+  b.msg = '';
+  if (act === 'add') {
+    if (b.sel < 0) { b.msg = 'まず、つなぎたい原子をタップして選ぼう。'; return renderCard(); }
+    if (bldFree(b.sel) < 1) { b.msg = `選んだ ${b.atoms[b.sel].el} 原子には、空いている手（価標）がもうない。`; return renderCard(); }
+    if (b.atoms.length >= 24) { b.msg = '原子は24個までにしよう。'; return renderCard(); }
+    b.atoms.push({ el });
+    b.bonds.push({ a: b.sel, b: b.atoms.length - 1, o: 1 });
+    // H などの手が1本の原子をつないだときは、選んでいる原子のまま
+    if (BUILD_VAL[el] > 1 && bldFree(b.sel) === 0) b.sel = b.atoms.length - 1;
+  } else if (act === 'up') {
+    if (b.sel < 0) { b.msg = 'まず原子を選ぼう。'; return renderCard(); }
+    const bond = b.bonds.find(x => (x.a === b.sel || x.b === b.sel) && x.o < 3 && bldFree(x.a) > 0 && bldFree(x.b) > 0);
+    if (!bond) { b.msg = 'となりの原子どうしに、空いている手がないので結合を増やせない。'; return renderCard(); }
+    bond.o++;
+  } else if (act === 'down') {
+    const bond = b.bonds.find(x => (x.a === b.sel || x.b === b.sel) && x.o > 1);
+    if (!bond) { b.msg = '二重結合・三重結合がない。'; return renderCard(); }
+    bond.o--;
+  } else if (act === 'del') {
+    if (b.sel <= 0) { b.msg = b.sel === 0 ? '最初の原子は消せない。「はじめから」を使おう。' : 'まず原子を選ぼう。'; return renderCard(); }
+    const gone = b.sel;
+    b.bonds = b.bonds.filter(x => x.a !== gone && x.b !== gone);
+    // 最初の原子とつながっていない部分も消す
+    const keep = new Set([0]), st = [0];
+    while (st.length) { const u = st.pop(); b.bonds.forEach(x => { const v = x.a === u ? x.b : x.b === u ? x.a : -1; if (v >= 0 && !keep.has(v)) { keep.add(v); st.push(v); } }); }
+    const map = new Map();
+    const atoms = [];
+    b.atoms.forEach((a, i) => { if (keep.has(i)) { map.set(i, atoms.length); atoms.push(a); } });
+    b.bonds = b.bonds.filter(x => keep.has(x.a) && keep.has(x.b)).map(x => ({ a: map.get(x.a), b: map.get(x.b), o: x.o }));
+    b.atoms = atoms;
+    b.sel = 0;
+  } else if (act === 'reset') {
+    const found = b.found;
+    bldStart(state.entry);
+    state.bld.found = found;
+  } else if (act === 'fill') {
+    // 空いている手をすべて H でうめる
+    const n = b.atoms.length;
+    for (let i = 0; i < n; i++) while (bldFree(i) > 0 && b.atoms.length < 30) { b.atoms.push({ el: 'H' }); b.bonds.push({ a: i, b: b.atoms.length - 1, o: 1 }); }
+  }
+  bldRebuild(true);
+}
+function buildCardHTML(e) {
+  const b = state.bld, m = e.mission;
+  const key = hillString(countAtoms(b.atoms), 0);
+  let html = headHTML(e, `<span>いまの分子式 ${formulaHTML(key)}</span>`) + '<div class="card-body">';
+  html += `<p class="note">${m.note || 'つなぎたい原子をタップして選び、下のボタンで原子をつなごう。手（価標）がすべてうまったら完成。'}</p>`;
+  if (m.hint) html += `<p class="note hintline">ヒント：${esc(m.hint)}</p>`;
+  const sel = b.sel >= 0 ? b.atoms[b.sel] : null;
+  html += `<div class="selrow">選んでいる原子：<b>${sel ? sel.el : 'なし'}</b>${sel ? `（空いている手 ${bldFree(b.sel)}本）` : ''}</div>`;
+  html += '<div class="palette">' + ['H', 'C', 'N', 'O', 'Cl'].map(el => `<button type="button" data-add="${el}"><i class="dot" style="background:${EL[el].c}"></i>${el}<small>手${BUILD_VAL[el]}</small></button>`).join('') + '</div>';
+  html += `<div class="tools">
+    <button type="button" data-bld="up">結合を増やす</button>
+    <button type="button" data-bld="down">結合を減らす</button>
+    <button type="button" data-bld="fill">残りをHでうめる</button>
+    <button type="button" data-bld="del">原子を消す</button>
+    <button type="button" data-bld="reset">はじめから</button></div>`;
+  if (b.msg) html += `<div class="verdict">${esc(b.msg)}</div>`;
+  if (b.complete) {
+    if (b.success) html += `<div class="verdict good">ミッション達成！ ${b.hit ? `「${esc(b.hit.name)}」ができた。` : ''}</div>`;
+    else if (m.multi && b.hit && key === m.target) html += `<div class="verdict mid">「${esc(b.hit.name)}」ができた！ あと ${m.multi - b.found.size} 種類つくろう。</div>`;
+    else if (b.hit) html += `<div class="verdict good">完成！ これは「${esc(b.hit.name)}」。${m.target && key !== m.target ? 'でも、ミッションの分子とはちがうよ。' : ''}</div>`;
+    else html += `<div class="verdict mid">手がすべてうまった分子（${formulaHTML(key)}）ができた。一覧にはない分子だよ。</div>`;
+    if (b.hit) html += `<button type="button" class="pbtn ghost" data-go="${b.hit.id}">「${esc(b.hit.name)}」の説明を見る</button>`;
+  } else {
+    const left = b.atoms.reduce((s, _, i) => s + bldFree(i), 0);
+    html += `<p class="note">空いている手があと ${left} 本。原子の上の数字が、その原子の空いている手の数。</p>`;
+  }
+  if (m.multi) html += `<p class="note">見つけた種類：${[...b.found].map(id => esc(LIB.find(x => x.id === id).name)).join('・') || 'まだなし'}</p>`;
+  html += `<p class="note">クリアしたミッション：${[...doneMissions].length} / ${MISSIONS.length - 1}</p></div>`;
+  return html;
+}
+
+// ===== クイズ =====
+const QUIZ_SETS = [
+  { id: 'quiz-mix', name: 'ミックス（全部から）', types: ['shape', 'polar', 'formula', 'name', 'mass', 'config', 'element', 'valence', 'ion', 'bondtype', 'mol', 'coef'] },
+  { id: 'quiz-shape', name: '分子の形と極性', types: ['shape', 'polar', 'formula', 'name'] },
+  { id: 'quiz-atom', name: '原子・電子・イオン', types: ['config', 'element', 'valence', 'ion'] },
+  { id: 'quiz-bond', name: '結合の種類', types: ['bondtype', 'shape', 'polar'] },
+  { id: 'quiz-calc', name: '計算（分子量・mol・反応式）', types: ['mass', 'mol', 'coef'] },
+];
+QUIZ_SETS.forEach(q => LIB.push({ id: q.id, cat: 'quiz', kind: 'quizset', name: q.name, f: 'Q', quiz: q }));
+const BEST_KEY = 'molecule-lab:quizbest';
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function choicesWith(answer, pool, n = 4) {
+  const wrong = shuffle(pool.filter(x => x !== answer)).slice(0, n - 1);
+  return shuffle([answer, ...wrong]);
+}
+const SHAPE_NORMAL = { '正三角形': '平面三角形', '四面体形': '正四面体形' };
+function makeQuestion(type) {
+  const L = id => getModel(LIB.find(e => e.id === id));
+  if (type === 'shape') {
+    const e = L(pick(['water', 'ammonia', 'methane', 'co2', 'h2s', 'so2', 'formaldehyde', 'ccl4', 'nh4', 'h3o', 'co3', 'hcl', 'nitrogen', 'ethylene', 'acetylene', 'benzene', 'hf']));
+    const ans = SHAPE_NORMAL[e.an.shape] || e.an.shape;
+    return { subject: e.id, q: `「${e.name}」${formulaHTML(displayFormula(e))} の形は？`, choices: choicesWith(ans, ['直線形', '折れ線形', '三角錐形', '正四面体形', '平面三角形', '平面形']), answer: ans,
+      explain: `${e.name}は${ans}。${e.point || ''}` };
+  }
+  if (type === 'polar') {
+    const e = L(pick(['water', 'ammonia', 'methane', 'co2', 'hcl', 'h2s', 'ccl4', 'chcl3', 'nitrogen', 'oxygen', 'ethanol', 'benzene', 'so2', 'formaldehyde', 'acetone', 'octane']));
+    return { subject: e.id, q: `「${e.name}」${formulaHTML(displayFormula(e))} は極性分子？ 無極性分子？`, choices: ['極性分子', '無極性分子'], answer: e.an.polarity,
+      explain: `${e.name}は${e.an.polarity}。${e.an.polarNote}`, after: { polar: true } };
+  }
+  if (type === 'formula' || type === 'name') {
+    const ids = ['water', 'ammonia', 'methane', 'co2', 'hcl', 'ethanol', 'methanol', 'ethylene', 'acetylene', 'formaldehyde', 'acetic', 'h2o2', 'so2', 'benzene', 'propane', 'acetone', 'glucose', 'urea'];
+    const id = pick(ids), e = L(id);
+    const others = ids.map(L);
+    if (type === 'formula') {
+      const ans = displayFormula(e);
+      return { subject: id, q: '3Dで表示している分子の分子式は？（原子記号をよく見て数えよう）', choices: choicesWith(ans, others.map(displayFormula)).map(x => ({ v: x, html: formulaHTML(x) })), answer: ans,
+        explain: `${e.name}：${formulaHTML(ans)}` };
+    }
+    return { subject: id, q: '3Dで表示している分子の名前は？', choices: choicesWith(e.name, others.map(x => x.name)), answer: e.name, explain: `${formulaHTML(displayFormula(e))} は${e.name}。${e.point || ''}` };
+  }
+  if (type === 'mass') {
+    const e = L(pick(['water', 'ammonia', 'methane', 'co2', 'hcl', 'ethanol', 'oxygen', 'nitrogen', 'h2o2', 'acetic', 'glucose', 'h2so4', 'so2', 'propane']));
+    const M = e.an.mass.total;
+    const pool = [M + 2, M - 2, M + 16, M - 12, M + 1, M + 14, Math.round(M * 2)].filter(v => v > 0 && v !== M).map(fmtMass);
+    return { subject: e.id, q: `${formulaHTML(displayFormula(e))}（${e.name}）の分子量は？（H=1.0, C=12, N=14, O=16, S=32, Cl=35.5）`, choices: choicesWith(fmtMass(M), [...new Set(pool)]), answer: fmtMass(M),
+      explain: e.an.mass.parts.map(p => `${p.e} ${fmtMass(p.m)}×${p.n}`).join(' + ') + ` = ${fmtMass(M)}` };
+  }
+  if (type === 'config' || type === 'element' || type === 'valence' || type === 'ion') {
+    const pool = type === 'ion' ? Object.keys(ION_OF).filter(x => x !== 'H') : ELEMENTS_20.slice(type === 'element' ? 2 : 0);
+    const el = pick(pool), Z = EL[el].z, c = shellCounts(Z);
+    const subject = 'atom-' + el;
+    if (type === 'config') {
+      const ans = configText(c);
+      const wrong = new Set();
+      for (let i = 0; i < 4; i++) for (const d of [-1, 1]) {
+        const w = c.slice(); const j = i + d;
+        if (j < 0 || j > 3 || !w[i]) continue;
+        w[i]--; w[j]++;
+        if (w[j] <= SHELL_MAX[j] && !(w[3] && !w[2])) wrong.add(configText(w));
+      }
+      wrong.add(configText(shellCounts(Z + 1))); wrong.add(configText(shellCounts(Math.max(1, Z - 1))));
+      wrong.delete(ans);
+      return { subject, q: `${EL[el].n}（${el}、原子番号${Z}）の電子配置は？`, choices: choicesWith(ans, [...wrong]), answer: ans,
+        explain: `電子${Z}個が内側の殻から順に入る：${ans}。${Z >= 19 ? 'K・Ca では、M殻に8個入ったところで N殻に入る。' : ''}`, hideShells: true };
+    }
+    if (type === 'element') {
+      return { subject, q: '3Dの原子はどれ？（電子の数を数えよう）', choices: choicesWith(EL[el].n, shuffle(ELEMENTS_20).slice(0, 8).map(x => EL[x].n)), answer: EL[el].n,
+        explain: `電子が${Z}個（${configText(c)}）なので、原子番号${Z}の${EL[el].n}。`, hideNuc: true };
+    }
+    if (type === 'valence') {
+      const v = valenceElectrons(Z);
+      return { subject, q: `${EL[el].n}（${el}）原子の価電子の数は？`, choices: choicesWith(String(v), ['0', '1', '2', '3', '4', '5', '6', '7']), answer: String(v),
+        explain: v === 0 ? '貴ガスは安定な電子配置なので、価電子は0とする。' : `最外殻の電子が${v}個（${configText(c)}）なので、価電子は${v}個。`, hideShells: false };
+    }
+    const ion = ION_OF[el], ans = el + chargeSup(ion);
+    const pool2 = Object.keys(ION_OF).map(x => x + chargeSup(ION_OF[x])).concat([el + chargeSup(-ion), el + chargeSup(ion > 0 ? ion + 1 : ion - 1)]);
+    return { subject, q: `${EL[el].n}（${el}）がなりやすいイオンは？`, choices: choicesWith(ans, [...new Set(pool2)]).map(x => ({ v: x, html: x.replace(/([+−]+|\d[+−])$/, '<sup>$1</sup>') })), answer: ans,
+      explain: ion > 0 ? `価電子${ion}個を失って ${ans} になり、貴ガスと同じ電子配置になる。` : `電子を${-ion}個受け取って ${ans} になり、最外殻が8個になる。` };
+  }
+  if (type === 'bondtype') {
+    const list = [['nacl', 'イオン結合'], ['naoh', 'イオン結合'], ['caco3', 'イオン結合'], ['copper', '金属結合'], ['iron', '金属結合'], ['diamond', '共有結合'], ['water', '共有結合'], ['co2', '共有結合'], ['methane', '共有結合'], ['graphite', '共有結合']];
+    const [id, ans] = pick(list), e = L(id);
+    return { subject: id, q: `「${e.name}」をつくっている結合（主なもの）は？`, choices: ['共有結合', 'イオン結合', '金属結合'], answer: ans,
+      explain: { 'イオン結合': '金属元素と非金属元素 → 陽イオンと陰イオンがクーロン力で引き合うイオン結合。', '金属結合': '金属元素だけ → 自由電子による金属結合。', '共有結合': '非金属元素どうし → 電子対を共有する共有結合。' }[ans] };
+  }
+  if (type === 'mol') {
+    const m = pick(MOLE_LIST.filter(x => x.phase === 'gas').concat(MOLE_LIST.filter(x => x.id === 'mole-water')));
+    const M = massOf(parseBody(m.f)).total, n = pick([0.5, 1, 1.5, 2, 3]);
+    const kind = pick(m.phase === 'gas' ? ['g2mol', 'mol2g', 'mol2L', 'L2mol', 'count'] : ['g2mol', 'mol2g', 'count']);
+    const fm = formulaHTML(m.f);
+    const opt = (ans, alts, unit) => ({ choices: choicesWith(fmtNum(ans) + unit, [...new Set(alts.filter(a => a > 0 && fmtNum(a) !== fmtNum(ans)).map(a => fmtNum(a) + unit))]), answer: fmtNum(ans) + unit });
+    if (kind === 'g2mol') return Object.assign({ subject: m.model, q: `${fm}（分子量${fmtMass(M)}）${fmtNum(n * M)} g は何 mol？`, explain: `${fmtNum(n * M)} g ÷ ${fmtMass(M)} g/mol = ${fmtNum(n)} mol` }, opt(n, [n * 2, n / 2, n + 1, n * M / 10], ' mol'));
+    if (kind === 'mol2g') return Object.assign({ subject: m.model, q: `${fm}（分子量${fmtMass(M)}）${fmtNum(n)} mol は何 g？`, explain: `${fmtNum(n)} mol × ${fmtMass(M)} g/mol = ${fmtNum(n * M)} g` }, opt(n * M, [M, n * M * 2, n * M / 2, n * M + 2], ' g'));
+    if (kind === 'mol2L') return Object.assign({ subject: m.model, q: `${fm} ${fmtNum(n)} mol の体積は、0 ℃・1.013×10<sup>5</sup> Pa で何 L？`, explain: `${fmtNum(n)} mol × 22.4 L/mol = ${fmtNum(n * 22.4)} L（気体の種類に関係ない）` }, opt(n * 22.4, [22.4, n * 11.2, n * 44.8, n * 22.4 + 22.4], ' L'));
+    if (kind === 'L2mol') return Object.assign({ subject: m.model, q: `0 ℃・1.013×10<sup>5</sup> Pa で ${fmtNum(n * 22.4)} L の ${fm} は何 mol？`, explain: `${fmtNum(n * 22.4)} L ÷ 22.4 L/mol = ${fmtNum(n)} mol` }, opt(n, [n * 2, n / 2, n + 1, n * 22.4 / 10], ' mol'));
+    const ans = `${(n * 6).toFixed(1)}×10²³ 個`;
+    const alts = [n * 3, n * 12, n * 6 + 6, n * 1.5].map(v => `${v.toFixed(1)}×10²³ 個`);
+    return { subject: m.model, q: `${fm} ${fmtNum(n)} mol にふくまれる分子の数は？（アボガドロ定数 6.0×10<sup>23</sup> /mol）`, choices: choicesWith(ans, alts), answer: ans,
+      explain: `${fmtNum(n)} mol × 6.0×10²³ /mol = ${ans}` };
+  }
+  // coef
+  const r = pick(REACTIONS.filter(x => x.level >= 2));
+  const sp = rxSpecies(r);
+  const k = pick(sp.map((_, i) => i).filter(i => r.ans[i] > 1).concat([sp.findIndex((_, i) => r.ans[i] === Math.max(...r.ans))]));
+  const side = s => sp.map((x, i) => ({ x, i })).filter(o => o.x.side === s).map(o => (o.i === k ? '<b class="blank">□</b>' : (r.ans[o.i] === 1 ? '' : r.ans[o.i])) + formulaHTML(o.x.f)).join(' + ');
+  return { subject: r.id, q: `${side('L')} → ${side('R')}<br>□に入る係数は？`, choices: choicesWith(String(r.ans[k]), ['1', '2', '3', '4', '5', '6']), answer: String(r.ans[k]),
+    explain: `答えの反応式：${sp.map((x, i) => (i === sp.findIndex(y => y.side === 'R') ? '→ ' : (i ? '+ ' : '')) + (r.ans[i] === 1 ? '' : r.ans[i]) + formulaHTML(x.f)).join(' ')}。${r.point}` };
+}
+function quizStart(set) {
+  const types = shuffle(set.types.concat(set.types)).slice(0, 10);
+  while (types.length < 10) types.push(pick(set.types));
+  state.quiz = { set, i: 0, score: 0, streak: 0, picked: null, qs: types.map(makeQuestion) };
+  quizShow();
+}
+function quizShow() {
+  const qz = state.quiz;
+  qz.picked = null;
+  const q = qz.qs[qz.i];
+  const subj = LIB.find(e => e.id === q.subject);
+  selectEntry(subj, { quiz: true });
+}
+function quizCardHTML() {
+  const qz = state.quiz;
+  if (qz.i >= qz.qs.length) {
+    let best = 0;
+    try { best = +(localStorage.getItem(BEST_KEY + ':' + qz.set.id) || 0); } catch (e) { /* 無視 */ }
+    if (qz.score > best) { best = qz.score; try { localStorage.setItem(BEST_KEY + ':' + qz.set.id, String(best)); } catch (e) { /* 無視 */ } }
+    const msg = qz.score === 10 ? '全問正解！ すばらしい！' : qz.score >= 7 ? 'よくできました！' : qz.score >= 4 ? 'もう一息！ まちがえた問題を見直そう。' : '説明を読んでから、もう一度チャレンジしよう。';
+    return `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill">クイズ</span><span class="pill strong">${esc(qz.set.name)}</span></div>
+      <h2 class="mol-name">結果 ${qz.score} / 10</h2></div></div><div class="card-body"><div class="verdict good">${msg}</div>
+      <p class="note">これまでの最高点：${best} / 10</p><button type="button" class="pbtn big" data-act="qretry">もう一度チャレンジ</button></div>`;
+  }
+  const q = qz.qs[qz.i];
+  let html = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill">クイズ ${qz.i + 1} / 10</span><span class="pill strong">${esc(qz.set.name)}</span>
+    <span class="pill">正解 ${qz.score}</span>${qz.streak >= 2 ? `<span class="pill fire">${qz.streak}連続正解</span>` : ''}</div>
+    <div class="qprog"><i style="width:${qz.i * 10}%"></i></div><h2 class="qtext">${q.q}</h2></div></div><div class="card-body">`;
+  html += '<div class="qchoices">' + q.choices.map((c, k) => {
+    const v = typeof c === 'string' ? c : c.v, label = typeof c === 'string' ? esc(c) : c.html;
+    let cls = '';
+    if (qz.picked !== null) cls = v === q.answer ? 'right' : (v === qz.picked ? 'wrong' : 'dim');
+    return `<button type="button" class="qc ${cls}" data-pick="${k}" ${qz.picked !== null ? 'disabled' : ''}>${label}</button>`;
+  }).join('') + '</div>';
+  if (qz.picked !== null) {
+    const ok = qz.picked === q.answer;
+    const ansC = q.choices.find(c => (typeof c === 'string' ? c : c.v) === q.answer);
+    const ansHTML = typeof ansC === 'string' ? esc(ansC) : ansC.html;
+    html += `<div class="verdict ${ok ? 'good' : ''}">${ok ? '正解！' : `ざんねん… 正解は「${ansHTML}」`}</div><p class="desc">${q.explain}</p>
+      <button type="button" class="pbtn big" data-act="qnext">${qz.i === 9 ? '結果を見る' : '次の問題'}</button>`;
+  }
+  return html + '</div>';
+}
+function quizPick(k) {
+  const qz = state.quiz, q = qz.qs[qz.i];
+  if (qz.picked !== null) return;
+  const c = q.choices[k];
+  qz.picked = typeof c === 'string' ? c : c.v;
+  if (qz.picked === q.answer) { qz.score++; qz.streak++; } else qz.streak = 0;
+  // 答えたあとは、ヒントになる表示を出す
+  if (q.after && q.after.polar && view.kind === 'mol') { state.show.polar = true; applyLook(); }
+  if ((q.hideNuc || q.hideShells) && view.kind === 'atom') { q.hideNuc = false; q.hideShells = false; selectEntry(state.entry, { quiz: true, keepPick: true }); return; }
+  renderCard();
+}
 
 // ===== 結合の種類ごとの見た目 =====
 const BOND_STYLE = {
@@ -1511,6 +2273,7 @@ const state = {
   show: { labels: true, lp: true, pairs: false, btype: true, angle: false, polar: false, rotate: true, vib: false, cloud: false },
   cardOpen: true, sec: 'mol', cells: 1, atomView: 'shell',
   mole: { n: 1, unit: 'mol' },
+  rx: null, bld: null, quiz: null, quizActive: false, showStash: null,
   demo: { tau: 0, playing: false },
   atomIon: false,
 };
@@ -1888,6 +2651,7 @@ function applyLook() {
     const a = m.atoms[L.i];
     let html = esc(a.el);
     if (a.charge) html += '<sup>' + chargeSup(a.charge) + '</sup>';
+    if (e.kind === 'build' && state.bld) { const f = bldFree(L.i); if (f > 0) html += `<span class="free">${f}</span>`; }
     if (polar) {
       const d = an.delta[L.i];
       if (d < -0.3) html += '<sup>δ−</sup>'; else if (d > 0.3) html += '<sup>δ+</sup>';
@@ -1912,7 +2676,7 @@ function rebuildArcs() {
       want.push([c, m.nb[c][0].j, m.nb[c][1].j]);
     });
   }
-  if (state.selected >= 0) {
+  if (state.selected >= 0 && state.entry.kind !== 'build') {
     const c = state.selected, nb = m.nb[c];
     let n = 0;
     for (let i = 0; i < nb.length && n < 6; i++) for (let j = i + 1; j < nb.length && n < 6; j++) {
@@ -2149,7 +2913,9 @@ function buildAtomView() {
     const L = addLabel('lbl-shell', '', () => new THREE.Vector3(sh.r * 0.72, sh.r * 0.72, 0));
     L.shell = i;
   });
-  view.nucLabel = addLabel('lbl-nuc', `原子核<br><b>+${Z}</b>`, () => new THREE.Vector3(0, -0.72, 0));
+  const qq = state.quizActive && state.quiz ? state.quiz.qs[state.quiz.i] : null;
+  view.nucLabel = addLabel('lbl-nuc', qq && qq.hideNuc ? '原子核<br><b>?</b>' : `原子核<br><b>+${Z}</b>`, () => new THREE.Vector3(0, -0.72, 0));
+  if (qq && qq.hideShells) view.labels.forEach(L => { if (L.shell !== undefined) L.quizHide = true; });
   // 電子雲モード：殻のあたりに電子が雲のように広がっている様子
   const cloudGeo = new THREE.BufferGeometry();
   const cloud = new THREE.Points(cloudGeo, new THREE.PointsMaterial({ size: 0.1, map: dotTexture(), transparent: true, opacity: 0.7, depthWrite: false, vertexColors: true }));
@@ -2185,7 +2951,7 @@ function buildAtomView() {
       const n = bohr.counts[L.shell];
       const show = n > 0 || (bohr.trans && bohr.trans.from[L.shell] > 0) || L.shell <= bohr.outer();
       L.el.hidden = !show;
-      L.el.innerHTML = `${SHELL_NAMES[L.shell]}殻 <b>${n}</b>`;
+      L.el.innerHTML = L.quizHide ? `${SHELL_NAMES[L.shell]}殻` : `${SHELL_NAMES[L.shell]}殻 <b>${n}</b>`;
     });
   };
   renderLegend();
@@ -2388,13 +3154,8 @@ function buildMoleView(keepCamera) {
     const base = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.35, 2.2), phong('#8f9ab0'));
     base.position.set(-2.2, -1.45, 0); g.add(base);
     addLabel('lbl-mol big', `${fmtNum(num.mass)} g`, () => new THREE.Vector3(-2.2, -1.45, 1.2));
-    const side = Math.cbrt(num.mL) / UNIT;
-    boxAt(Math.max(side, 0.02), new THREE.Vector3(3.2, side / 2, 0), accent, true);
-    boxAt(ref, new THREE.Vector3(3.2 + 2.2, ref / 2, 0), muted, false);
-    addLabel('lbl-mol', `体積 ${fmtNum(num.mL)} mL`, () => new THREE.Vector3(3.2, Math.max(side, 0.3) + 0.5, 0));
-    addLabel('lbl-mol', '1 L', () => new THREE.Vector3(3.2 + 2.2, ref + 0.4, 0));
     view.tick = t => { icons.forEach((ic, i) => { ic.rotation.y = 0.3 * Math.sin(t * 0.8 + i); }); };
-    view.moleExtent = 6.5;
+    view.moleExtent = 4.6;
   }
   renderLegend();
 }
@@ -2414,6 +3175,7 @@ function sceneRadius() {
   const e = state.entry;
   if (view.kind === 'atom') return SHELL_R[Math.max(1, view.bohr.outer())] + 0.6;
   if (view.kind === 'demo') return e.demo === 'metal' ? 5.4 : e.demo === 'ionic' ? 5.2 : 2.7;
+  if (view.kind === 'reaction') return Math.max(view.rxWidth / 2 + 0.8, view.rxHeight / 2 + 1.8, 3);
   if (view.kind === 'mole') return e.phase === 'gas' ? view.moleExtent * 0.9 + 1.5 : view.moleExtent;
   const m = e.model;
   let r = 0;
@@ -2436,11 +3198,12 @@ function fitCamera() {
   const e = state.entry;
   let dir;
   if (view.kind === 'mole') dir = new THREE.Vector3(0.35, 0.45, 1);
+  else if (view.kind === 'reaction') dir = new THREE.Vector3(0, 0.12, 1);
   else if (view.kind !== 'mol') dir = new THREE.Vector3(0, 0, 1);
   else if (e.model.crystal) dir = new THREE.Vector3(0.75, 0.5, 1);
   else dir = new THREE.Vector3(0.28, 0.22, 1);
   const target = new THREE.Vector3(0, 0, 0);
-  if (view.kind === 'mole') target.set(e.phase === 'gas' ? view.moleExtent * 0.2 : 0.6, e.phase === 'gas' ? view.moleExtent * 0.4 : 0.6, 0);
+  if (view.kind === 'mole') target.set(e.phase === 'gas' ? view.moleExtent * 0.2 : -2.2, e.phase === 'gas' ? view.moleExtent * 0.4 : 0.8, 0);
   cam.position.copy(dir.normalize().multiplyScalar(dist)).add(target);
   R.controls.target.copy(target);
   R.controls.update();
@@ -2515,6 +3278,14 @@ function bindPicking() {
   });
 }
 function selectAtom(i) {
+  if (state.entry.kind === 'build') {
+    if (i < 0) return;
+    state.bld.sel = i; state.selected = i; state.bld.msg = '';
+    updatePositions(performance.now() / 1000);
+    renderCard();
+    return;
+  }
+  if (state.quizActive) return;
   state.selected = (i === state.selected) ? -1 : i;
   if (state.selected >= 0 && !state.cardOpen) setCardOpen(true);
   rebuildArcs();
@@ -2553,10 +3324,16 @@ function renderGrid() {
     return;
   }
   grid.className = 'grid';
+  if (state.sec === 'quiz') {
+    grid.innerHTML = QUIZ_SETS.map(q => `<button type="button" class="card-btn" data-id="${q.id}" aria-current="${state.quiz && state.quiz.set.id === q.id}"><span class="f">Q</span><span class="n">${esc(q.name)}</span></button>`).join('');
+    return;
+  }
   const cats = state.sec === 'mol' ? [state.cat] : SECTIONS.find(s => s.id === state.sec).cats;
   grid.innerHTML = LIB.filter(e => cats.includes(e.cat)).map(e => {
     const f = formulaHTML(e.rational || displayFormula(e));
-    return `<button type="button" class="card-btn" data-id="${e.id}" aria-current="${cur(e.id)}"><span class="f">${f}</span><span class="n">${esc(e.name)}</span></button>`;
+    const done = (e.kind === 'reaction' && solvedRx.has(e.id)) || (e.kind === 'build' && doneMissions.has(e.id));
+    const wide = e.kind === 'reaction' ? ' wide' : '';
+    return `<button type="button" class="card-btn${wide}" data-id="${e.id}" aria-current="${cur(e.id)}"><span class="f">${f}</span><span class="n">${done ? '<b class="done">✓</b>' : ''}${esc(e.name)}${e.kind === 'reaction' ? '　' + esc(e.en) : ''}</span></button>`;
   }).join('');
 }
 const configText = c => c.map((n, i) => (n ? SHELL_NAMES[i] + n : '')).filter(Boolean).join(' ');
@@ -2581,8 +3358,13 @@ function renderLegend() {
     if (state.show.lp && state.mode !== 'space' && e.model.lps.length) items.push(`<span class="lg"><i class="sw blob"></i>非共有電子対</span>`);
   } else if (view.kind === 'mole') {
     items.push(`<span class="lg">模型1個 = 0.1 mol</span>`);
-    items.push(`<span class="lg"><i class="sw box" style="--c:var(--accent)"></i>${e.phase === 'gas' ? '気体の体積' : '実際の体積'}</span>`);
-    items.push(`<span class="lg"><i class="sw box" style="--c:var(--muted)"></i>1 L</span>`);
+    if (e.phase === 'gas') {
+      items.push(`<span class="lg"><i class="sw box" style="--c:var(--accent)"></i>気体の体積</span>`);
+      items.push(`<span class="lg"><i class="sw box" style="--c:var(--muted)"></i>1 L</span>`);
+    }
+  } else if (view.kind === 'reaction') {
+    const els = [...new Set(view.rxSides.L.atoms.concat(view.rxSides.R.atoms).map(a => a.el))];
+    els.forEach(el => items.push(`<span class="lg"><i class="sw dot" style="--c:${EL[el].c}"></i>${el} ${EL[el].n}</span>`));
   } else if (view.kind === 'atom' && state.atomView === 'cloud') {
     items.push(`<span class="lg"><i class="sw dot" style="--c:${ELECTRON_COLOR}"></i>最外殻の電子の雲</span>`);
     items.push(`<span class="lg"><i class="sw dot" style="--c:#9fb4ff"></i>内側の電子の雲</span>`);
@@ -2630,7 +3412,10 @@ function renderCard() {
   const e = state.entry;
   if (!e) return;
   let html = '';
-  if (e.kind === 'atom') html = atomCardHTML(e);
+  if (state.quizActive && state.quiz) html = quizCardHTML();
+  else if (e.kind === 'reaction') html = rxCardHTML(e);
+  else if (e.kind === 'build') html = buildCardHTML(e);
+  else if (e.kind === 'atom') html = atomCardHTML(e);
   else if (e.kind === 'mole') html = moleCardHTML(e);
   else if (e.kind === 'demo') {
     html = headHTML(e, formulaHTML(e.f)) + '<div class="card-body">' + stepsHTML(e)
@@ -2663,7 +3448,7 @@ function molCardHTML(e) {
     if (e.coord) html += fact('配位数', esc(e.coord));
     if (e.perCell) html += fact('単位格子中', esc(e.perCell));
   } else if (!e.custom) {
-    html += fact(an.charge ? '式量' : '分子量', fmtMass(an.mass.total));
+    html += fact(an.charge || an.nComp > 1 ? '式量' : '分子量', fmtMass(an.mass.total));
     html += fact('形', esc(an.shape));
     html += fact('極性', esc(an.polarity), an.polarity === '極性分子' ? 'polar' : an.polarity === '無極性分子' ? 'nonpolar' : '');
     if (an.keyAngle && m.atoms.length >= 3) {
@@ -2675,14 +3460,16 @@ function molCardHTML(e) {
   }
   html += '</dl>';
   if (!e.crystal || e.formula === 'CO2' || /共有/.test(e.bond)) html += `<div class="bsum">${bondSummary(e)}</div>`;
-  if (!e.custom) html += `<div class="calc">${massLine(an, e.crystal ? (e.formula === 'CO2' ? '分子量' : '式量') : (an.charge ? '式量' : '分子量'))}</div>`;
+  if (!e.custom) html += `<div class="calc">${massLine(an, e.crystal ? (e.formula === 'CO2' ? '分子量' : '式量') : (an.charge || an.nComp > 1 ? '式量' : '分子量'))}</div>`;
   if (!e.crystal && !e.custom && an.polarNote) html += `<p class="note">${esc(an.polarNote)}</p>`;
   if (state.show.polar && !e.crystal && !e.custom) {
     html += '<p class="note">極性の表示：<b class="red">赤</b>は電子が集まる側（δ−）、<b class="blue">青</b>は電子が少ない側（δ+）。オレンジの矢印は分子全体で電子がかたよる向き。</p>';
   }
+  if (e.where) html += `<p class="where"><b>身近なところ</b>${esc(e.where)}</p>`;
   if (e.desc) html += `<p class="desc">${esc(e.desc)}</p>`;
   if (e.props && e.props.length) html += `<div class="props">${e.props.map(([k, v]) => `<span><em>${esc(k)}</em>${esc(v)}</span>`).join('')}</div>`;
   if (e.point) html += `<div class="point"><h3>授業のポイント</h3><p>${esc(e.point)}</p></div>`;
+  if (e.more) html += `<details class="more"><summary>もっと知る</summary><p>${esc(e.more)}</p></details>`;
   const iso = e.custom ? [] : LIB.filter(x => x.key === e.key && x.id !== e.id && x.kind === 'mol' && x.cat !== 'bond' && !x.crystal && !e.crystal);
   if (iso.length) html += `<h3 class="sec-h">同じ分子式の物質（異性体）</h3><div class="chips">${iso.map(x => `<button type="button" data-go="${x.id}">${esc(x.name)}</button>`).join('')}</div>`;
   const allo = e.crystal ? LIB.filter(x => x.crystal && x.formula === e.formula && x.id !== e.id) : [];
@@ -2786,7 +3573,7 @@ function moleCardHTML(e) {
   <div id="moleOut">${moleOutHTML(e)}</div>`;
   const point = e.phase === 'gas'
     ? '気体 1 mol の体積は、気体の種類に関係なく 22.4 L（0 ℃・1.013×10⁵ Pa）。重い CO₂ でも軽い H₂ でも同じ大きさの箱になることを確かめよう。'
-    : `1 mol の質量は、${e.model === 'atom' ? '原子量' : e.model === 'pair' ? '式量' : '分子量'}に g をつけた値（${e.name}なら ${fmtNum(x.M)} g）。同じ 1 mol でも、気体の 22.4 L とくらべると体積がとても小さい（右の「1 L」の箱とくらべよう）。`;
+    : `1 mol の質量は、${e.model === 'atom' ? '原子量' : e.model === 'pair' ? '式量' : '分子量'}に g をつけた値（${e.name}なら ${fmtNum(x.M)} g）。物質がちがっても、1 mol にふくまれる粒子の数はいつも 6.0×10²³ 個。`;
   html += `<div class="point"><h3>授業のポイント</h3><p>${point}</p></div></div>`;
   return html;
 }
@@ -2799,7 +3586,6 @@ function moleOutHTML(e) {
     + box('mol', '物質量', `${fmtNum(x.n)} mol`) + '<div class="ha" aria-hidden="true">⇄</div>'
     + box('count', `粒子の数（${esc(pw)}）`, `${fmtSci(x.count)} ${esc(e.unit || '個')}`);
   if (e.phase === 'gas') html += '<div class="hv" aria-hidden="true">⇅</div>' + box('L', '気体の体積', `${fmtNum(x.gasL)} L`);
-  else html += '<div class="hv" aria-hidden="true">⇅</div>' + `<div class="hb vol"><span>体積（密度 ${e.density} g/cm³）</span><b>${fmtNum(x.mL)} mL</b></div>`;
   html += '</div><ol class="calc-steps">';
   const N = fmtNum(x.n), Mx = fmtNum(x.M);
   if (u === 'g') html += `<li>物質量 = ${fmtNum(x.mass)} g ÷ ${Mx} g/mol = <b>${N} mol</b></li>`;
@@ -2808,10 +3594,9 @@ function moleOutHTML(e) {
   if (u !== 'g') html += `<li>質量 = ${N} mol × ${Mx} g/mol = <b>${fmtNum(x.mass)} g</b></li>`;
   if (u !== 'count') html += `<li>粒子の数 = ${N} mol × 6.0×10<sup>23</sup> /mol = <b>${fmtSci(x.count)} ${esc(e.unit || '個')}</b></li>`;
   if (e.phase === 'gas' && u !== 'L') html += `<li>体積 = ${N} mol × 22.4 L/mol = <b>${fmtNum(x.gasL)} L</b>（0 ℃・1.013×10<sup>5</sup> Pa）</li>`;
-  if (e.phase !== 'gas') html += `<li>体積 ≒ ${fmtNum(x.mass)} g ÷ ${e.density} g/cm³ = <b>${fmtNum(x.mL)} mL</b></li>`;
   html += '</ol>';
   const k = Math.round(state.mole.n * 10);
-  html += `<p class="note">3Dの模型1個 = 0.1 mol（6.0×10<sup>22</sup> ${esc(e.unit || '個')}）を表します。${k > 50 ? '模型は50個（5 mol）まで表示します。' : ''}${e.phase === 'gas' ? '青い箱が気体の体積、灰色の箱が 1 L です。' : '青い箱が実際の体積、灰色の箱が 1 L です。'}</p>`;
+  html += `<p class="note">3Dの模型1個 = 0.1 mol（6.0×10<sup>22</sup> ${esc(e.unit || '個')}）を表します。${k > 50 ? '模型は50個（5 mol）まで表示します。' : ''}${e.phase === 'gas' ? '青い箱が気体の体積、灰色の箱が 1 L です。' : '液体や固体の体積は物質ごとにちがうので、ここでは質量と粒子の数を見よう。'}</p>`;
   return html;
 }
 function setMole(n, from) {
@@ -2840,6 +3625,30 @@ function syncDemoUI() {
   cap.hidden = false;
 }
 
+// ===== クイズの出入り =====
+function stashShow() {
+  if (!state.showStash) state.showStash = Object.assign({}, state.show);
+  Object.assign(state.show, { labels: true, lp: true, pairs: false, btype: true, angle: false, polar: false, cloud: false, vib: false });
+}
+function leaveQuiz() {
+  if (state.showStash) { state.show = state.showStash; state.showStash = null; syncControls(); }
+  state.quizActive = false;
+}
+function showQuizMenu() {
+  // クイズのメニュー：3Dにはぐるぐる回る水分子を出しておく
+  const e = LIB.find(x => x.id === 'water');
+  state.entry = getModel(e);
+  state.selected = -1;
+  $('stageWrap').dataset.kind = 'quizmenu';
+  $('caption').hidden = true;
+  if (R) { clearView(); buildMolView(); R.controls.autoRotate = true; fitCamera(); }
+  const best = id => { try { return +(localStorage.getItem(BEST_KEY + ':' + id) || 0); } catch (err) { return 0; } };
+  $('card').innerHTML = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill">クイズ</span></div><h2 class="mol-name">どのクイズにする？</h2></div></div>
+    <div class="card-body"><p class="note">1回10問。答えると、3Dの模型と説明で答えを確かめられる。</p><div class="qsets">${QUIZ_SETS.map(q => `<button type="button" class="qset" data-go="${q.id}"><b>${esc(q.name)}</b><span>最高 ${best(q.id)} / 10</span></button>`).join('')}</div></div>`;
+  $('card').classList.remove('collapsed');
+  state.cardOpen = true;
+}
+
 // ===== 切りかえ =====
 function setCardOpen(open) {
   state.cardOpen = open;
@@ -2847,12 +3656,17 @@ function setCardOpen(open) {
   onResize();
 }
 function selectEntry(e, opts) {
+  opts = opts || {};
+  if (e.kind === 'quizset') { leaveQuiz(); state.sec = 'quiz'; state.quizActive = true; stashShow(); quizStart(e.quiz); return; }
+  if (opts.quiz) { state.quizActive = true; } else leaveQuiz();
   state.entry = getModel(e);
   state.selected = -1;
+  if (e.kind === 'reaction') state.rx = { coef: e.rx.left.concat(e.rx.right).map(() => 1), phase: 'edit', hint: '', hints: 0 };
+  if (e.kind === 'build') { bldStart(e); const b = state.bld; e.def = { atoms: [{ el: b.atoms[0].el, charge: 0 }], bonds: [] }; e.model = buildMolecule(e.def); e.an = analyze(e.model); }
   state.atomIon = false;
   state.demo = { tau: 0, playing: !!e.steps && !reduceMotion };
   if (reduceMotion && e.steps) state.demo.tau = e.T;
-  if (!e.auto) {
+  if (!e.auto && !opts.quiz) {
     state.sec = secOf(e.cat);
     if (state.sec === 'mol') state.cat = e.cat;
   }
@@ -2868,14 +3682,16 @@ function selectEntry(e, opts) {
     if (e.kind === 'atom') buildAtomView();
     else if (e.kind === 'demo') buildDemoView();
     else if (e.kind === 'mole') buildMoleView();
+    else if (e.kind === 'reaction') buildReactionView();
     else buildMolView();
-    R.controls.autoRotate = e.kind === 'mol' && !e.steps && state.show.rotate;
+    if (e.kind === 'build') { state.selected = state.bld.sel; bldCheck(); updatePositions(0); }
+    R.controls.autoRotate = e.kind === 'mol' && !e.steps && state.show.rotate && !state.quizActive;
     view.growStart = performance.now();
     view.grow = reduceMotion ? 1 : 0;
     fitCamera();
   }
   syncDemoUI();
-  if (!e.auto) { try { history.replaceState(null, '', '#' + e.id); } catch (err) { /* 無視 */ } }
+  if (!e.auto && !opts.quiz) { try { history.replaceState(null, '', '#' + e.id); } catch (err) { /* 無視 */ } }
   if (opts && opts.scroll && isNarrow()) stageWrap.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
 }
 
@@ -2949,7 +3765,8 @@ function bindUI() {
     const b = ev.target.closest('[data-sec]');
     if (!b || b.dataset.sec === state.sec) return;
     const sec = SECTIONS.find(s => s.id === b.dataset.sec);
-    const firstOf = { mol: 'water', crystal: 'nacl', atom: 'atom-Na', bond: 'covalent', mole: 'mole-water' };
+    const firstOf = { mol: 'water', crystal: 'nacl', atom: 'atom-Na', bond: 'covalent', mole: 'mole-water', reaction: 'rx-h2o', build: 'b-h2o', quiz: 'quiz-mix' };
+    if (sec.id === 'quiz') { leaveQuiz(); state.sec = 'quiz'; state.quizActive = false; state.entry = null; renderNav(); renderTabs(); renderGrid(); showQuizMenu(); return; }
     if (sec.id === 'mol') state.cat = 'basic';
     selectEntry(LIB.find(e => e.id === firstOf[sec.id]));
   });
@@ -2983,6 +3800,20 @@ function bindUI() {
   $('card').addEventListener('click', ev => {
     const go = ev.target.closest('[data-go]');
     if (go) { selectEntry(LIB.find(e => e.id === go.dataset.go)); return; }
+    const cf = ev.target.closest('[data-coef]');
+    if (cf) {
+      const i = +cf.dataset.coef, st = state.rx;
+      st.coef[i] = Math.max(1, Math.min(12, st.coef[i] + +cf.dataset.d));
+      st.hint = '';
+      clearView(); buildReactionView(); renderCard();
+      return;
+    }
+    const add = ev.target.closest('[data-add]');
+    if (add) { bldAction('add', add.dataset.add); return; }
+    const bt = ev.target.closest('[data-bld]');
+    if (bt) { bldAction(bt.dataset.bld); return; }
+    const pk = ev.target.closest('[data-pick]');
+    if (pk) { quizPick(+pk.dataset.pick); return; }
     const un = ev.target.closest('[data-unit]');
     if (un) { state.mole.unit = un.dataset.unit; renderCard(); return; }
     const act = ev.target.closest('[data-act]');
@@ -2990,6 +3821,12 @@ function bindUI() {
     if (li && state.entry.steps) { state.demo.tau = +li.dataset.tau + 0.01; state.demo.playing = true; syncDemoUI(); return; }
     if (!act) return;
     const a = act.dataset.act;
+    if (a === 'react') { state.rx.phase = 'anim'; state.rx.t0 = performance.now(); solvedRx.add(state.entry.id); saveSet(SOLVED_KEY, solvedRx); renderCard(); renderGrid(); return; }
+    if (a === 'rxreset') { state.rx.phase = 'edit'; renderCard(); return; }
+    if (a === 'rxnext') { const k = REACTIONS.findIndex(r => r.id === state.entry.id); selectEntry(LIB.find(x => x.id === REACTIONS[(k + 1) % REACTIONS.length].id)); return; }
+    if (a === 'hint') { rxHint(); renderCard(); return; }
+    if (a === 'qnext') { state.quiz.i++; if (state.quiz.i >= 10) { renderCard(); renderGrid(); } else quizShow(); return; }
+    if (a === 'qretry') { stashShow(); quizStart(state.quiz.set); return; }
     if (a === 'card') setCardOpen(!state.cardOpen);
     else if (a === 'unselect') selectAtom(state.selected);
     else if (a === 'play') {
