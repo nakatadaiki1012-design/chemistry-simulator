@@ -206,7 +206,7 @@ sub, sup { font-size: 0.68em; line-height: 0; }
 }
 .card.collapsed { bottom: auto; }
 .card.collapsed .card-body { display: none; }
-.card-head { display: flex; gap: 8px; align-items: flex-start; padding: 12px 12px 8px 14px; }
+.card-head { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px 6px 14px; }
 .ch-main { flex: 1; min-width: 0; }
 .card-body { overflow-y: auto; padding: 0 14px 14px; flex: 1; min-height: 0; }
 .eyebrow { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -370,7 +370,8 @@ details.more p { margin: 4px 0 0; line-height: 1.65; }
 .feat.f-burn { background: #ffd9d6; color: #b3261e; } .feat.f-acid { background: #fff1c2; color: #7a5a00; } .feat.f-base { background: #e6dcff; color: #5a2fc2; }
 .feat.f-danger { background: #2b2f38; color: #ffd24d; } .feat.f-dissolve { background: #d6ecff; color: #0b5394; }
 .featbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 14px 8px; align-items: center; }
-.featbar .fl { font-size: 11px; color: var(--muted); margin-right: 2px; width: 100%; }
+.featbar .fl { font-size: 12px; color: var(--muted); border: 0; background: transparent; padding: 2px 0; width: 100%; text-align: left; }
+.featbar .fl:hover { color: var(--accent); }
 .featbar .feat { opacity: .75; }
 .featbar .feat[aria-pressed="true"] { opacity: 1; box-shadow: 0 0 0 2px var(--accent); }
 .pt-note.filt { grid-column: 1 / -1; margin: 0 0 2px; }
@@ -399,6 +400,53 @@ details.more p { margin: 4px 0 0; line-height: 1.65; }
 .cmptab tbody tr + tr > * { border-top: 1px solid var(--line); }
 .cmptab tr.dif td { background: var(--chip); font-weight: 700; }
 .cmptab tr.dif th { color: var(--warm); }
+/* ナビゲーション（グループ → メニュー） */
+.secnav button { font-size: 15px; padding: 6px 16px; font-weight: 700; }
+.subnav { display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 4px; padding: 12px 12px 10px; border-bottom: 1px solid var(--line); }
+.subnav button { flex: 1 1 auto; border: 1px solid var(--line); background: var(--bg); border-radius: 8px; padding: 5px 8px; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.subnav button[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.search { padding-top: 10px; }
+.search label { display: none; }
+/* 説明カードのタブ */
+.ctabs { display: flex; gap: 2px; margin: 0 14px 8px; border-bottom: 1px solid var(--line); }
+.ctabs button { border: 0; background: transparent; padding: 5px 12px; font-size: 13px; font-weight: 700; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.ctabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.more-p b { display: block; font-size: 12px; color: var(--accent); }
+/* pH */
+.seg.wrap { flex-wrap: wrap; margin: 8px 0; }
+#phSlider { width: 100%; accent-color: var(--accent); margin: 6px 0 2px; }
+.phbar { position: relative; height: 14px; border-radius: 999px; }
+.phticks { position: relative; height: 18px; font-size: 11px; color: var(--muted); }
+.phticks span { position: absolute; transform: translateX(-50%); top: 1px; }
+.phticks .lab { font-size: 10.5px; }
+.ph-badge[data-ph="acid"] { background: #d9442b; } .ph-badge[data-ph="neutral"] { background: #2f9e5b; } .ph-badge[data-ph="base"] { background: #2a62d4; }
+.phitems { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: 4px 0 8px; }
+.phitems button { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 3px 8px; font-size: 12.5px; text-align: left; }
+.phitems button i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.phitems button small { margin-left: auto; color: var(--muted); font-family: var(--font-data); }
+.phitems button.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.lbl-ion-s { font-size: 11px; font-family: var(--font-data); padding: 0 5px; border-radius: 999px; color: #fff; }
+.lbl-ion-s.acid { background: var(--red); } .lbl-ion-s.base { background: var(--blue); } .lbl-ion-s.spec { background: #8a96a8; }
+.tcurve { width: 100%; height: auto; color: var(--ink); margin: 4px 0; }
+/* タイムアタック */
+.tabar { position: relative; height: 22px; border-radius: 999px; background: var(--chip); margin: 8px 0 6px; overflow: hidden; }
+.tabar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 999px; }
+.tabar i.low { background: var(--warm); }
+.tabar b { position: absolute; right: 10px; top: 0; line-height: 22px; font-family: var(--font-data); font-size: 13px; }
+.qset.hot { border-color: var(--warm); }
+.qset.hot b { color: var(--warm); }
+/* 授業モード */
+body.present .app { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage"; }
+body.present .lib { display: none; }
+body.present { --card-w: 460px; }
+.ls-title { font-family: var(--font-display); font-weight: 800; font-size: 30px; line-height: 1.3; margin: 8px 0 0; text-wrap: balance; }
+.ls-text { font-size: 21px; line-height: 1.75; margin: 6px 0 14px; text-wrap: pretty; }
+.ls-dots { display: flex; gap: 6px; align-items: center; margin-bottom: 12px; }
+.ls-dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.ls-dots i.done { background: var(--muted); } .ls-dots i.on { background: var(--accent); width: 24px; border-radius: 999px; }
+.ls-dots span { margin-left: 6px; font-size: 13px; color: var(--muted); font-family: var(--font-data); }
+.ls-nav { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.ls-nav .pbtn.big { flex: 1; font-size: 18px; }
 .fallback { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted); }
 
 @media (max-width: 1180px) {
@@ -413,7 +461,10 @@ details.more p { margin: 4px 0 0; line-height: 1.65; }
   .grid { display: flex; overflow-x: auto; overflow-y: hidden; padding-bottom: 12px; }
   .card-btn { flex: 0 0 auto; min-width: 104px; }
   .stage-wrap { height: 86vh; height: 86svh; min-height: 520px; }
-  .card { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-width: none; max-height: 44%; }
+  .card { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-width: none; max-height: 46%; }
+  body.present .card { max-height: 52%; }
+  .ls-title { font-size: 22px; } .ls-text { font-size: 17px; }
+  .subnav { flex-wrap: nowrap; overflow-x: auto; }
   .ov-bl { bottom: calc(44% + 14px); right: 10px; }
   .stage-wrap.card-closed .ov-bl { bottom: 76px; }
   .ov-tl { max-width: calc(100% - 100px); }
@@ -439,7 +490,8 @@ details.more p { margin: 4px 0 0; line-height: 1.65; }
 
 <main class="app">
   <aside class="panel lib" aria-label="分子をえらぶ">
-    <div class="search">
+    <nav class="subnav" id="subnav" aria-label="メニュー"></nav>
+    <div class="search" id="searchBox">
       <label for="q">分子式か名前で探す</label>
       <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="例: H2O, C2H6O, NH4+, エタノール">
       <ul class="results" id="results" hidden></ul>
@@ -2286,7 +2338,7 @@ const BEST_KEY = 'molecule-lab:quizbest';
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 function choicesWith(answer, pool, n = 4) {
-  const wrong = shuffle(pool.filter(x => x !== answer)).slice(0, n - 1);
+  const wrong = shuffle([...new Set(pool)].filter(x => x !== answer)).slice(0, n - 1);
   return shuffle([answer, ...wrong]);
 }
 const SHAPE_NORMAL = { '正三角形': '平面三角形', '四面体形': '正四面体形' };
@@ -2446,6 +2498,7 @@ function quizCardHTML() {
   return html + '</div>';
 }
 function quizPick(k) {
+  if (state.ta) { taPick(k); return; }
   const qz = state.quiz, q = qz.qs[qz.i];
   if (qz.picked !== null) return;
   const c = q.choices[k];
@@ -2455,6 +2508,337 @@ function quizPick(k) {
   if (q.after && q.after.polar && view.kind === 'mol') { state.show.polar = true; applyLook(); }
   if ((q.hideNuc || q.hideShells) && view.kind === 'atom') { q.hideNuc = false; q.hideShells = false; selectEntry(state.entry, { quiz: true, keepPick: true }); return; }
   renderCard();
+}
+
+// ===== 画面上部のグループ =====
+const GROUPS = [
+  { id: 'see', name: '見る', secs: ['mol', 'compare', 'crystal', 'atom', 'bond'] },
+  { id: 'move', name: '動かす', secs: ['phase', 'ph', 'reaction', 'mole', 'build'] },
+  { id: 'play', name: '挑戦', secs: ['quiz'] },
+  { id: 'lesson', name: '授業モード', secs: ['lesson'] },
+];
+const FIRST_OF = { compare: 'cmp-water-h2s', phase: 'ph-water', mol: 'water', crystal: 'nacl', atom: 'atom-Na', bond: 'covalent', mole: 'mole-water',
+  reaction: 'rx-h2o', build: 'b-h2o', quiz: 'quiz-mix', ph: 'ph-scale', lesson: 'ls-shape' };
+const navGroupOf = sec => GROUPS.find(g => g.secs.includes(sec)) || GROUPS[0];
+
+// ===== pH（酸性・塩基性） =====
+const PH_ITEMS = [
+  { n: '胃液', ph: 1.5 }, { n: 'レモン汁', ph: 2.2 }, { n: '食酢', ph: 2.8 }, { n: 'コーラ', ph: 2.5 }, { n: '炭酸水', ph: 4.5 },
+  { n: '雨水', ph: 5.6 }, { n: '牛乳', ph: 6.6 }, { n: '純粋な水', ph: 7.0 }, { n: '血液', ph: 7.4 }, { n: '海水', ph: 8.2 },
+  { n: '重曹水', ph: 8.3 }, { n: 'せっけん水', ph: 10 }, { n: 'アンモニア水', ph: 11.5 }, { n: '塩素系漂白剤', ph: 12.5 },
+];
+LIB.push(
+  { id: 'ph-scale', cat: 'ph', kind: 'ph', name: 'pHのものさし', f: 'pH', en: '身近な液体の酸性・塩基性' },
+  { id: 'ph-neut', cat: 'ph', kind: 'neut', name: '中和チャレンジ', f: 'HCl + NaOH', en: 'BTBを緑にしよう' },
+);
+SECTIONS.push({ id: 'ph', name: 'pH', cats: ['ph'] });
+const INDICATORS = { none: '指示薬なし', btb: 'BTB溶液', pp: 'フェノールフタレイン', univ: '万能pH試験液' };
+function mixHex(a, b, t) { return '#' + new THREE.Color(a).lerp(new THREE.Color(b), Math.max(0, Math.min(1, t))).getHexString(); }
+function indicatorColor(kind, ph) {
+  if (kind === 'btb') return ph < 6 ? '#e6c632' : ph < 7.6 ? mixHex('#e6c632', '#2f9e5b', (ph - 6) / 1.6 * 1.6) : mixHex('#2f9e5b', '#2a62d4', (ph - 7.6) / 0.8);
+  if (kind === 'pp') return ph < 8.3 ? '#dfe9f3' : mixHex('#f3c5df', '#d81b7a', (ph - 8.3) / 1.7);
+  if (kind === 'univ') {
+    const stops = ['#d7262b', '#ef6b2b', '#f2a33a', '#f2d23a', '#c6d83a', '#7cc244', '#3aa858', '#2aa38a', '#2a8fb0', '#2f6bc7', '#4b4fbf', '#6a3fb0', '#7b2f9e', '#6e2483', '#5c1d70'];
+    const i = Math.max(0, Math.min(13, Math.floor(ph))), f = ph - i;
+    return mixHex(stops[i], stops[i + 1], f);
+  }
+  return '#cfe6f7';
+}
+function phClass(ph) {
+  if (ph < 3) return ['強い酸性', 'acid'];
+  if (ph < 6.95) return ['酸性', 'acid'];
+  if (ph <= 7.05) return ['中性', 'neutral'];
+  if (ph <= 11) return ['塩基性', 'base'];
+  return ['強い塩基性', 'base'];
+}
+const supNum = n => String(n).replace('-', '−');
+
+// ビーカーの中に、水分子・H₃O⁺・OH⁻ などを浮かべる
+function buildBeaker(ph, color, extra) {
+  const g = R.group;
+  const Rb = 2.6, Hb = 4.4, level = Hb * 0.72;
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(Rb, Rb, Hb, 56, 1, true),
+    new THREE.MeshPhongMaterial({ color: '#d9e8f5', transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false, shininess: 90 }));
+  glass.position.y = Hb / 2; g.add(glass);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(Rb, 0.04, 8, 64), phong('#b8c7d8')); rim.rotation.x = Math.PI / 2; rim.position.y = Hb; g.add(rim);
+  const bottom = new THREE.Mesh(new THREE.CylinderGeometry(Rb, Rb, 0.06, 56), phong('#c9d6e4', { transparent: true, opacity: 0.6 }));
+  g.add(bottom);
+  const liquid = new THREE.Mesh(new THREE.CylinderGeometry(Rb * 0.97, Rb * 0.97, level, 56),
+    new THREE.MeshPhongMaterial({ color, transparent: true, opacity: 0.38, depthWrite: false, shininess: 40 }));
+  liquid.position.y = level / 2 + 0.03; g.add(liquid);
+  const nH = ph < 6.95 ? Math.min(14, Math.round((7 - ph) * 2)) : ph <= 7.05 ? 1 : 0;
+  const nOH = ph > 7.05 ? Math.min(14, Math.round((ph - 7) * 2)) : ph >= 6.95 ? 1 : 0;
+  const list = [];
+  const add = (ref, n, label, cls) => { for (let i = 0; i < n; i++) list.push({ ref, label, cls }); };
+  add('water', 10, '', '');
+  add('h3o', nH, 'H₃O⁺', 'acid');
+  add('oh', nOH, 'OH⁻', 'base');
+  (extra || []).forEach(x => add(x.ref, x.n, x.label, x.cls));
+  const r = rng(Math.round(ph * 10) + 3);
+  const s = 0.36;
+  const mats = {};
+  const mat = el => mats[el] || (mats[el] = phong(EL[el].c));
+  const items = list.map((it, i) => {
+    const tpl = speciesTemplate(it.ref);
+    const grp = new THREE.Group();
+    tpl.atoms.forEach(a => {
+      const m = new THREE.Mesh(R.SMALL, mat(a.el));
+      m.scale.setScalar((EL[a.el].rc * 0.42 + 0.13) * s * 1.7);
+      m.position.set(a.p[0] * s, a.p[1] * s, a.p[2] * s);
+      grp.add(m);
+    });
+    g.add(grp);
+    // ビーカーの中に均一に散らばるように置く
+    const ang = r() * Math.PI * 2, rad = (Rb - 0.45) * Math.sqrt(r());
+    const home = new THREE.Vector3(Math.cos(ang) * rad, 0.55 + r() * (level - 1.0), Math.sin(ang) * rad);
+    const L = it.label ? addLabel('lbl-ion-s ' + it.cls, it.label, () => grp.position.clone().add(new THREE.Vector3(0, 0.42, 0))) : null;
+    return { grp, home, w: [0.3 + r() * 0.5, 0.3 + r() * 0.5, 0.3 + r() * 0.5], ph: [r() * 6, r() * 6, r() * 6], spin: r() };
+  });
+  view.beaker = { liquid, items, Hb, level };
+  view.tick = t => {
+    items.forEach(it => {
+      it.grp.position.set(it.home.x + 0.35 * Math.sin(it.w[0] * t + it.ph[0]), it.home.y + 0.3 * Math.sin(it.w[1] * t + it.ph[1]), it.home.z + 0.35 * Math.sin(it.w[2] * t + it.ph[2]));
+      it.grp.rotation.set(t * it.spin, t * 0.6 * it.spin, 0);
+    });
+    if (view.drop) {
+      const k = (performance.now() - view.drop.t0) / 450;
+      view.drop.mesh.visible = k < 1;
+      view.drop.mesh.position.set(0.4, Hb + 1.6 - k * (Hb + 1.6 - level), 0);
+    }
+  };
+  // スポイト（中和チャレンジで使う）
+  const drop = new THREE.Mesh(R.SMALL, basic('#7aa7ff', { transparent: true, opacity: 0.85 }));
+  drop.scale.set(0.16, 0.22, 0.16); drop.visible = false; g.add(drop);
+  view.drop = { mesh: drop, t0: -1e9 };
+  return { nH, nOH };
+}
+function buildPhView() {
+  const e = state.entry;
+  view.kind = 'ph';
+  if (e.kind === 'neut') {
+    const n = neutState(), ph = n.ph;
+    const salt = Math.min(10, Math.round(state.neut.v / 2));
+    const acidIon = state.neut.acid === 'h2so4' ? { ref: 'so4', n: 3, label: 'SO₄²⁻', cls: 'spec' } : { ref: 'atom:Cl', n: 5, label: 'Cl⁻', cls: 'spec' };
+    buildBeaker(ph, indicatorColor('btb', ph), [acidIon, { ref: 'atom:Na', n: salt, label: 'Na⁺', cls: 'spec' }]);
+  } else {
+    buildBeaker(state.ph, indicatorColor(state.ind, state.ph));
+  }
+  renderLegend();
+}
+function phScaleBar() {
+  const pct = v => (v / 14 * 100).toFixed(1);
+  const grad = Array.from({ length: 15 }, (_, i) => indicatorColor('univ', i)).join(',');
+  return `<div class="phbar" style="background:linear-gradient(90deg,${grad})"><b class="pt-marker" style="left:${pct(state.ph)}%"></b></div>
+    <div class="phticks">${[0, 7, 14].map(v => `<span style="left:${pct(v)}%">${v}</span>`).join('')}<span class="lab" style="left:15%">← 酸性</span><span class="lab" style="left:85%">塩基性 →</span></div>`;
+}
+function phCardHTML(e) {
+  const ph = state.ph, [cls, k] = phClass(ph);
+  const diff = Math.round(Math.abs(7 - ph) * 10) / 10;
+  let html = headHTML(e, '') + '<div class="card-body">';
+  html += `<div class="temp-row"><b>pH ${ph.toFixed(1)}</b><span class="ph-badge" data-ph="${k}">${cls}</span></div>
+    <input type="range" id="phSlider" min="0" max="14" step="0.1" value="${ph}" aria-label="pH">${phScaleBar()}`;
+  html += `<div class="seg sm wrap" role="group" aria-label="指示薬">${Object.entries(INDICATORS).map(([id, n]) => `<button type="button" data-ind="${id}" aria-pressed="${state.ind === id}">${n}</button>`).join('')}</div>`;
+  html += `<div class="phitems">${PH_ITEMS.map(it => `<button type="button" data-phv="${it.ph}" class="${Math.abs(it.ph - ph) < 0.05 ? 'on' : ''}"><i style="background:${indicatorColor('univ', it.ph)}"></i>${it.n}<small>${it.ph}</small></button>`).join('')}</div>`;
+  html += `<div class="verdict mid">水素イオン濃度 [H⁺] ＝ 1×10<sup>${supNum(-Math.round(ph))}</sup> mol/L くらい。${diff >= 1 && ph !== 7 ? `中性より H⁺ が ${ph < 7 ? '' : '1/'}${Math.round(Math.pow(10, Math.round(diff))).toLocaleString('ja-JP')} 倍${ph < 7 ? '多い' : ''}。` : ''}</div>`;
+  html += `<div class="point"><h3>授業のポイント</h3><p>pH が 1 小さくなると、H⁺ の濃さは 10 倍になる。ビーカーの中の <b class="red">H₃O⁺</b> と <b class="blue">OH⁻</b> の数の変化に注目。${state.ind === 'btb' ? 'BTB は酸性で黄、中性で緑、塩基性で青。' : state.ind === 'pp' ? 'フェノールフタレインは塩基性（pH 8.3 以上）で赤くなる。酸性・中性では無色。' : ''}</p></div>`;
+  return html + '</div>';
+}
+
+// ===== 中和チャレンジ =====
+function neutState() {
+  const st = state.neut;
+  const acidMol = 0.1 * 10 / 1000 * (st.acid === 'h2so4' ? 2 : 1);  // H⁺ の物質量
+  const baseMol = 0.1 * st.v / 1000;
+  const V = (10 + st.v) / 1000;
+  let ph;
+  const ex = acidMol - baseMol;
+  if (Math.abs(ex) < 1e-9) ph = 7;
+  else if (ex > 0) ph = -Math.log10(ex / V);
+  else ph = 14 + Math.log10(-ex / V);
+  return { ph: Math.max(0, Math.min(14, ph)), acidMol, baseMol, eq: acidMol / 0.1 * 1000 };
+}
+function neutCurveSVG() {
+  const st = state.neut, n = neutState();
+  const maxV = Math.max(25, n.eq + 8);
+  const W = 300, H = 120, x = v => 26 + v / maxV * (W - 34), y = p => 8 + (14 - p) / 14 * (H - 26);
+  const pts = st.hist.map(([v, p]) => `${x(v).toFixed(1)},${y(p).toFixed(1)}`).join(' ');
+  return `<svg class="tcurve" viewBox="0 0 ${W} ${H}" role="img" aria-label="中和の曲線">
+    <rect x="26" y="${y(7.6)}" width="${W - 34}" height="${y(6) - y(7.6)}" fill="#2f9e5b" opacity=".18"/>
+    <line x1="26" y1="${y(7)}" x2="${W - 8}" y2="${y(7)}" stroke="currentColor" stroke-opacity=".3" stroke-dasharray="3 3"/>
+    <line x1="26" y1="8" x2="26" y2="${H - 18}" stroke="currentColor" stroke-opacity=".5"/><line x1="26" y1="${H - 18}" x2="${W - 8}" y2="${H - 18}" stroke="currentColor" stroke-opacity=".5"/>
+    <text x="4" y="${y(14) + 4}" font-size="9" fill="currentColor">14</text><text x="10" y="${y(7) + 3}" font-size="9" fill="currentColor">7</text><text x="10" y="${y(0)}" font-size="9" fill="currentColor">0</text>
+    <text x="${W - 8}" y="${H - 5}" font-size="9" fill="currentColor" text-anchor="end">加えたNaOH水溶液 (mL)</text>
+    <polyline points="${pts}" fill="none" stroke="#d9661f" stroke-width="2"/>
+    ${st.hist.length ? `<circle cx="${x(st.v)}" cy="${y(n.ph)}" r="4" fill="#d9661f"/>` : ''}
+  </svg>`;
+}
+function neutCardHTML(e) {
+  const st = state.neut, n = neutState(), [cls, k] = phClass(n.ph);
+  const green = n.ph >= 6 && n.ph <= 7.6;
+  let html = headHTML(e, '') + '<div class="card-body">';
+  html += `<div class="seg sm wrap" role="group" aria-label="酸">${[['hcl', '塩酸 HCl（1価）'], ['h2so4', '硫酸 H₂SO₄（2価）']].map(([id, n2]) => `<button type="button" data-acid="${id}" aria-pressed="${st.acid === id}">${n2}</button>`).join('')}</div>`;
+  html += `<p class="note">0.10 mol/L の酸 10 mL に BTB を入れた。0.10 mol/L の NaOH 水溶液を加えて、<b>緑色（中性）</b>にしよう。</p>`;
+  html += `<div class="temp-row"><b>${st.v.toFixed(1)} mL</b><span class="ph-badge" data-ph="${k}">pH ${n.ph.toFixed(1)}・${cls}</span></div>`;
+  html += `<div class="tools"><button type="button" data-nv="5">＋5 mL</button><button type="button" data-nv="1">＋1 mL</button><button type="button" data-nv="0.1">＋1滴（0.1 mL）</button><button type="button" data-nv="reset">はじめから</button></div>`;
+  html += neutCurveSVG();
+  if (green) html += `<div class="verdict good">中和できた！ ${st.v.toFixed(1)} mL で緑色になった。H⁺ と OH⁻ が同じ物質量（${(n.baseMol * 1000).toFixed(2)}×10⁻³ mol）になった。</div>`;
+  else if (n.ph > 7.6 && st.v > n.eq) html += `<div class="verdict">入れすぎて塩基性（青）になった。「はじめから」でもう一度。少しずつ入れるのがコツ。</div>`;
+  html += `<div class="point"><h3>授業のポイント</h3><p>H⁺ ＋ OH⁻ → H₂O。${st.acid === 'h2so4' ? '硫酸は1分子から H⁺ を2個出す2価の酸なので、同じ濃さの塩酸の2倍（20 mL）の NaOH が必要。' : '塩酸は1価の酸なので、同じ濃さ・同じ体積の NaOH（10 mL）でちょうど中和する。'} 中和点の近くでは、1滴で pH が大きく変わる。</p></div>`;
+  return html + '</div>';
+}
+function neutAdd(v) {
+  const st = state.neut;
+  if (v === 'reset') { st.v = 0; st.hist = [[0, neutState().ph]]; }
+  else { st.v = Math.min(40, Math.round((st.v + +v) * 10) / 10); st.hist.push([st.v, neutState().ph]); view.dropPending = true; }
+  clearView(); buildPhView();
+  if (view.dropPending !== undefined && v !== 'reset') view.drop.t0 = performance.now();
+  renderCard();
+}
+
+// ===== タイムアタック =====
+LIB.push({ id: 'ta-60', cat: 'quiz', kind: 'ta', name: 'タイムアタック（60秒）', f: '⏱', en: '3Dを見て、すばやく答えよう' });
+const TA_TYPES = ['name', 'formula', 'shape', 'polar', 'state', 'hbond'];
+function taStart() {
+  leaveQuiz();
+  stashShow();
+  state.ta = { end: performance.now() + 60000, score: 0, miss: 0, picked: null, done: false, q: null };
+  taNext();
+}
+function taNext() {
+  const ta = state.ta;
+  if (!ta || ta.done) return;
+  let q, guard = 0;
+  do { q = makeQuestion(pick(TA_TYPES)); guard++; } while (ta.q && q.subject === ta.q.subject && guard < 5);
+  ta.q = q; ta.picked = null;
+  selectEntry(LIB.find(e => e.id === q.subject), { quiz: true, ta: true });
+}
+function taCardHTML() {
+  const ta = state.ta;
+  let best = 0;
+  try { best = +(localStorage.getItem(BEST_KEY + ':ta') || 0); } catch (e) { /* 無視 */ }
+  if (ta.done) {
+    return `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">タイムアタック</span></div><h2 class="mol-name">${ta.score} 問 正解！</h2></div></div>
+      <div class="card-body"><div class="verdict good">${ta.score >= best && ta.score > 0 ? '自己ベスト！' : 'おつかれさま！'} まちがい ${ta.miss} 問</div>
+      <p class="note">自己ベスト：${best} 問</p><button type="button" class="pbtn big" data-act="tastart">もう一度</button></div>`;
+  }
+  const q = ta.q;
+  let html = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">タイムアタック</span><span class="pill">正解 ${ta.score}</span><span class="pill">ベスト ${best}</span></div>
+    <div class="tabar"><i id="taBar"></i><b id="taTime"></b></div><h2 class="qtext">${q.q}</h2></div></div><div class="card-body"><div class="qchoices">`;
+  html += q.choices.map((c, k) => {
+    const v = typeof c === 'string' ? c : c.v, label = typeof c === 'string' ? esc(c) : c.html;
+    let cls = '';
+    if (ta.picked !== null) cls = v === q.answer ? 'right' : (v === ta.picked ? 'wrong' : 'dim');
+    return `<button type="button" class="qc ${cls}" data-pick="${k}" ${ta.picked !== null ? 'disabled' : ''}>${label}</button>`;
+  }).join('') + '</div></div>';
+  return html;
+}
+function taPick(k) {
+  const ta = state.ta, q = ta.q;
+  if (ta.picked !== null || ta.done) return;
+  const c = q.choices[k];
+  ta.picked = typeof c === 'string' ? c : c.v;
+  if (ta.picked === q.answer) ta.score++; else ta.miss++;
+  renderCard();
+  setTimeout(() => { if (state.ta === ta && !ta.done) taNext(); }, ta.picked === q.answer ? 450 : 1100);
+}
+function taTick() {
+  const ta = state.ta;
+  if (!ta || ta.done || !state.quizActive) return;
+  const left = Math.max(0, ta.end - performance.now());
+  const bar = $('taBar'), tm = $('taTime');
+  if (bar) { bar.style.width = (left / 600) + '%'; bar.classList.toggle('low', left < 10000); }
+  if (tm) tm.textContent = Math.ceil(left / 1000) + '秒';
+  if (left <= 0) {
+    ta.done = true;
+    let best = 0;
+    try { best = +(localStorage.getItem(BEST_KEY + ':ta') || 0); if (ta.score > best) localStorage.setItem(BEST_KEY + ':ta', String(ta.score)); } catch (e) { /* 無視 */ }
+    renderCard();
+  }
+}
+
+// ===== 授業モード（大きな文字で1画面ずつ） =====
+const LESSONS = [
+  { id: 'ls-shape', name: '分子の形はなぜ決まる？', steps: [
+    { go: 'methane', title: 'メタン CH₄', text: 'C原子のまわりに共有電子対が4組。4組の電子対はおたがいに反発して、いちばん離れた向きをとる。だから正四面体形（109.5°）になる。', show: { lp: true, angle: true, labels: true } },
+    { go: 'ammonia', title: 'アンモニア NH₃', text: '電子対は4組のまま。でも1組は非共有電子対（紫）。原子だけを見ると三角錐形になる。', show: { lp: true, angle: true } },
+    { go: 'water', title: '水 H₂O', text: '非共有電子対が2組。原子だけを見ると折れ線形（約104.5°）。非共有電子対の反発が強いので、角度が少し小さくなる。', show: { lp: true, angle: true } },
+    { go: 'co2', title: '二酸化炭素 CO₂', text: '二重結合は1つの「かたまり」として数える。C原子のまわりのかたまりは2つなので、反対向きの直線形（180°）。', show: { lp: true, angle: true } },
+    { go: 'cmp-ch4-nh3', title: 'まとめ', text: '形は「中心原子のまわりの電子対の数」と「そのうち非共有電子対がいくつか」で決まる。' },
+  ] },
+  { id: 'ls-polar', name: '極性分子と無極性分子', steps: [
+    { go: 'hcl', title: '結合の極性', text: 'Cl は H より電気陰性度が大きいので、共有電子対を強く引きつける。Cl がδ−、H がδ+ になる。', show: { polar: true, cloud: true } },
+    { go: 'water', title: '水は極性分子', text: '折れ線形なので、2本の O–H 結合の極性が打ち消し合わない。オレンジの矢印が、分子全体のかたより。', show: { polar: true } },
+    { go: 'co2', title: '二酸化炭素は無極性分子', text: 'C=O 結合には極性がある。でも直線形なので、左右反対向きに打ち消し合う。', show: { polar: true } },
+    { go: 'cmp-ccl4-chcl3', title: '形がにていても…', text: 'CCl₄ は打ち消し合って無極性、CHCl₃ は打ち消し合わず極性。' },
+  ] },
+  { id: 'ls-hbond', name: '水素結合と沸点', steps: [
+    { go: 'hbond', title: '水素結合', text: 'O–H の H（δ+）が、となりの分子の O の非共有電子対（δ−）と引き合う。青い点線が水素結合。' },
+    { go: 'ph-h2s', title: '硫化水素を温めると', text: '水素結合がないので、−60 ℃でもう気体。室温（25 ℃）では、分子がばらばらに飛び回っている。', phaseT: 25 },
+    { go: 'ph-water', title: '水を温めると', text: '同じ25 ℃でも、水は液体。水素結合で引き合っているので、100 ℃まで気体にならない。スライダーで温度を上げてみよう。', phaseT: 25 },
+    { go: 'cmp-etoh-dme', title: '同じ分子式でも', text: 'エタノール（–OH あり）は78 ℃、ジメチルエーテル（–OH なし）は −24 ℃。水素結合のあるなしで、沸点が大きく変わる。' },
+  ] },
+  { id: 'ls-ion', name: 'イオンのでき方', steps: [
+    { go: 'atom-Na', title: 'ナトリウム原子', text: 'Na の電子配置は K2 L8 M1。最外殻（M殻）の電子は1個だけ。' },
+    { go: 'atom-Na', title: 'Na⁺ になる', text: 'M殻の電子1個を失うと、K2 L8 になり、ネオンと同じ安定な電子配置になる。これが陽イオン Na⁺。', atomIon: true },
+    { go: 'atom-Cl', title: '塩素原子 → Cl⁻', text: 'Cl は K2 L8 M7。電子を1個受け取ると M殻が8個になり、アルゴンと同じ電子配置の陰イオン Cl⁻ になる。', atomIon: true },
+    { go: 'ionic', title: 'イオン結合', text: 'Na の電子が Cl に移り、Na⁺ と Cl⁻ がクーロン力で引き合う。' },
+    { go: 'nacl', title: '塩化ナトリウムの結晶', text: 'たくさんの Na⁺ と Cl⁻ が交互に並んで、イオン結晶をつくる。', cells: 2 },
+  ] },
+  { id: 'ls-rx', name: '化学反応式のつくり方', steps: [
+    { go: 'rx-h2o', title: '水素の燃焼：反応前', text: 'H₂ + O₂ → H₂O のままだと、O 原子が左に2個、右に1個。原子の数が合っていない。' },
+    { go: 'rx-h2o', title: '係数をそろえる', text: 'H₂O を2個にすると O がそろう。すると H が右に4個になるので、H₂ も2個にする。2H₂ + O₂ → 2H₂O。', solve: true },
+    { go: 'rx-ch4', title: 'メタンの燃焼', text: 'C → H → O の順にそろえる。CH₄ + 2O₂ → CO₂ + 2H₂O。「反応させる」を押すと、原子が組みかわる様子が見られる。', solve: true },
+    { go: 'rx-photo', title: '光合成', text: '6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂。大きな分子でも、左右の原子の数は必ず等しい（質量保存の法則）。', solve: true },
+  ] },
+  { id: 'ls-mol', name: '物質量（mol）', steps: [
+    { go: 'mole-water', title: '1 mol とは', text: '6.0×10²³ 個の粒子のあつまりを 1 mol という。水 1 mol は 18 g（分子量に g をつけた値）。' },
+    { go: 'mole-co2', title: '気体 1 mol の体積', text: '0 ℃・1気圧で、気体 1 mol は種類に関係なく 22.4 L。' },
+    { go: 'mole-h2', title: '軽い水素でも', text: '水素 1 mol は 2 g しかないのに、体積は二酸化炭素と同じ 22.4 L。' },
+  ] },
+  { id: 'ls-ph', name: '酸・塩基と中和', steps: [
+    { go: 'ph-scale', title: 'pH のものさし', text: 'pH 7 が中性。7 より小さいと酸性、大きいと塩基性。身近な液体のボタンを押してみよう。', ph: 2.2, ind: 'univ' },
+    { go: 'ph-scale', title: 'BTB 溶液', text: '酸性で黄色、中性で緑色、塩基性で青色になる。', ph: 11.5, ind: 'btb' },
+    { go: 'ph-neut', title: '中和', text: '酸の H⁺ と塩基の OH⁻ が結びついて水になる。NaOH を少しずつ加えて、緑色にしよう。' },
+  ] },
+];
+LESSONS.forEach(l => LIB.push({ id: l.id, cat: 'lesson', kind: 'lesson', name: l.name, f: `${l.steps.length}ステップ`, lesson: l }));
+SECTIONS.push({ id: 'lesson', name: '授業モード', cats: ['lesson'] });
+function lessonStart(l) { state.lesson = { l, i: 0 }; document.body.classList.add('present'); lessonGo(); }
+function lessonExit() {
+  if (!state.lesson) return;
+  state.lesson = null;
+  document.body.classList.remove('present');
+  if (state.lessonStash) { state.show = state.lessonStash; state.lessonStash = null; syncControls(); }
+}
+function lessonGo() {
+  const { l, i } = state.lesson, st = l.steps[i];
+  if (!state.lessonStash) state.lessonStash = Object.assign({}, state.show);
+  Object.assign(state.show, state.lessonStash, { rotate: true }, st.show || {});
+  if (st.cells) state.cells = st.cells;
+  if (st.ph !== undefined) state.ph = st.ph;
+  if (st.ind) state.ind = st.ind;
+  syncControls();
+  selectEntry(LIB.find(e => e.id === st.go), { lesson: true });
+  if (st.atomIon) {
+    state.atomIon = true;
+    const el = state.entry.el, Z = EL[el].z;
+    view.bohr.setCounts(shellCounts(Z - ION_OF[el]), { now: performance.now() / 1000, t: performance.now() / 1000 });
+  }
+  if (st.phaseT !== undefined) state.phaseT = st.phaseT;
+  if (st.solve && state.rx) { state.rx.coef = state.entry.rx.ans.slice(); clearView(); buildReactionView(); }
+  renderCard();
+  setTimeout(() => R && fitCamera(), 60);
+}
+function lessonCardHTML() {
+  const { l, i } = state.lesson, st = l.steps[i];
+  return `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">授業モード</span><span class="pill">${esc(l.name)}</span></div>
+    <h2 class="ls-title">${esc(st.title)}</h2></div></div>
+    <div class="card-body"><p class="ls-text">${esc(st.text)}</p>
+    <div class="ls-dots">${l.steps.map((_, k) => `<i class="${k === i ? 'on' : k < i ? 'done' : ''}"></i>`).join('')}<span>${i + 1} / ${l.steps.length}</span></div>
+    <div class="ls-nav"><button type="button" class="pbtn ghost" data-act="lsprev" ${i === 0 ? 'disabled' : ''}>← 前へ</button>
+    ${i < l.steps.length - 1 ? '<button type="button" class="pbtn big" data-act="lsnext">次へ →</button>' : '<button type="button" class="pbtn big" data-act="lsexit">おわり</button>'}</div>
+    <p class="note">キーボードの ← → でも進めます。右上のボタンで全画面にできます。</p>
+    <button type="button" class="pbtn ghost" data-act="lsexit">授業モードをやめる</button></div>`;
 }
 
 // ===== 状態変化ラボ =====
@@ -2698,7 +3082,9 @@ function renderFeatFilter() {
   const box = $('feats');
   box.hidden = state.sec !== 'mol';
   if (box.hidden) return;
-  box.innerHTML = '<span class="fl">特徴でさがす</span>' + FEATURES.map(f => `<button type="button" class="feat f-${f.id}" data-ff="${f.id}" aria-pressed="${state.feat === f.id}">${f.name}</button>`).join('');
+  const open = state.featOpen || !!state.feat;
+  box.innerHTML = `<button type="button" class="fl" data-ftoggle aria-expanded="${open}">特徴でさがす ${open ? '▴' : '▾'}${state.feat ? '：' + FEATURES.find(f => f.id === state.feat).name : ''}</button>`
+    + (open ? FEATURES.map(f => `<button type="button" class="feat f-${f.id}" data-ff="${f.id}" aria-pressed="${state.feat === f.id}">${f.name}</button>`).join('') : '');
 }
 
 // ===== 結合の種類ごとの見た目 =====
@@ -2728,6 +3114,7 @@ const state = {
   mole: { n: 1, unit: 'mol' },
   rx: null, bld: null, quiz: null, quizActive: false, showStash: null,
   phaseT: 25, phaseAnim: 0, feat: null,
+  ph: 7, ind: 'btb', neut: { acid: 'hcl', v: 0, hist: [] }, ta: null, lesson: null, lessonStash: null, cardTab: 'basic',
   demo: { tau: 0, playing: false },
   atomIon: false,
 };
@@ -3630,6 +4017,7 @@ function sceneRadius() {
   if (view.kind === 'atom') return SHELL_R[Math.max(1, view.bohr.outer())] + 0.6;
   if (view.kind === 'demo') return e.demo === 'metal' ? 5.4 : e.demo === 'ionic' ? 5.2 : 2.7;
   if (view.kind === 'phase') return view.phaseInfo.H * 1.75;
+  if (view.kind === 'ph') return 4.1;
   if (view.kind === 'compare') return view.cmpR;
   if (view.kind === 'reaction') return Math.max(view.rxWidth / 2 + 0.8, view.rxHeight / 2 + 1.8, 3);
   if (view.kind === 'mole') return e.phase === 'gas' ? view.moleExtent * 0.9 + 1.5 : view.moleExtent;
@@ -3656,12 +4044,14 @@ function fitCamera() {
   if (view.kind === 'mole') dir = new THREE.Vector3(0.35, 0.45, 1);
   else if (view.kind === 'reaction') dir = new THREE.Vector3(0, 0.12, 1);
   else if (view.kind === 'phase') dir = new THREE.Vector3(0.55, 0.4, 1);
+  else if (view.kind === 'ph') dir = new THREE.Vector3(0.15, 0.45, 1);
   else if (view.kind === 'compare') dir = new THREE.Vector3(0.15, 0.2, 1);
   else if (view.kind !== 'mol') dir = new THREE.Vector3(0, 0, 1);
   else if (e.model.crystal) dir = new THREE.Vector3(0.75, 0.5, 1);
   else dir = new THREE.Vector3(0.28, 0.22, 1);
   const target = new THREE.Vector3(0, 0, 0);
   if (view.kind === 'phase') target.set(0, view.phaseInfo.H, 0);
+  if (view.kind === 'ph') target.set(0, 2.2, 0);
   if (view.kind === 'mole') target.set(e.phase === 'gas' ? view.moleExtent * 0.2 : -2.2, e.phase === 'gas' ? view.moleExtent * 0.4 : 0.8, 0);
   cam.position.copy(dir.normalize().multiplyScalar(dist)).add(target);
   R.controls.target.copy(target);
@@ -3718,6 +4108,7 @@ function loop(now) {
   R.controls.update();
   R.renderer.render(R.scene, R.camera);
   updateLabels();
+  taTick();
 }
 
 // 原子をクリック／タップして選ぶ
@@ -3754,7 +4145,29 @@ function selectAtom(i) {
 
 // ===== 画面の左：分子の棚 =====
 function renderNav() {
-  $('secnav').innerHTML = SECTIONS.map(s => `<button type="button" data-sec="${s.id}" aria-current="${s.id === state.sec}">${s.name}</button>`).join('');
+  const grp = navGroupOf(state.sec);
+  $('secnav').innerHTML = GROUPS.map(g => `<button type="button" data-grp="${g.id}" aria-current="${g.id === grp.id}">${g.name}</button>`).join('');
+  const sub = $('subnav');
+  sub.hidden = grp.secs.length < 2;
+  sub.innerHTML = grp.secs.map(id => SECTIONS.find(s => s.id === id)).map(s => `<button type="button" data-sec="${s.id}" aria-current="${s.id === state.sec}">${s.name}</button>`).join('');
+  $('searchBox').hidden = state.sec !== 'mol';
+}
+function goSection(id) {
+  if (id === 'quiz') { lessonExit(); leaveQuiz(); state.sec = 'quiz'; state.entry = null; renderNav(); renderTabs(); renderGrid(); showQuizMenu(); return; }
+  if (id === 'lesson') { lessonExit(); leaveQuiz(); state.sec = 'lesson'; state.entry = null; renderNav(); renderTabs(); renderGrid(); showLessonMenu(); return; }
+  if (id === 'mol') { state.cat = 'daily'; state.feat = null; }
+  selectEntry(LIB.find(e => e.id === FIRST_OF[id]));
+}
+function showLessonMenu() {
+  const e = LIB.find(x => x.id === 'water');
+  state.entry = getModel(e); state.selected = -1;
+  $('stageWrap').dataset.kind = 'quizmenu';
+  $('caption').hidden = true;
+  if (R) { clearView(); buildMolView(); R.controls.autoRotate = true; fitCamera(); }
+  $('card').innerHTML = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">授業モード</span></div><h2 class="mol-name">どの授業をする？</h2></div></div>
+    <div class="card-body"><p class="note">大きな文字の説明と3Dで、1画面ずつ進めます。プロジェクターに映すときは、右上のボタンで全画面に。</p>
+    <div class="qsets">${LESSONS.map(l => `<button type="button" class="qset" data-go="${l.id}"><b>${esc(l.name)}</b><span>${l.steps.length}ステップ</span></button>`).join('')}</div></div>`;
+  $('card').classList.remove('collapsed'); state.cardOpen = true;
 }
 function renderTabs() {
   const sec = SECTIONS.find(s => s.id === state.sec);
@@ -3785,17 +4198,18 @@ function renderGrid() {
   }
   grid.className = 'grid';
   if (state.sec === 'quiz') {
-    grid.innerHTML = QUIZ_SETS.map(q => `<button type="button" class="card-btn" data-id="${q.id}" aria-current="${state.quiz && state.quiz.set.id === q.id}"><span class="f">Q</span><span class="n">${esc(q.name)}</span></button>`).join('');
+    grid.innerHTML = `<button type="button" class="card-btn wide" data-id="ta-60" aria-current="${!!state.ta}"><span class="f">⏱ タイムアタック</span><span class="n">60秒で何問答えられる？</span></button>`
+      + QUIZ_SETS.map(q => `<button type="button" class="card-btn wide" data-id="${q.id}" aria-current="${!state.ta && state.quiz && state.quiz.set.id === q.id}"><span class="f">${esc(q.name)}</span><span class="n">10問</span></button>`).join('');
     return;
   }
   const cats = state.sec === 'mol' ? (state.feat ? SECTIONS[0].cats : [state.cat]) : SECTIONS.find(s => s.id === state.sec).cats;
   const fdef = state.sec === 'mol' && state.feat ? FEATURES.find(f => f.id === state.feat) : null;
   const items = LIB.filter(e => cats.includes(e.cat) && (!fdef || (getModel(e), fdef.test(e))));
   grid.innerHTML = (fdef ? `<p class="pt-note filt">「${fdef.name}」の物質：${items.length}種類${fdef.note ? `（${esc(fdef.note)}）` : ''}</p>` : '') + items.map(e => {
-    const f = e.kind === 'compare' ? esc(e.name) : formulaHTML(e.rational || displayFormula(e));
+    const f = ['compare', 'lesson', 'ph', 'neut'].includes(e.kind) ? esc(e.name) : formulaHTML(e.rational || displayFormula(e));
     const done = (e.kind === 'reaction' && solvedRx.has(e.id)) || (e.kind === 'build' && doneMissions.has(e.id));
-    const wide = e.kind === 'reaction' || e.kind === 'compare' ? ' wide' : '';
-    return `<button type="button" class="card-btn${wide}" data-id="${e.id}" aria-current="${cur(e.id)}"><span class="f">${f}</span><span class="n">${done ? '<b class="done">✓</b>' : ''}${e.kind === 'compare' ? esc(e.cmp.diff.slice(0, 26)) + '…' : esc(e.name)}${e.kind === 'reaction' || e.kind === 'phase' ? '　' + esc(e.en) : ''}</span></button>`;
+    const wide = ['reaction', 'compare', 'lesson', 'ph', 'neut'].includes(e.kind) ? ' wide' : '';
+    return `<button type="button" class="card-btn${wide}" data-id="${e.id}" aria-current="${cur(e.id)}"><span class="f">${f}</span><span class="n">${done ? '<b class="done">✓</b>' : ''}${e.kind === 'compare' ? esc(e.cmp.diff.slice(0, 26)) + '…' : ['ph', 'neut', 'lesson'].includes(e.kind) ? esc(e.en || e.f) : esc(e.name)}${e.kind === 'reaction' || e.kind === 'phase' ? '　' + esc(e.en) : ''}${e.kind === 'lesson' || e.kind === 'ph' || e.kind === 'neut' ? '' : ''}</span></button>`;
   }).join('');
 }
 const configText = c => c.map((n, i) => (n ? SHELL_NAMES[i] + n : '')).filter(Boolean).join(' ');
@@ -3824,6 +4238,10 @@ function renderLegend() {
       items.push(`<span class="lg"><i class="sw box" style="--c:var(--accent)"></i>気体の体積</span>`);
       items.push(`<span class="lg"><i class="sw box" style="--c:var(--muted)"></i>1 L</span>`);
     }
+  } else if (view.kind === 'ph') {
+    items.push(`<span class="lg"><i class="sw dot" style="--c:var(--red)"></i>H₃O⁺（酸性のもと）</span>`);
+    items.push(`<span class="lg"><i class="sw dot" style="--c:var(--blue)"></i>OH⁻（塩基性のもと）</span>`);
+    if (e.kind === 'neut') items.push(`<span class="lg"><i class="sw dot" style="--c:#8a96a8"></i>そのまま残るイオン</span>`);
   } else if (view.kind === 'phase') {
     items.push(e.ph.hb ? `<span class="lg"><i class="sw dash n1" style="--c:${BOND_STYLE.hbond.color}"></i>水素結合（強い引き合い）</span>` : `<span class="lg"><i class="sw dash n1" style="--c:#9aa3b2"></i>分子間力（弱い引き合い）</span>`);
   } else if (view.kind === 'compare') {
@@ -3880,7 +4298,11 @@ function renderCard() {
   const e = state.entry;
   if (!e) return;
   let html = '';
-  if (state.quizActive && state.quiz) html = quizCardHTML();
+  if (state.lesson) html = lessonCardHTML();
+  else if (state.quizActive && state.ta) html = taCardHTML();
+  else if (state.quizActive && state.quiz) html = quizCardHTML();
+  else if (e.kind === 'ph') html = phCardHTML(e);
+  else if (e.kind === 'neut') html = neutCardHTML(e);
   else if (e.kind === 'reaction') html = rxCardHTML(e);
   else if (e.kind === 'phase') html = phaseCardHTML(e);
   else if (e.kind === 'compare') html = compareCardHTML(e);
@@ -3907,9 +4329,13 @@ function molCardHTML(e) {
   const m = e.model, an = e.an;
   let sub = formulaHTML(displayFormula(e));
   if (e.rational) sub += `<small>示性式 ${formulaHTML(e.rational)}</small>`;
-  let html = headHTML(e, sub) + '<div class="card-body">';
-  html += featureChipsHTML(e);
+  let html = headHTML(e, sub);
+  const tab = state.cardTab;
+  html += `<div class="ctabs" role="tablist"><button type="button" role="tab" data-ctab="basic" aria-selected="${tab === 'basic'}">ポイント</button><button type="button" role="tab" data-ctab="more" aria-selected="${tab === 'more'}">くわしく</button></div>`;
+  html += '<div class="card-body">';
   if (state.selected >= 0) html += selectedAtomHTML(state.selected);
+  if (tab === 'more') return html + molMoreHTML(e) + '</div>';
+  html += featureChipsHTML(e);
   if (e.steps) html += stepsHTML(e);
   html += '<dl class="facts">';
   if (e.crystal) {
@@ -3931,16 +4357,21 @@ function molCardHTML(e) {
   }
   html += '</dl>';
   if (!e.crystal || e.formula === 'CO2' || /共有/.test(e.bond)) html += `<div class="bsum">${bondSummary(e)}</div>`;
+  if (e.where) html += `<p class="where"><b>身近なところ</b>${esc(e.where)}</p>`;
+  if (e.point) html += `<div class="point"><h3>授業のポイント</h3><p>${esc(e.point)}</p></div>`;
+  return html + '</div>';
+}
+function molMoreHTML(e) {
+  const m = e.model, an = e.an;
+  let html = '';
+  if (e.desc) html += `<p class="desc">${esc(e.desc)}</p>`;
+  if (e.props && e.props.length) html += `<div class="props">${e.props.map(([k, v]) => `<span><em>${esc(k)}</em>${esc(v)}</span>`).join('')}</div>`;
+  if (e.more) html += `<p class="desc more-p"><b>もっと知る</b>${esc(e.more)}</p>`;
   if (!e.custom) html += `<div class="calc">${massLine(an, e.crystal ? (e.formula === 'CO2' ? '分子量' : '式量') : (an.charge || an.nComp > 1 ? '式量' : '分子量'))}</div>`;
   if (!e.crystal && !e.custom && an.polarNote) html += `<p class="note">${esc(an.polarNote)}</p>`;
   if (state.show.polar && !e.crystal && !e.custom) {
     html += '<p class="note">極性の表示：<b class="red">赤</b>は電子が集まる側（δ−）、<b class="blue">青</b>は電子が少ない側（δ+）。オレンジの矢印は分子全体で電子がかたよる向き。</p>';
   }
-  if (e.where) html += `<p class="where"><b>身近なところ</b>${esc(e.where)}</p>`;
-  if (e.desc) html += `<p class="desc">${esc(e.desc)}</p>`;
-  if (e.props && e.props.length) html += `<div class="props">${e.props.map(([k, v]) => `<span><em>${esc(k)}</em>${esc(v)}</span>`).join('')}</div>`;
-  if (e.point) html += `<div class="point"><h3>授業のポイント</h3><p>${esc(e.point)}</p></div>`;
-  if (e.more) html += `<details class="more"><summary>もっと知る</summary><p>${esc(e.more)}</p></details>`;
   const iso = e.custom ? [] : LIB.filter(x => x.key === e.key && x.id !== e.id && x.kind === 'mol' && x.cat !== 'bond' && !x.crystal && !e.crystal);
   if (iso.length) html += `<h3 class="sec-h">同じ分子式の物質（異性体）</h3><div class="chips">${iso.map(x => `<button type="button" data-go="${x.id}">${esc(x.name)}</button>`).join('')}</div>`;
   const allo = e.crystal ? LIB.filter(x => x.crystal && x.formula === e.formula && x.id !== e.id) : [];
@@ -3950,7 +4381,6 @@ function molCardHTML(e) {
     const atomEntry = LIB.find(x => x.id === 'atom-' + el);
     return `<button type="button" ${atomEntry ? `data-go="atom-${el}"` : 'disabled'}><i class="dot" style="background:${EL[el].c}"></i>${el} ${EL[el].n}</button>`;
   }).join('')}</div>`;
-  html += '</div>';
   return html;
 }
 function selectedAtomHTML(i) {
@@ -4104,6 +4534,7 @@ function stashShow() {
 function leaveQuiz() {
   if (state.showStash) { state.show = state.showStash; state.showStash = null; syncControls(); }
   state.quizActive = false;
+  state.ta = null;
 }
 function showQuizMenu() {
   // クイズのメニュー：3Dにはぐるぐる回る水分子を出しておく
@@ -4115,7 +4546,7 @@ function showQuizMenu() {
   if (R) { clearView(); buildMolView(); R.controls.autoRotate = true; fitCamera(); }
   const best = id => { try { return +(localStorage.getItem(BEST_KEY + ':' + id) || 0); } catch (err) { return 0; } };
   $('card').innerHTML = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill">クイズ</span></div><h2 class="mol-name">どのクイズにする？</h2></div></div>
-    <div class="card-body"><p class="note">1回10問。答えると、3Dの模型と説明で答えを確かめられる。</p><div class="qsets">${QUIZ_SETS.map(q => `<button type="button" class="qset" data-go="${q.id}"><b>${esc(q.name)}</b><span>最高 ${best(q.id)} / 10</span></button>`).join('')}</div></div>`;
+    <div class="card-body"><p class="note">1回10問。答えると、3Dの模型と説明で答えを確かめられる。</p><div class="qsets"><button type="button" class="qset hot" data-go="ta-60"><b>⏱ タイムアタック（60秒）</b><span>ベスト ${best('ta')} 問</span></button>${QUIZ_SETS.map(q => `<button type="button" class="qset" data-go="${q.id}"><b>${esc(q.name)}</b><span>最高 ${best(q.id)} / 10</span></button>`).join('')}</div></div>`;
   $('card').classList.remove('collapsed');
   state.cardOpen = true;
 }
@@ -4128,8 +4559,13 @@ function setCardOpen(open) {
 }
 function selectEntry(e, opts) {
   opts = opts || {};
+  if (e.kind === 'lesson') { lessonExit(); state.sec = 'lesson'; lessonStart(e.lesson); return; }
+  if (e.kind === 'ta') { lessonExit(); state.sec = 'quiz'; taStart(); return; }
+  if (!opts.lesson) lessonExit();
   if (e.kind === 'quizset') { leaveQuiz(); state.sec = 'quiz'; state.quizActive = true; stashShow(); quizStart(e.quiz); return; }
   if (opts.quiz) { state.quizActive = true; } else leaveQuiz();
+  if (state.entry !== e) state.cardTab = 'basic';
+  if (e.kind === 'neut' && !state.neut.hist.length) { state.neut.v = 0; state.neut.hist = [[0, 1]]; }
   state.entry = getModel(e);
   state.selected = -1;
   if (e.kind === 'phase') state.phaseAnim = 0;
@@ -4138,7 +4574,7 @@ function selectEntry(e, opts) {
   state.atomIon = false;
   state.demo = { tau: 0, playing: !!e.steps && !reduceMotion };
   if (reduceMotion && e.steps) state.demo.tau = e.T;
-  if (!e.auto && !opts.quiz) {
+  if (!e.auto && !opts.quiz && !opts.lesson) {
     state.sec = secOf(e.cat);
     if (state.sec === 'mol') state.cat = e.cat;
   }
@@ -4156,6 +4592,7 @@ function selectEntry(e, opts) {
     else if (e.kind === 'mole') buildMoleView();
     else if (e.kind === 'reaction') buildReactionView();
     else if (e.kind === 'phase') buildPhaseView();
+    else if (e.kind === 'ph' || e.kind === 'neut') buildPhView();
     else if (e.kind === 'compare') buildCompareView();
     else buildMolView();
     if (e.kind === 'build') { state.selected = state.bld.sel; bldCheck(); updatePositions(0); }
@@ -4165,7 +4602,7 @@ function selectEntry(e, opts) {
     fitCamera();
   }
   syncDemoUI();
-  if (!e.auto && !opts.quiz) { try { history.replaceState(null, '', '#' + e.id); } catch (err) { /* 無視 */ } }
+  if (!e.auto && !opts.quiz && !opts.lesson) { try { history.replaceState(null, '', '#' + e.id); } catch (err) { /* 無視 */ } }
   if (opts && opts.scroll && isNarrow()) stageWrap.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
 }
 
@@ -4236,6 +4673,18 @@ function openResult(r) {
 // ===== イベント =====
 function bindUI() {
   $('secnav').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-grp]');
+    if (!b) return;
+    const grp = GROUPS.find(g => g.id === b.dataset.grp);
+    if (grp.secs.includes(state.sec) && !state.lesson) return;
+    goSection(grp.secs[0]);
+  });
+  $('subnav').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-sec]');
+    if (!b || b.dataset.sec === state.sec) return;
+    goSection(b.dataset.sec);
+  });
+  $('secnav').addEventListener('dummy', ev => {
     const b = ev.target.closest('[data-sec]');
     if (!b || b.dataset.sec === state.sec) return;
     const sec = SECTIONS.find(s => s.id === b.dataset.sec);
@@ -4263,6 +4712,7 @@ function bindUI() {
     state.atomView = b.dataset.av; syncControls(); renderCard(); renderLegend();
   });
   $('feats').addEventListener('click', ev => {
+    if (ev.target.closest('[data-ftoggle]')) { state.featOpen = !(state.featOpen || state.feat); if (!state.featOpen) state.feat = null; renderTabs(); renderGrid(); return; }
     const b = ev.target.closest('[data-ff]');
     if (!b) return;
     state.feat = state.feat === b.dataset.ff ? null : b.dataset.ff;
@@ -4280,6 +4730,16 @@ function bindUI() {
   $('card').addEventListener('click', ev => {
     const go = ev.target.closest('[data-go]');
     if (go) { selectEntry(LIB.find(e => e.id === go.dataset.go)); return; }
+    const ind = ev.target.closest('[data-ind]');
+    if (ind) { state.ind = ind.dataset.ind; clearView(); buildPhView(); renderCard(); return; }
+    const phv = ev.target.closest('[data-phv]');
+    if (phv) { state.ph = +phv.dataset.phv; clearView(); buildPhView(); renderCard(); return; }
+    const ac = ev.target.closest('[data-acid]');
+    if (ac) { state.neut.acid = ac.dataset.acid; neutAdd('reset'); return; }
+    const nv = ev.target.closest('[data-nv]');
+    if (nv) { neutAdd(nv.dataset.nv); return; }
+    const ctab = ev.target.closest('[data-ctab]');
+    if (ctab) { state.cardTab = ctab.dataset.ctab; renderCard(); return; }
     const ft = ev.target.closest('[data-feat]');
     if (ft) { state.feat = ft.dataset.feat; state.sec = 'mol'; renderNav(); renderTabs(); renderGrid(); return; }
     const pt = ev.target.closest('[data-pt]');
@@ -4305,6 +4765,10 @@ function bindUI() {
     if (li && state.entry.steps) { state.demo.tau = +li.dataset.tau + 0.01; state.demo.playing = true; syncDemoUI(); return; }
     if (!act) return;
     const a = act.dataset.act;
+    if (a === 'tastart') { taStart(); return; }
+    if (a === 'lsnext') { state.lesson.i++; lessonGo(); return; }
+    if (a === 'lsprev') { state.lesson.i--; lessonGo(); return; }
+    if (a === 'lsexit') { const l = state.lesson; lessonExit(); goSection('lesson'); return; }
     if (a === 'heat' || a === 'cool') { const d = a === 'heat' ? 1 : -1; state.phaseAnim = state.phaseAnim === d ? 0 : d; syncPhaseUI(); return; }
     if (a === 'react') { state.rx.phase = 'anim'; state.rx.t0 = performance.now(); solvedRx.add(state.entry.id); saveSet(SOLVED_KEY, solvedRx); renderCard(); renderGrid(); return; }
     if (a === 'rxreset') { state.rx.phase = 'edit'; renderCard(); return; }
@@ -4329,6 +4793,12 @@ function bindUI() {
     }
   });
   $('card').addEventListener('input', ev => {
+    if (ev.target.id === 'phSlider') {
+      state.ph = +ev.target.value; clearView(); buildPhView();
+      const card = $('card'), y = card.querySelector('.card-body') ? card.querySelector('.card-body').scrollTop : 0;
+      renderCard(); const s = $('phSlider'); if (s) s.focus(); const b = card.querySelector('.card-body'); if (b) b.scrollTop = y;
+      return;
+    }
     if (ev.target.id === 'phRange') { state.phaseT = +ev.target.value; state.phaseAnim = 0; syncPhaseUI(); return; }
     if (ev.target.id === 'moleRange') { setMole(+ev.target.value, 'range'); return; }
     if (ev.target.id === 'moleVal') {
@@ -4378,6 +4848,11 @@ function bindUI() {
     else { w.classList.toggle('is-max'); done(); }
   });
   document.addEventListener('keydown', ev => {
+    if (state.lesson && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) {
+      const l = state.lesson;
+      if (ev.key === 'ArrowRight' && l.i < l.l.steps.length - 1) { l.i++; lessonGo(); }
+      if (ev.key === 'ArrowLeft' && l.i > 0) { l.i--; lessonGo(); }
+    }
     if (ev.key === 'Escape' && $('stageWrap').classList.contains('is-max')) { $('stageWrap').classList.remove('is-max'); setTimeout(() => R && fitCamera(), 100); }
   });
   narrowMQ.addEventListener('change', () => { if (R && state.entry) fitCamera(); });
