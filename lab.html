@@ -46,8 +46,14 @@ sub, sup { font-size: .68em; line-height: 0; }
 .modes button { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; font-size: 15px; font-weight: 700; color: var(--muted); white-space: nowrap; }
 .modes button[aria-current="true"] { background: var(--ink); color: var(--panel); }
 .back { margin-left: auto; font-size: 13px; color: var(--accent); text-decoration: none; white-space: nowrap; }
-.app { flex: 1; min-height: 0; display: grid; gap: 12px; grid-template-columns: 250px minmax(0, 1fr); padding-block: 12px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-.lib { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); overflow-y: auto; padding: 10px; min-width: 0; }
+.app { flex: 1; min-height: 0; display: grid; gap: 12px; grid-template-columns: 236px minmax(0, 1fr) 350px; padding-block: 12px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.lib { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); overflow-y: auto; padding: 10px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.cats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.cat { border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 4px 4px; font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.cat small { display: none; margin-left: 5px; font-family: var(--font-data); font-weight: 500; font-size: 10.5px; opacity: .8; }
+.cat[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+.items { display: flex; flex-direction: column; gap: 2px; }
+.libfoot { font-size: 12px; color: var(--muted); margin: auto 4px 0; }
 .grp { font-size: 11px; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin: 10px 4px 4px; }
 .grp:first-child { margin-top: 2px; }
 .item { width: 100%; display: flex; align-items: center; gap: 8px; text-align: left; border: 1px solid transparent; background: transparent; border-radius: 9px; padding: 6px 8px; font-size: 14px; }
@@ -73,14 +79,33 @@ sub, sup { font-size: .68em; line-height: 0; }
 .tgl[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .toast { position: absolute; z-index: 4; left: 50%; top: 56px; transform: translateX(-50%); max-width: min(560px, calc(100% - 40px)); padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 15px; box-shadow: 0 8px 24px rgba(0,0,0,.18); text-align: center; text-wrap: balance; transition: opacity .3s; }
 .toast.ok { background: var(--ok); color: #fff; } .toast.ng { background: var(--ng); color: #fff; } .toast.info { background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
-.card { position: absolute; z-index: 3; top: 56px; right: 10px; bottom: 10px; width: var(--card-w); max-width: 50%; background: var(--glass); border: 1px solid var(--line); border-radius: var(--r); display: flex; flex-direction: column; overflow: hidden; backdrop-filter: blur(6px); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); display: flex; flex-direction: column; overflow: hidden; min-width: 0; min-height: 0; }
 .card-head { padding: 10px 14px 4px; }
 .eyebrow { font-size: 11px; color: var(--muted); letter-spacing: .06em; }
 .name { font-family: var(--font-display); font-weight: 800; font-size: 24px; line-height: 1.25; margin: 2px 0 0; }
 .yomi { font-size: 12px; color: var(--muted); font-family: var(--font-data); }
-.tabs { display: flex; gap: 2px; margin: 6px 14px 0; border-bottom: 1px solid var(--line); }
-.tabs button { white-space: nowrap; border: 0; background: transparent; padding: 5px 9px; font-size: 13px; font-weight: 700; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
-.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; margin: 8px 14px 0; background: var(--chip); border-radius: 10px; padding: 3px; }
+.tabs button { white-space: nowrap; border: 0; background: transparent; padding: 5px 4px; font-size: 13.5px; font-weight: 700; color: var(--muted); border-radius: 8px; }
+.tabs button[aria-selected="true"] { background: var(--panel); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.seqhead { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--muted); }
+.seqhead b { font-family: var(--font-data); font-size: 17px; color: var(--ink); }
+.qlead { margin: 4px 0 0; font-weight: 700; font-size: 14.5px; }
+.seqopts { display: flex; flex-direction: column; gap: 6px; }
+.seqo { text-align: left; border: 1.5px solid var(--line); background: var(--panel); border-radius: 10px; padding: 9px 12px; font-size: 14px; font-weight: 700; line-height: 1.5; }
+.seqo:hover { border-color: var(--accent); }
+details.donelist { font-size: 13px; color: var(--muted); }
+details.donelist summary { cursor: pointer; font-weight: 700; }
+details.donelist ol, ol.placed { margin: 4px 0 0; padding-left: 22px; font-size: 13px; }
+ol.placed { color: var(--ok); font-weight: 700; margin-bottom: 6px; }
+ol.stepper { list-style: none; margin: 8px 0 0; padding: 0; }
+ol.stepper li { border-bottom: 1px solid var(--line); }
+ol.stepper button { width: 100%; display: flex; gap: 10px; align-items: flex-start; text-align: left; border: 0; background: transparent; padding: 7px 2px; font-size: 14px; line-height: 1.5; }
+ol.stepper .n { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--chip); color: var(--accent); display: grid; place-items: center; font: 600 12px var(--font-data); margin-top: 1px; }
+ol.stepper li.open .n { background: var(--accent); color: var(--accent-ink); }
+ol.stepper li.open .t { font-weight: 700; }
+ol.stepper .why { margin: 0 0 8px 32px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+h3.sub { font-size: 13px; color: var(--muted); margin: 4px 0 2px; letter-spacing: .04em; }
+h3.sub + ul { margin-bottom: 10px; }
 .body { overflow-y: auto; padding: 10px 14px 14px; flex: 1; min-height: 0; }
 .use { margin: 0 0 8px; font-size: 14.5px; }
 ol.how { margin: 0; padding-left: 22px; font-size: 14px; }
@@ -140,15 +165,20 @@ ul.caution.danger li b.x { background: #b7791f; }
 .elecv { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13.5px; background: var(--chip); border-radius: 10px; padding: 6px 10px; }
 .elecv b { font-family: var(--font-data); font-size: 17px; }
 .fallback { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted); }
+@media (max-width: 1200px) { .app { grid-template-columns: 196px minmax(0, 1fr) 330px; } }
 @media (max-width: 900px) {
   body { overflow: auto; height: auto; min-height: 100%; }
   .app { display: flex; flex-direction: column; }
-  .lib { display: flex; gap: 6px; overflow-x: auto; padding: 8px; align-items: center; }
-  .lib .note { display: none; }
-  .grp { display: none; }
+  .lib { padding: 8px; gap: 6px; overflow: visible; }
+  .cats { display: flex; overflow-x: auto; padding-bottom: 6px; }
+  .cat { padding: 3px 10px; border-radius: 999px; }
+  .cat small { display: inline; }
+  .items { flex-direction: row; overflow-x: auto; gap: 6px; }
+  .libfoot, .grp { display: none; }
   .item { flex: 0 0 auto; width: auto; white-space: nowrap; border-color: var(--line); }
-  .stage-wrap { height: 88vh; height: 88svh; min-height: 540px; }
-  .card { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-width: none; max-height: 50%; }
+  .stage-wrap { height: 58vh; height: 58svh; min-height: 360px; flex: none; }
+  .card { overflow: visible; }
+  .body { overflow: visible; }
   .modes button { padding: 5px 10px; font-size: 14px; }
   .top { flex-wrap: wrap; }
 }
@@ -177,8 +207,8 @@ ul.caution.danger li b.x { background: #b7791f; }
       <button type="button" class="ibtn" id="btnFull" title="全画面" aria-label="全画面"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
     <div class="toast" id="toast" hidden></div>
-    <aside class="card" id="card" aria-live="polite"></aside>
   </section>
+  <aside class="card" id="card" aria-live="polite"></aside>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -750,9 +780,7 @@ function initThree() {
       if (!w || !h) return;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
-      const card = $('card'), narrow = window.matchMedia('(max-width: 900px)').matches;
-      const ox = !narrow && !card.hidden ? Math.min(card.offsetWidth + 20, w * 0.5) / 2 : 0;
-      const oy = narrow && !card.hidden ? Math.min(card.offsetHeight + 16, h * 0.55) / 2 : 0;
+      const ox = 0, oy = 0; // 説明パネルは実験台の外にあるのでずらさない
       if (ox || oy) camera.setViewOffset(w, h, ox, oy, w, h); else camera.clearViewOffset();
       camera.updateProjectionMatrix();
     };
@@ -785,9 +813,7 @@ function frame(focusY, radius, dir) {
   R.resize();
   const cam = R.camera, stage = $('stage');
   const w = stage.clientWidth || 1, h = stage.clientHeight || 1;
-  const narrow = window.matchMedia('(max-width: 900px)').matches, card = $('card');
-  const wEff = narrow ? w : w - Math.min(card.offsetWidth + 20, w * 0.5);
-  const hEff = narrow ? h - Math.min(card.offsetHeight + 16, h * 0.55) : h;
+  const wEff = w, hEff = h;
   const tanV = Math.tan(cam.fov * Math.PI / 360);
   const half = Math.min(Math.atan(tanV * hEff / h), Math.atan(tanV * wEff / h));
   const dist = radius / Math.sin(half) * 1.05;
@@ -1188,18 +1214,24 @@ function showPractice(id) {
 }
 function practiceCardHTML(p) {
   const it = ITEMS.find(x => x.id === p.item), info = INFO[p.id], tab = state.ptab || 'op';
-  const eyebrow = p.grp === '実験' ? '実験' : '操作の練習';
-  let h = `<div class="card-head"><div class="eyebrow">${eyebrow}${done.has(p.id) ? ' ・ ✓ クリア' : ''}</div><h2 class="name">${esc(p.name)}</h2></div>
-    <div class="tabs" role="tablist">${[['op', 'やってみる'], ['why', '手順のわけ'], ['miss', 'ミスしやすい点'], ['danger', '危険']].map(([k, n]) => `<button type="button" role="tab" data-ptab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div><div class="body">`;
+  let h = `<div class="card-head"><div class="eyebrow">${esc(catOf(p.id))}${done.has(p.id) ? ' ・ ✓ クリア' : ''}${done.has(p.id + ':order') ? ' ・ ✓ 手順' : ''}</div><h2 class="name">${esc(p.name)}</h2></div>
+    <div class="tabs" role="tablist">${[['op', 'やってみる'], ['steps', '手順とわけ'], ['care', '注意']].map(([k, n]) => `<button type="button" role="tab" data-ptab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div><div class="body">`;
   if (tab === 'op') h += PR[p.id].html();
-  else if (tab === 'why') {
-    h += `<div class="purpose"><b>なぜこの実験をするの？</b>${esc(info.purpose)}</div><ol class="whysteps">${info.steps.map(([st, why]) => `<li><b>${esc(st)}</b><span>なぜ？ ${esc(why)}</span></li>`).join('')}</ol>`;
-  } else if (tab === 'miss') h += `<ul class="caution">${info.mistakes.map(x => `<li><b class="x">!</b><span>${esc(x)}</span></li>`).join('')}</ul>`;
-  else h += `<ul class="caution danger">${info.danger.map(x => `<li><b class="x">⚠</b><span>${esc(x)}</span></li>`).join('')}</ul>`;
-  if (tab !== 'op') h += `<p style="margin-top:12px"><button type="button" class="btn main" data-ptab="op">やってみる →</button></p>`;
-  if (it) h += `<p style="margin-top:10px"><button type="button" class="btn" data-see="${it.id}">「${esc(it.name)}」の説明を見る</button></p>`;
-  h += '</div>';
-  return h;
+  else if (tab === 'steps') {
+    if (state.order && state.order.id === p.id) h += orderHTML();
+    else {
+      const open = state.stepOpen;
+      h += `<div class="purpose"><b>なぜこの実験をするの？</b>${esc(info.purpose)}</div>
+        <ol class="stepper">${info.steps.map(([st, why], i) => `<li class="${i === open ? 'open' : ''}"><button type="button" data-step="${i}" aria-expanded="${i === open}"><span class="n">${i + 1}</span><span class="t">${esc(st)}</span></button>${i === open ? `<p class="why">なぜ？ ${esc(why)}</p>` : ''}</li>`).join('')}</ol>
+        <p class="note" style="margin-top:6px">手順をタップすると「なぜ？」が出る。</p>
+        <div class="row" style="margin-top:8px"><button type="button" class="btn main" data-order="start">ならべかえチャレンジ</button></div>`;
+    }
+  } else {
+    h += `<h3 class="sub">ミスしやすい点</h3><ul class="caution">${info.mistakes.map(x => `<li><b class="x">!</b><span>${esc(x)}</span></li>`).join('')}</ul>
+      <h3 class="sub">危険・安全のために</h3><ul class="caution danger">${info.danger.map(x => `<li><b class="x">⚠</b><span>${esc(x)}</span></li>`).join('')}</ul>`;
+  }
+  if (tab !== 'op' && it) h += `<p style="margin-top:10px"><button type="button" class="btn" data-see="${it.id}">「${esc(it.name)}」の説明を見る</button></p>`;
+  return h + '</div>';
 }
 
 // ===== クイズ =====
@@ -2396,6 +2428,378 @@ SAFETY_Q.push(
   ['多くとりすぎた薬品は、もとのびんにもどす。', false, 'びんの中の薬品がよごれるので、もどさない。'],
 );
 
+// ===== 手順トレーニング（次にすることを選んで進める実験） =====
+// SEQ[id] = { intro, purpose, steps: [{ do, why, wrong: [[まちがった操作, なぜだめか]] }], mistakes, danger, build(g) → { tick(t, k, e) }, frame }
+const SEQ = {};
+function seqOptions(def, k) {
+  const st = def.steps[k];
+  if (!st) return [];
+  const o = [{ text: st.do, ok: true }];
+  st.wrong.slice(0, 2).forEach(([text, why]) => o.push({ text, why }));
+  // 先の手順を混ぜて「順番」も考えさせる
+  const later = def.steps[k + 2] || def.steps[k + 1];
+  if (o.length < 3 && later) o.push({ text: later.do, why: 'それはもう少しあとの手順。その前にやることがある。' });
+  return shuffle(o);
+}
+function seqPractice(id) {
+  const def = SEQ[id];
+  return {
+    init() {
+      const s = { k: 0, tk: performance.now(), miss: 0, fb: null };
+      s.opts = seqOptions(def, 0);
+      state.pr = s;
+      const api = def.build(R.group, s);
+      R.tick = t => api.tick(t, s.k, (performance.now() - s.tk) / 1000);
+      frame(...def.frame);
+    },
+    html() {
+      const s = state.pr, n = def.steps.length, fin = s.k >= n;
+      let h = `<div class="ctl">`;
+      if (s.k === 0 && !s.fb) h += `<p class="use">${esc(def.intro)}</p>`;
+      h += `<div class="seqhead"><span>手順 <b>${Math.min(s.k + 1, n)}</b> / ${n}</span><span class="note">ミス ${s.miss}</span></div><div class="qprog"><i style="width:${s.k / n * 100}%"></i></div>`;
+      if (s.fb) h += `<div class="verdict ${s.fb.ok ? 'ok' : 'ng'}">${s.fb.ok ? '○ ' : '× '}${esc(s.fb.msg)}</div>`;
+      if (!fin) {
+        h += `<p class="qlead">次にすることは？</p><div class="seqopts">${s.opts.map((o, i) => `<button type="button" class="seqo" data-seq="${i}">${esc(o.text)}</button>`).join('')}</div>`;
+      } else {
+        h += `<div class="verdict ok">${s.miss === 0 ? 'ノーミスで完了！' : `完了！（ミス ${s.miss} 回）`} 「手順」タブの「ならべかえ」でも確かめよう。</div>
+          <div class="row"><button type="button" class="btn" data-a="seqreset">もう一度</button><button type="button" class="btn main" data-ptab="steps">手順をふり返る</button></div>`;
+      }
+      if (s.k > 0) h += `<details class="donelist"><summary>ここまでの手順（${s.k}）</summary><ol>${def.steps.slice(0, s.k).map(st => `<li>${esc(st.do)}</li>`).join('')}</ol></details>`;
+      return h + '</div>';
+    },
+    act(a, v) {
+      const s = state.pr;
+      if (a === 'seqreset') { clearScene(); this.init(); renderCard(); return; }
+      if (a === 'seq') {
+        const o = s.opts[+v];
+        if (!o) return;
+        if (o.ok) {
+          const st = def.steps[s.k];
+          s.fb = { ok: true, msg: st.why };
+          s.k++; s.tk = performance.now();
+          s.opts = seqOptions(def, s.k);
+          if (s.k >= def.steps.length) markDone(id);
+        } else { s.miss++; s.fb = { ok: false, msg: o.why }; }
+        renderCard();
+      }
+    },
+  };
+}
+
+// 細かい部品
+function powder(n, color, spread, y0, y1, size) {
+  const g = new THREE.Group(), mat = solid(color, { shininess: 10 });
+  const geo = new THREE.DodecahedronGeometry(size || 0.035);
+  for (let i = 0; i < n; i++) {
+    const m = new THREE.Mesh(geo, mat);
+    const a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * spread;
+    m.position.set(Math.cos(a) * r, y0 + Math.random() * (y1 - y0) * (1 - r / spread * 0.6), Math.sin(a) * r);
+    g.add(m);
+  }
+  return g;
+}
+const lerp = (a, b, k) => a + (b - a) * Math.max(0, Math.min(1, k));
+
+// ---------- 炭酸水素ナトリウムの熱分解 ----------
+SEQ['p-nahco3'] = {
+  intro: '炭酸水素ナトリウム（重そう）を加熱すると何ができるかを調べる。正しい順番で操作しよう。',
+  purpose: '1つの物質が2つ以上の物質に分かれる「分解」を確かめる。出てくる気体・液体・残った固体を、それぞれ決まった方法で調べる練習になる。2NaHCO₃ → Na₂CO₃ + H₂O + CO₂',
+  steps: [
+    { do: '試験管の口を少し下げて、スタンドに固定する', why: '加熱で出た水が、熱い底の方に流れると急に冷えて試験管が割れる。口を下げればそれを防げる。', wrong: [['試験管の口を少し上げて固定する', '出た水が熱い底に流れて、試験管が割れる。固体の加熱は口を下げる。']] },
+    { do: 'ゴム栓つきの誘導管をつけ、先を石灰水に入れる', why: '発生した気体を石灰水に通して、何の気体か調べるため。', wrong: [['ゴム栓をせずに加熱を始める', '気体が試験管の口からにげて、石灰水に届かない。']] },
+    { do: '全体を軽く温めてから、固体の部分を外炎で加熱する', why: 'いきなり一か所だけ強く熱すると、ガラスが割れやすい。', wrong: [['炎の中心（内炎）に試験管の底を当てたままにする', '内炎は温度が低い。全体を温めてから、温度の高い外炎で加熱する。']] },
+    { do: '石灰水の変化を観察する', why: '石灰水が白くにごった → 二酸化炭素 CO₂ が出た。', wrong: [['石灰水に顔を近づけてにおいをかぐ', 'においでは二酸化炭素はわからない。気体は手であおいでかぐのが基本。']] },
+    { do: '試験管の口についた液体に、青い塩化コバルト紙をつける', why: '青色 → 赤（桃）色 に変われば水 H₂O。', wrong: [['口についた液体を指でさわって確かめる', '実験の薬品にふれたり、なめたりしない。塩化コバルト紙で調べる。']] },
+    { do: '火を消す前に、誘導管を石灰水から抜く', why: '先に火を消すと、試験管の中の気体が冷えて縮み、石灰水が吸いこまれる（逆流）。熱い試験管に冷たい液が入ると割れる。', wrong: [['先に火を消してから、誘導管を抜く', '中の気体が冷えて縮み、石灰水が逆流して熱い試験管が割れる。必ず「抜いてから消す」。']] },
+    { do: 'ガスバーナーの火を消し、試験管が冷めるのを待つ', why: '熱いままさわるとやけどする。', wrong: [['熱い試験管にすぐ水をかけて冷やす', '急に冷えて試験管が割れる。自然に冷ます。']] },
+    { do: '残った白い固体を水に溶かし、フェノールフタレインを加える', why: '濃い赤色になる。残った固体は炭酸ナトリウム Na₂CO₃ で、炭酸水素ナトリウムより水によく溶け、強い塩基性。', wrong: [['残った固体を少しなめて、味を確かめる', '薬品は絶対になめない。指示薬で性質を調べる。']] },
+  ],
+  mistakes: ['試験管の口を上げてしまう。', '火を消してから誘導管を抜く（逆流）。', '石灰水のにごりが二酸化炭素、塩化コバルト紙の色の変化が水、と結びつけられない。'],
+  danger: ['逆流で試験管が割れると、熱い破片や液が飛ぶ。保護めがねをかける。', '加熱した試験管・スタンドの金具は熱い。', '石灰水は弱いアルカリ性。目に入ったらすぐ水で洗う。'],
+  frame: [1.6, 3.6, new THREE.Vector3(0.2, 0.35, 1)],
+  build(g, s) {
+    const tb = MODELS.tube();
+    tb.g.children.forEach(c => { if (c.renderOrder === 1) c.visible = false; });
+    const tube = new THREE.Group(); tube.add(tb.g); g.add(tube);
+    const pw = new THREE.Group(), pwm = solid(0xf7f7f2, { shininess: 10 }), pwg = new THREE.DodecahedronGeometry(0.045);
+    for (let i = 0; i < 110; i++) { const m = new THREE.Mesh(pwg, pwm); m.position.set(-0.24 + Math.random() * 0.15, 0.12 + Math.random() * 0.9, (Math.random() - 0.5) * 0.34); pw.add(m); }
+    tube.add(pw);
+    const st = rubberStopper(0.27, 0.24, 0.32); st.position.y = 3.35; tube.add(st);
+    const drops = new THREE.Group();
+    for (let i = 0; i < 9; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.035 + Math.random() * 0.02, 8, 6), liquidMat(0xd6ecff, 0.8)); d.position.set(-0.2 - Math.random() * 0.05, 2.3 + Math.random() * 0.9, (Math.random() - 0.5) * 0.3); drops.add(d); }
+    tube.add(drops);
+    const stand = makeStand(3.6, 1.6, 1.5); stand.rotation.y = -Math.PI / 2; stand.position.set(-1.4, 0, -0.15); g.add(stand);
+    const bm = MODELS.burner(); bm.g.scale.setScalar(0.5); bm.g.position.set(0.5, 0, 0); g.add(bm.g);
+    bm.flame.size = 0.55; bm.flame.air = 0.9;
+    // 石灰水の試験管
+    const lw = MODELS.tube(); lw.g.scale.setScalar(0.85);
+    let lime = null; lw.g.children.forEach(c => { if (c.renderOrder === 1) lime = c; });
+    lime.material.color.set(0xeef6f8); lime.material.opacity = 0.35;
+    const lwG = new THREE.Group(); lwG.add(lw.g); g.add(lwG);
+    const bub = bubbleSet(10, 0xffffff, 0.035); bub.forEach(b => lwG.add(b));
+    const pipe = tubePath([[-2.42, 1.5], [-2.8, 1.55], [-3.1, 2.4], [-3.25, 3.25], [-3.35, 3.2], [-3.4, 2.4], [-3.4, 0.55]], 0.045, glassMat({ opacity: 0.45 }));
+    g.add(pipe);
+    const paper = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.22), solid(0x2d6fe0)); paper.position.set(-2.6, 1.25, 0.25); g.add(paper);
+    const bk = MODELS.beaker(); bk.g.scale.setScalar(0.4); bk.g.position.set(1.9, 0, 1.3); g.add(bk.g);
+    let bkLiq = null; bk.g.children.forEach(c => { if (c.renderOrder === 1) bkLiq = c; });
+    const L1 = addLabel('炭酸水素ナトリウム', () => new THREE.Vector3(0.3, 2.3, 0)); L1.part = true;
+    const L2 = addLabel('石灰水', () => lwG.position.clone().add(new THREE.Vector3(0.3, 1.2, 0))); L2.part = true;
+    [L1, L2].forEach(L => { L.el.hidden = !state.parts; });
+    return {
+      tick(t, k, e) {
+        // 口の向き：最初は上向き（まちがい）、固定後は少し下向き
+        tube.rotation.z = Math.PI / 2 + (k >= 1 ? 0.12 : -0.12);
+        tube.position.set(1.0, k >= 1 ? 1.9 : 1.5, 0);
+        st.visible = pipe.visible = k >= 2;
+        lwG.visible = k >= 1;
+        lwG.position.set(-3.4, 0, k >= 6 ? lerp(0, 1.1, k > 6 ? 1 : e * 2) : 0);
+        const lit = k >= 3 && k < 7;
+        bm.flame.lit = lit; bm.flame.update(t);
+        const cloud = k >= 4 ? 1 : k === 3 ? Math.min(1, e / 4) : 0;
+        lime.material.color.set(new THREE.Color(0xeef6f8).lerp(new THREE.Color(0xffffff), cloud)); lime.material.opacity = 0.35 + 0.5 * cloud;
+        bub.forEach((b, i) => { b.visible = lit && k < 6; const kk = (t * 0.8 + b.userData.ph) % 1; b.position.set(Math.sin(i) * 0.07, 0.35 + kk * 0.6, Math.cos(i * 2) * 0.07); });
+        drops.visible = k >= 4 || (k === 3 && e > 2);
+        paper.visible = k >= 5; paper.material.color.set(k >= 5 ? 0xe58aa6 : 0x2d6fe0);
+        bk.g.visible = k >= 8; if (bkLiq) { bkLiq.material.color.set(0xd81b60); bkLiq.material.opacity = 0.7; }
+      },
+    };
+  },
+};
+
+// ---------- メスフラスコで溶液をつくる ----------
+SEQ['p-volflask'] = {
+  intro: '0.100 mol/L の塩化ナトリウム水溶液を 100 mL つくろう（NaCl のモル質量は 58.5 g/mol）。',
+  purpose: '濃度が正確にわかる溶液（標準溶液）をつくる。中和滴定など、濃度を使って計算する実験はすべてこの操作から始まる。「100 mL の水に溶かす」のではなく「溶かしてから全体を 100 mL にする」のがポイント。',
+  steps: [
+    { do: '必要な NaCl の質量を計算する（0.100 mol/L × 0.100 L × 58.5 g/mol）', why: '物質量 = 濃度 × 体積 = 0.0100 mol。質量 = 0.0100 mol × 58.5 g/mol = 0.585 g。', wrong: [['0.100 mol 分の 5.85 g をはかる', '100 mL（0.100 L）しかつくらないので、必要なのは 0.0100 mol ＝ 0.585 g。']] },
+    { do: '電子てんびんで 0.585 g をはかりとり、ビーカーに入れる', why: '薬包紙の上ではかり、ビーカーに移す。', wrong: [['てんびんに直接 NaCl をのせてはかる', 'てんびんがよごれ、さびる。薬包紙やビーカーにのせてはかる。']] },
+    { do: '少量の純粋な水を加え、ガラス棒でかき混ぜて完全に溶かす', why: 'メスフラスコの中では混ぜにくく、溶け残りが出やすい。先にビーカーで溶かしておく。', wrong: [['NaCl をそのままメスフラスコに入れ、標線まで水を入れてから溶かす', '溶け残りが出やすく、溶けると体積が変わることもある。先にビーカーで溶かす。']] },
+    { do: 'ろうとを使って、溶かした液をメスフラスコに移す', why: 'メスフラスコの口は細い。こぼれた分だけ物質量が減ってしまう。', wrong: [['ビーカーから直接メスフラスコに注ぐ', '口が細いのでこぼれやすい。こぼれた分だけ濃度が小さくなる。']] },
+    { do: 'ビーカーとガラス棒を少量の水ですすぎ、すすいだ液もメスフラスコに入れる（2〜3回）', why: 'ビーカーのかべやガラス棒に残った NaCl も、すべてメスフラスコに移すため。', wrong: [['すすいだ液は流しに捨てる', 'ビーカーに残った溶質の分だけ、濃度が小さくなる。']] },
+    { do: '純粋な水を、標線の少し下まで入れる', why: '一気に標線まで入れると、入れすぎやすい。', wrong: [['水道水を標線まで一気に入れる', '水道水にはイオンなどがふくまれる。純粋な水（蒸留水）を使い、最後は少しずつ。']] },
+    { do: 'こまごめピペットで1滴ずつ加え、液面の底を標線に合わせる（真横から見る）', why: 'メニスカス（へこんだ液面）の底を、目の高さで標線に合わせる。', wrong: [['標線をこえたので、上の液をピペットで吸い取って合わせる', '吸い取った液にも NaCl が入っているので、濃度がずれる。最初からつくり直す。']] },
+    { do: '栓をして、上下を何度もひっくり返してよく混ぜる', why: '首の細い部分は混ざりにくく、そのままだと上と下で濃度がちがう。', wrong: [['振らずに、すぐ使う', '濃度が均一になっていない。必ず栓をしてよく混ぜる。']] },
+  ],
+  mistakes: ['「水 100 mL に溶かす」と考えてしまう（溶かしたあと全体を 100 mL にする）。', 'すすぎの液を捨てる。', '標線をこえたのに吸い出して合わせる。', 'メスフラスコを加熱して乾かす（目盛りがくるう）。'],
+  danger: ['メスフラスコは倒れやすい。机の中央に置く。', 'ガラス器具は加熱しない。洗ったあとは自然乾燥。'],
+  frame: [2.0, 3.6, new THREE.Vector3(0.2, 0.3, 1)],
+  build(g) {
+    // メスフラスコ
+    const inner = [];
+    for (let k = 0; k <= 16; k++) { const a = -Math.PI / 2 + Math.PI * 0.86 * k / 16; inner.push([Math.cos(a) * 0.95, 1.0 + Math.sin(a) * 0.95]); }
+    const lst = inner[inner.length - 1];
+    inner.push([0.15, lst[1] + 0.2], [0.15, 4.3], [0.18, 4.36]);
+    const fl = new THREE.Group(), body = new THREE.Group(); body.position.y = -2.2; fl.add(body); body.add(shell(inner, 0.035));
+    const mark = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.008, 6, 40), new THREE.MeshBasicMaterial({ color: 0x1b2430 })); mark.rotation.x = Math.PI / 2; mark.position.y = 3.3; body.add(mark);
+    const lab = textSprite('100 mL', 0.16); lab.position.set(0, 0.95, 0.99); body.add(lab);
+    const levels = [0.7, 1.35, 3.05, 3.3].map(h => { const m = liquid(inner.slice(0, inner.length - 1), h, 0xbfe2f5, 0.04); m.visible = false; body.add(m); return m; });
+    const stp = cyl(0.2, 0.17, 0.3, solid(0x2b5fbf), 20); stp.position.y = 4.5; body.add(stp);
+    fl.position.set(0.5, 2.2, 0); g.add(fl);
+    const fsh = contactShadow(2.2, 2.2, 0.4); fsh.position.x = 0.5; g.add(fsh);
+    const fun = MODELS.funnel(); fun.g.scale.setScalar(0.45); fun.g.position.set(0.5, 4.5, 0); g.add(fun.g);
+    const bk = MODELS.beaker(); bk.g.scale.setScalar(0.5); bk.g.position.set(-1.9, 0, 0.3); g.add(bk.g);
+    let bkLiq = null; bk.g.children.forEach(c => { if (c.renderOrder === 1) bkLiq = c; });
+    const pile = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.14, 20), new THREE.MeshLambertMaterial({ color: 0xc8ced6 })); pile.position.set(-1.9, 0.15, 0.3); g.add(pile);
+    const rod = glassRod(1.9, 0.035); rod.position.set(-1.75, 0.2, 0.3); rod.rotation.z = -0.3; g.add(rod);
+    const wb = new THREE.Group();
+    const wbody = cyl(0.42, 0.42, 1.4, new THREE.MeshPhongMaterial({ color: 0xf2f6f8, transparent: true, opacity: 0.85 }), 24); wbody.position.y = 0.7; wb.add(wbody);
+    const wcap = cyl(0.2, 0.25, 0.25, solid(0xe53935), 16); wcap.position.y = 1.52; wb.add(wcap);
+    const noz = tubePath([[0, 1.6], [0, 1.9], [-0.3, 2.1], [-0.55, 1.9]], 0.03, solid(0xf2f6f8)); wb.add(noz);
+    wb.position.set(2.4, 0, 0.5); g.add(wb);
+    const kom = MODELS.komagome(); kom.g.scale.setScalar(0.55); kom.g.position.set(0.5, 4.45, 0.0); g.add(kom.g);
+    const L = addLabel('標線', () => new THREE.Vector3(0.72, 3.3, 0)); L.part = true; L.el.hidden = !state.parts;
+    const L2 = addLabel('メスフラスコ', () => new THREE.Vector3(1.4, 1.2, 0)); L2.part = true; L2.el.hidden = !state.parts;
+    const L3 = addLabel('洗浄びん（純粋な水）', () => new THREE.Vector3(2.4, 2.3, 0.5)); L3.part = true; L3.el.hidden = !state.parts;
+    return {
+      tick(t, k, e) {
+        pile.visible = k === 2;
+        if (bkLiq) { bkLiq.visible = k >= 3 && k < 4; bkLiq.material.color.set(0xd5ecf7); }
+        fun.g.visible = k >= 4 && k < 6;
+        const lv = k >= 7 ? 3 : k >= 6 ? 2 : k >= 5 ? 1 : k >= 4 ? 0 : -1;
+        levels.forEach((m, i) => { m.visible = i === lv; });
+        kom.g.visible = k === 6;
+        stp.visible = k >= 8;
+        fl.rotation.z = k >= 8 && e < 4 && !reduceMotion ? Math.sin(e * 2.4) * 1.2 * (1 - e / 4) : 0;
+        fl.position.y = fl.rotation.z ? 2.6 : 2.2;
+      },
+    };
+  },
+};
+
+// ---------- ペーパークロマトグラフィー ----------
+SEQ['p-chroma'] = {
+  intro: '黒い水性ペンのインクが、何色の色素でできているか調べよう。',
+  purpose: '混合物を、ろ紙に吸着しやすいか・展開液に溶けやすいかのちがいで分ける。少しの量でも分けられるので、色素や薬品の成分を調べるのに使われる。',
+  steps: [
+    { do: 'ろ紙の下から 2 cm くらいの所に、鉛筆で線を引く', why: '鉛筆の黒鉛は水に溶けないので動かない。インクをつける位置（原点）の目印になる。', wrong: [['ボールペンで線を引く', '線のインクも展開液で動いてしまい、結果がわからなくなる。']] },
+    { do: '線の上に、インクを小さな点でつける（乾かして数回重ねる）', why: '点が大きいと、分かれた色どうしが重なって見分けにくい。', wrong: [['インクを太く大きくぬる', '色どうしが重なって、分かれ方が見えにくくなる。']] },
+    { do: '容器に展開液（水）を、鉛筆の線より低くなるように入れる', why: '線が液につかると、インクがろ紙を上がらずに液へ溶け出してしまう。', wrong: [['展開液を線より上まで入れる', 'インクの点が液にしずみ、液に溶け出してしまう。']] },
+    { do: 'ろ紙の下のはしだけが液につくようにつるし、ふたをする', why: 'ふたをすると中が展開液の蒸気でいっぱいになり、ろ紙から液が蒸発しにくくなってきれいに上がる。', wrong: [['ふたをせず、風の当たる所に置く', 'ろ紙から液が蒸発して、上がり方が不安定になる。']] },
+    { do: '液が上のはし近くまで上がったら取り出し、液の先端に鉛筆で印をつける', why: '乾くと先端がわからなくなる。Rf値 ＝ 原点から色の中心まで ÷ 原点から液の先端まで。', wrong: [['液がろ紙の上はしをこえるまで待つ', '色が上にたまって、距離がはかれなくなる。']] },
+    { do: '乾かしてから、色の分かれ方と位置を調べる', why: '吸着しにくく、液に溶けやすい色素ほど速く上がる。黒インクは黄・赤・青などの色素の混合物とわかる。', wrong: [['ぬれたまま指でこすって色を確かめる', 'ろ紙が破れ、色がにじむ。乾かしてから観察する。']] },
+  ],
+  mistakes: ['線をボールペンで引く。', 'インクの点が液につかっている。', 'ふたをしない。', '液の先端に印をつけ忘れる。'],
+  danger: ['展開液にエタノールなどを使うときは火気厳禁。換気する。', 'ろ紙は手の油がつかないよう、はしを持つ。'],
+  frame: [1.8, 3.0, new THREE.Vector3(0.25, 0.3, 1)],
+  build(g) {
+    const jarIn = [[0, 0.08], [0.8, 0.08], [0.85, 0.14], [0.85, 3.6], [0.88, 3.66]];
+    const jar = new THREE.Group(); jar.add(shell(jarIn, 0.04));
+    const solv = liquid(jarIn.slice(0, 4), 0.45, 0xd8eef8, 0.02); jar.add(solv);
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 0.04, 40), glassMat({ opacity: 0.35 })); lid.position.y = 3.72; jar.add(lid);
+    jar.add(contactShadow(2.2, 2.2, 0.4)); g.add(jar);
+    const c = document.createElement('canvas'); c.width = 96; c.height = 384;
+    const tex = new THREE.CanvasTexture(c);
+    const paper = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 3.0), new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide }));
+    const hang = new THREE.Group(); hang.add(paper); paper.position.y = 1.5;
+    const rod = glassRod(2.2, 0.035); rod.rotation.z = Math.PI / 2; rod.position.y = 3.05; hang.add(rod);
+    const clip = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.12, 0.08), solid(0x37474f)); clip.position.y = 2.98; hang.add(clip);
+    g.add(hang);
+    const draw = (k, p) => {
+      const x = c.getContext('2d'), H = 384, Y = f => H - f * H;
+      x.fillStyle = '#fbfaf4'; x.fillRect(0, 0, 96, H);
+      const o = 2 / 30, front = o + (0.95 - o) * p;
+      if (p > 0) { x.fillStyle = 'rgba(150,180,200,0.18)'; x.fillRect(0, Y(front), 96, H - Y(front)); }
+      if (k >= 1) { x.strokeStyle = '#555'; x.lineWidth = 2; x.beginPath(); x.moveTo(6, Y(o)); x.lineTo(90, Y(o)); x.stroke(); }
+      if (k >= 2) {
+        const dyes = [['#f2c200', 0.86], ['#e0307a', 0.6], ['#2f5fd0', 0.32], ['#222', 0.0]];
+        dyes.forEach(([col, rf]) => {
+          const y = o + (front - o) * rf, sp = 6 + 26 * p * (rf > 0 ? 0.6 + rf * 0.4 : 0.2);
+          const grd = x.createRadialGradient(48, Y(y), 1, 48, Y(y), sp);
+          grd.addColorStop(0, col); grd.addColorStop(1, 'rgba(255,255,255,0)');
+          x.globalAlpha = p > 0 || rf === 0 ? 0.85 : 0; if (p === 0 && rf === 0) x.globalAlpha = 1;
+          x.fillStyle = grd; x.beginPath(); x.ellipse(48, Y(y), sp * 1.1, sp * 0.8, 0, 0, 6.29); x.fill();
+        });
+        x.globalAlpha = 1;
+      }
+      if (k >= 5) { x.strokeStyle = '#555'; x.setLineDash([4, 3]); x.beginPath(); x.moveTo(6, Y(front)); x.lineTo(90, Y(front)); x.stroke(); x.setLineDash([]); }
+      tex.needsUpdate = true;
+    };
+    let last = '';
+    const L = addLabel('ろ紙', () => (hang.rotation.x ? new THREE.Vector3(2.0, 0.1, -0.6) : new THREE.Vector3(0.45, 1.6, 0))); L.part = true; L.el.hidden = !state.parts;
+    const L2 = addLabel('展開液', () => new THREE.Vector3(0.9, 0.3, 0.3)); L2.part = true; L2.el.hidden = !state.parts;
+    return {
+      tick(t, k, e) {
+        solv.visible = k >= 3;
+        lid.visible = k >= 4;
+        const inJar = k === 4;
+        if (inJar) { hang.rotation.x = 0; hang.position.set(0, 0.38, 0); } else { hang.rotation.x = -Math.PI / 2; hang.position.set(1.5, 0.03, 1.3); }
+        rod.visible = clip.visible = inJar;
+        const p = k >= 5 ? 1 : k === 4 ? Math.min(1, e / 7) : 0;
+        const key = k + ':' + p.toFixed(2);
+        if (key !== last) { draw(k, p); last = key; }
+      },
+    };
+  },
+};
+
+// ---------- 昇華法（ヨウ素の精製） ----------
+SEQ['p-sublime'] = {
+  intro: 'ヨウ素と砂の混合物から、ヨウ素だけを取り出そう。',
+  purpose: 'ヨウ素は加熱すると液体にならずに気体になる（昇華）。砂は昇華しないので、気体になったヨウ素を冷やして固体にもどせば分けられる。',
+  steps: [
+    { do: '手袋をして、ヨウ素と砂の混合物をビーカーに入れる', why: 'ヨウ素は皮ふをいためる。薬さじを使う。', wrong: [['ヨウ素を素手でつまんで入れる', 'ヨウ素は皮ふをいためる。手袋をして、薬さじを使う。']] },
+    { do: '冷たい水を入れた丸底フラスコを、ビーカーの上にのせる', why: 'ヨウ素の気体が冷たいフラスコの底で冷やされ、固体（結晶）にもどる。', wrong: [['フラスコにお湯を入れてのせる', 'フラスコが温かいと、気体が固体にもどらない。']] },
+    { do: '換気をしながら、金網の上でおだやかに加熱する', why: 'ヨウ素の気体は有毒。強く熱すると気体がたくさん出て、すき間からもれる。', wrong: [['強火で一気に加熱する', '気体が大量に出て、すき間からもれる。ヨウ素の気体は有毒。']] },
+    { do: '紫色の気体と、フラスコの底につく黒紫色の結晶を観察する', why: '固体 → 気体（昇華）→ 固体。砂はビーカーに残る。', wrong: [['ビーカーに顔を近づけて、気体のにおいをかぐ', 'ヨウ素の気体は有毒。顔を近づけない。']] },
+    { do: '火を止め、冷めてからフラスコをはずして結晶を取る', why: '熱いうちにはずすと、残った気体が出てきて吸いこむ危険がある。やけども防ぐ。', wrong: [['すぐにフラスコを持ち上げて、ビーカーの中をのぞく', '残ったヨウ素の気体が出てくる。冷めてからはずす。']] },
+  ],
+  mistakes: ['強く加熱しすぎる。', 'フラスコに冷たい水を入れ忘れる。', '冷める前にフラスコをはずす。'],
+  danger: ['ヨウ素の気体は有毒。換気、またはドラフト（排気装置）の中で行う。', 'ヨウ素が皮ふにつくと茶色くなり、いためる。手袋をする。', '加熱したビーカー・金網は熱い。'],
+  frame: [2.2, 2.9, new THREE.Vector3(0.25, 0.3, 1)],
+  build(g) {
+    const tp = tripod(2.2, 0.75); g.add(tp);
+    const gauze = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.03, 1.9), solid(0x8d939a, { shininess: 20 })); gauze.position.y = 2.24; g.add(gauze);
+    const ceram = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.035, 32), solid(0xe8e6df)); ceram.position.y = 2.25; g.add(ceram);
+    const lamp = MODELS.lamp(); lamp.g.scale.setScalar(0.8); lamp.g.position.set(0, 0, 0); g.add(lamp.g);
+    lamp.cap.visible = false;
+    lamp.flame.size = 0.38; lamp.flame.air = 0.35;
+    const bk = MODELS.beaker(); bk.g.scale.setScalar(0.5); bk.g.position.y = 2.27; g.add(bk.g);
+    bk.g.children.forEach(c => { if (c.renderOrder === 1) c.visible = false; });
+    const mix = new THREE.Group();
+    mix.add(powder(80, 0xcdb48a, 0.42, 0.06, 0.16, 0.035));
+    const iod = powder(40, 0x3a2350, 0.4, 0.1, 0.2, 0.045); mix.add(iod);
+    mix.position.y = 2.3; g.add(mix);
+    const gas = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.15, 32, 1, true), new THREE.MeshBasicMaterial({ color: 0x8e3fb8, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+    gas.position.y = 3.0; g.add(gas);
+    const fl = MODELS.roundflask(); fl.g.scale.setScalar(0.5);
+    fl.g.children.forEach(c => { if (c.renderOrder === 1) c.material.color.set(0xcfe8f7); });
+    fl.g.children.forEach(c => { if (c.geometry && c.geometry.type === 'TorusGeometry') c.visible = false; if (c.geometry && c.geometry.type === 'DodecahedronGeometry') c.visible = false; });
+    const flG = new THREE.Group(); flG.add(fl.g); g.add(flG);
+    const flSh = fl.g.children.find(c => c.material && c.material.map === SHADOW_TEX);
+    const cr = new THREE.Group();
+    for (let i = 0; i < 46; i++) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.015, 0.09), metal(0x3b2450, 0.5)); const a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * 0.32; m.position.set(Math.cos(a) * r, 0.66 - Math.sqrt(0.372 - r * r) - 0.03, Math.sin(a) * r); m.rotation.y = a; m.userData.k = i / 46; cr.add(m); }
+    flG.add(cr);
+    const L = addLabel('冷たい水', () => flG.position.clone().add(new THREE.Vector3(0.55, 0.7, 0))); L.part = true; L.el.hidden = !state.parts;
+    const L2 = addLabel('ヨウ素と砂', () => new THREE.Vector3(0.6, 2.45, 0.2)); L2.part = true; L2.el.hidden = !state.parts;
+    return {
+      tick(t, k, e) {
+        mix.visible = k >= 1;
+        const onTop = k >= 2 && !(k >= 5 && e > 0.3);
+        flG.position.set(onTop ? 0 : 1.8, onTop ? 3.37 : 0, onTop ? 0 : 0.6);
+        if (flSh) flSh.visible = !onTop;
+        const heat = k >= 3 && k < 5;
+        lamp.flame.lit = heat; lamp.flame.update(t);
+        const prog = k >= 4 ? 1 : k === 3 ? Math.min(1, e / 6) : 0;
+        gas.material.opacity = heat ? 0.1 + 0.18 * prog : k >= 5 ? Math.max(0, 0.28 - e * 0.15) : 0;
+        cr.children.forEach(m => { m.visible = m.userData.k < prog; });
+        iod.children.forEach((m, i) => { m.visible = i / iod.children.length > prog * 0.95; });
+      },
+    };
+  },
+};
+
+Object.keys(SEQ).forEach(id => {
+  PR[id] = seqPractice(id);
+  const d = SEQ[id];
+  INFO[id] = { purpose: d.purpose, steps: d.steps.map(s => [s.do, s.why]), mistakes: d.mistakes, danger: d.danger };
+});
+PRACTICES.push(
+  { id: 'p-volflask', name: '決まった濃度の溶液をつくる', icon: 'M', item: null, grp: '実験' },
+  { id: 'p-nahco3', name: '炭酸水素ナトリウムの熱分解', icon: '重', item: null, grp: '実験' },
+  { id: 'p-chroma', name: 'ペーパークロマトグラフィー', icon: 'ク', item: null, grp: '実験' },
+  { id: 'p-sublime', name: '昇華法（ヨウ素）', icon: '昇', item: null, grp: '実験' },
+);
+SAFETY_Q.push(
+  ['炭酸水素ナトリウムを加熱するときは、試験管の口を少し下げる。', true, '出てきた水が加熱部に流れて、試験管が割れるのを防ぐ。'],
+  ['気体を石灰水に通す実験では、先に火を消してから誘導管を抜く。', false, '誘導管を抜いてから火を消す。逆だと石灰水が逆流する。'],
+  ['0.100 mol/L の溶液 100 mL は、水 100 mL に溶質を溶かしてつくる。', false, '溶かしたあと、メスフラスコで全体を 100 mL にする。'],
+  ['メスフラスコで標線をこえたら、上の液を吸い出して合わせればよい。', false, '濃度がずれるので、最初からつくり直す。'],
+  ['ペーパークロマトグラフィーの原点の線は、鉛筆で引く。', true, '鉛筆の黒鉛は展開液で動かない。'],
+  ['ヨウ素の昇華の実験では、フラスコに冷たい水を入れる。', true, '気体のヨウ素を冷やして固体にもどすため。'],
+);
+
+// ===== 手順タブ：ならべかえチャレンジ =====
+function orderStart() {
+  const info = INFO[state.id];
+  state.order = { id: state.id, pool: shuffle(info.steps.map((_, i) => i)), placed: [], miss: 0, msg: null };
+}
+function orderHTML() {
+  const o = state.order, info = INFO[o.id], n = info.steps.length, fin = o.placed.length === n;
+  let h = `<div class="seqhead"><span>ならべかえ <b>${o.placed.length}</b> / ${n}</span><span class="note">ミス ${o.miss}</span></div>`;
+  if (o.placed.length) h += `<ol class="placed">${o.placed.map(i => `<li>${esc(info.steps[i][0])}</li>`).join('')}</ol>`;
+  if (o.msg) h += `<div class="verdict ng">${esc(o.msg)}</div>`;
+  if (!fin) h += `<p class="qlead">${o.placed.length + 1} 番目は？</p><div class="seqopts">${o.pool.map(i => `<button type="button" class="seqo" data-opick="${i}">${esc(info.steps[i][0])}</button>`).join('')}</div>`;
+  else h += `<div class="verdict ok">${o.miss === 0 ? '全問正解！順番をおぼえたね。' : `完成！（ミス ${o.miss} 回）`}</div>`;
+  h += `<div class="row" style="margin-top:8px"><button type="button" class="btn" data-order="again">${fin ? 'もう一度' : 'やり直す'}</button><button type="button" class="btn" data-order="close">手順の一覧にもどる</button></div>`;
+  return h;
+}
+function orderPick(i) {
+  const o = state.order, info = INFO[o.id], next = o.placed.length;
+  if (i === next) { o.placed.push(i); o.pool = o.pool.filter(x => x !== i); o.msg = null; if (o.placed.length === info.steps.length && o.miss === 0) markDone(o.id + ':order'); }
+  else { o.miss++; o.msg = `「${info.steps[i][0]}」はもっとあと。`; }
+}
+
+// ===== 分類（左の一覧） =====
+const CATS = [
+  ['基本操作', ['p-burner', 'p-lamp', 'p-cylinder', 'p-filter', 'p-tube', 'p-balance']],
+  ['溶液・中和', ['p-volflask', 'p-titr']],
+  ['気体', ['p-gas', 'p-kipp']],
+  ['分離・精製', ['p-distill', 'p-recryst', 'p-chroma', 'p-sublime']],
+  ['物質の変化', ['p-cuox', 'p-fes', 'p-nahco3', 'p-flame']],
+  ['電気・イオン', ['p-elec', 'p-ionize']],
+].map(([c, ids]) => [c, ids.filter(id => PRACTICES.some(p => p.id === id))]);
+const catOf = id => (CATS.find(c => c[1].includes(id)) || CATS[0])[0];
+
 function quizStart(kind) {
   const qs = [];
   for (let i = 0; i < 10; i++) {
@@ -2451,19 +2855,21 @@ function quizMenuHTML() {
 // ===== 画面の組み立て =====
 function renderLib() {
   const lib = $('lib');
+  const item = (attr, id, ic, name, extra) => `<button type="button" class="item" ${attr}="${id}" aria-current="${state.id === id}"><span class="ic">${ic}</span>${esc(name)}${extra || ''}</button>`;
   if (state.mode === 'see') {
-    let h = '', last = '';
-    ITEMS.forEach(it => {
-      if (it.grp !== last) { h += `<div class="grp">${esc(it.grp)}</div>`; last = it.grp; }
-      h += `<button type="button" class="item" data-see="${it.id}" aria-current="${state.id === it.id}"><span class="ic">${ICON[it.id]}</span>${esc(it.name)}</button>`;
-    });
-    lib.innerHTML = h;
+    const groups = [...new Set(ITEMS.map(x => x.grp))];
+    const cur = state.libCat && groups.includes(state.libCat) ? state.libCat : (ITEMS.find(x => x.id === state.id) || ITEMS[0]).grp;
+    lib.innerHTML = `<div class="cats">${groups.map(c => `<button type="button" class="cat" data-cat="${esc(c)}" aria-pressed="${c === cur}">${esc(c)}</button>`).join('')}</div>`
+      + `<div class="items">${ITEMS.filter(x => x.grp === cur).map(it => item('data-see', it.id, ICON[it.id], it.name)).join('')}</div>`
+      + `<p class="libfoot">3Dの器具は、ドラッグで回せる。</p>`;
   } else if (state.mode === 'practice') {
-    let last = '';
-    lib.innerHTML = PRACTICES.map(p => (p.grp !== last ? `<div class="grp">${(last = p.grp) === '実験' ? '実験' : '基本操作の練習'}</div>` : '') + `<button type="button" class="item" data-goto="${p.id}" aria-current="${state.id === p.id}"><span class="ic">${p.icon}</span>${esc(p.name)}${done.has(p.id) ? '<span class="done">✓</span>' : ''}</button>`).join('')
-      + `<p class="note" style="margin:10px 4px">クリア ${PRACTICES.filter(p => done.has(p.id)).length} / ${PRACTICES.length}</p>`;
+    const cur = state.libCat && CATS.some(c => c[0] === state.libCat) ? state.libCat : catOf(state.id);
+    const ids = CATS.find(c => c[0] === cur)[1];
+    lib.innerHTML = `<div class="cats">${CATS.map(([c, l]) => `<button type="button" class="cat" data-cat="${esc(c)}" aria-pressed="${c === cur}">${esc(c)}<small>${l.filter(i => done.has(i)).length}/${l.length}</small></button>`).join('')}</div>`
+      + `<div class="items">${ids.map(id => { const p = PRACTICES.find(x => x.id === id); return item('data-goto', id, p.icon, p.name, done.has(id) ? '<span class="done">✓</span>' : ''); }).join('')}</div>`
+      + `<p class="libfoot">クリア ${PRACTICES.filter(p => done.has(p.id)).length} / ${PRACTICES.length}</p>`;
   } else {
-    lib.innerHTML = '<div class="grp">クイズ</div>' + [['name', '器具の名前あて'], ['safety', '安全な使い方 ○×'], ['mix', 'ミックス']].map(([k, n]) => `<button type="button" class="item" data-quiz="${k}" aria-current="${state.quiz && state.quiz.kind === k}"><span class="ic">Q</span>${n}</button>`).join('');
+    lib.innerHTML = '<div class="items">' + [['name', '器具の名前あて'], ['safety', '安全な使い方 ○×'], ['mix', 'ミックス']].map(([k, n]) => `<button type="button" class="item" data-quiz="${k}" aria-current="${!!(state.quiz && state.quiz.kind === k)}"><span class="ic">Q</span>${n}</button>`).join('') + '</div>';
   }
 }
 function renderCard() {
@@ -2486,7 +2892,7 @@ function setMode(mode) {
   else { state.quiz = null; state.id = null; renderLib(); if (R) { clearScene(); const m = MODELS.burner(); R.group.add(m.g); frame(m.focus[0], m.focus[1]); } renderCard(); }
 }
 function go(mode, id) {
-  state.mode = mode; state.id = id; state.tab = 'use'; state.ptab = 'op'; state.quiz = null;
+  state.mode = mode; state.id = id; state.tab = 'use'; state.ptab = 'op'; state.quiz = null; state.order = null; state.stepOpen = 0; state.libCat = null;
   document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === mode)));
   renderLib();
   if (!R) { renderCard(); return; }
@@ -2505,6 +2911,14 @@ document.addEventListener('click', ev => {
   if (gt) { go('practice', gt.dataset.goto); return; }
   const qz = t.closest('[data-quiz]');
   if (qz) { state.mode = 'quiz'; document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === 'quiz'))); quizStart(qz.dataset.quiz); renderLib(); return; }
+  const cat = t.closest('[data-cat]');
+  if (cat) { state.libCat = cat.dataset.cat; renderLib(); return; }
+  const stp = t.closest('[data-step]');
+  if (stp) { const i = +stp.dataset.step; state.stepOpen = state.stepOpen === i ? -1 : i; renderCard(); return; }
+  const ord = t.closest('[data-order]');
+  if (ord) { if (ord.dataset.order === 'close') state.order = null; else orderStart(); renderCard(); return; }
+  const opk = t.closest('[data-opick]');
+  if (opk && state.order) { orderPick(+opk.dataset.opick); renderCard(); return; }
   const ptab = t.closest('[data-ptab]');
   if (ptab) { state.ptab = ptab.dataset.ptab; renderCard(); const b = $('card').querySelector('.body'); if (b) b.scrollTop = 0; return; }
   const tab = t.closest('[data-tab]');
@@ -2516,7 +2930,7 @@ document.addEventListener('click', ev => {
     if (a.dataset.a === 'qnext') { state.quiz.i++; state.quiz.picked = null; if (state.quiz.i >= 10) renderCard(); else quizShow(); return; }
     PR[state.id].act(a.dataset.a); return;
   }
-  for (const [attr, act] of [['data-gas', 'gas'], ['data-method', 'method'], ['data-elyte', 'elyte'], ['data-sample', 'sample'], ['data-fq', 'fq'], ['data-metal', 'metal'], ['data-sol', 'sol'], ['data-fs', 'fs'], ['data-kmode', 'kmode'], ['data-add', 'add']]) {
+  for (const [attr, act] of [['data-gas', 'gas'], ['data-method', 'method'], ['data-elyte', 'elyte'], ['data-sample', 'sample'], ['data-fq', 'fq'], ['data-metal', 'metal'], ['data-sol', 'sol'], ['data-fs', 'fs'], ['data-kmode', 'kmode'], ['data-add', 'add'], ['data-seq', 'seq']]) {
     const b = t.closest('[' + attr + ']');
     if (b && state.pr) { PR[state.id].act(act, b.getAttribute(attr)); return; }
   }
