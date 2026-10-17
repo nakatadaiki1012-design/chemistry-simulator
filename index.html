@@ -435,6 +435,13 @@ details.more p { margin: 4px 0 0; line-height: 1.65; }
 .tabar b { position: absolute; right: 10px; top: 0; line-height: 22px; font-family: var(--font-data); font-size: 13px; }
 .qset.hot { border-color: var(--warm); }
 .qset.hot b { color: var(--warm); }
+.ls-gh { grid-column: 1 / -1; font-size: 12px; font-weight: 700; color: var(--muted); margin: 10px 2px 0; }
+.ls-gh:first-child { margin-top: 0; }
+.ls-part { font-family: var(--font-display); font-size: 15px; margin: 14px 0 2px; padding-top: 8px; border-top: 1px solid var(--line); }
+.ls-chap { font-size: 12.5px; color: var(--muted); margin: 8px 0 4px; font-weight: 700; }
+.ls-no { display: inline-block; min-width: 2.6em; font-family: var(--font-data); color: var(--accent); }
+.ls-ok { font-style: normal; color: var(--ok, #1f8a5b); }
+.ls-lab { display: inline-flex; text-decoration: none; }
 /* 授業モード */
 body.present .app { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage"; }
 body.present .lib { display: none; }
@@ -2759,53 +2766,172 @@ function taTick() {
   }
 }
 
-// ===== 授業モード（大きな文字で1画面ずつ） =====
+// ===== 授業モード（学習指導要領「化学基礎」の順に、大きな文字で1画面ずつ） =====
+// part：編、chap：章。lab：実験ラボの練習（別タブで開く）
+const LESSON_PARTS = [
+  { name: '第1編　物質の構成', chaps: ['第1章　物質の探究（化学と人間生活）', '第2章　物質の構成粒子', '第3章　化学結合'] },
+  { name: '第2編　物質の変化とその利用', chaps: ['第1章　物質量と化学反応式', '第2章　酸と塩基', '第3章　酸化と還元'] },
+];
 const LESSONS = [
-  { id: 'ls-shape', name: '分子の形はなぜ決まる？', steps: [
+  // ---------- 第1編 第1章 ----------
+  { id: 'ls-pure', no: '1-1', part: 0, chap: 0, name: '純物質と混合物・物質の分離', steps: [
+    { go: 'water', title: '純物質', text: '1種類の物質だけでできているものを純物質という。水 H₂O は純物質で、沸点（100 ℃）や融点（0 ℃）が決まっている。', show: { labels: true } },
+    { go: 'ph-ethanol', title: '混合物', text: 'ワインは、水とエタノールなどがまざった混合物。混合物は、まざっている割合で沸点などが変わる。3D はエタノールだけを取り出したようす（沸点 78 ℃）。水の沸点は 100 ℃。', phaseT: 25 },
+    { go: 'ph-ethanol', title: '蒸留', text: '沸点のちがいを利用して分ける。85 ℃にすると、エタノールは気体になる（3D）が、水は 100 ℃まで液体のまま。出てきた気体を冷やして液体にもどして集める。', phaseT: 85, lab: 'p-distill' },
+    { go: 'nacl', title: 'ろ過・再結晶', text: 'ろ過：液体に溶けない固体を、ろ紙で分ける。再結晶：温度による溶けやすさ（溶解度）のちがいを利用して、純粋な結晶を取り出す。', lab: 'p-recryst' },
+    { go: 'naphthalene', title: '昇華法', text: 'ナフタレンやヨウ素は、固体から直接気体になる（昇華）。この性質を利用して、昇華しない物質と分ける。', lab: 'p-sublime' },
+    { go: 'caffeine', title: '抽出・クロマトグラフィー', text: '抽出：溶媒への溶けやすさのちがいで取り出す（お茶の葉からカフェインなど）。クロマトグラフィー：ろ紙などへの吸着のしやすさのちがいで分ける。', lab: 'p-chroma' },
+  ] },
+  { id: 'ls-elem', no: '1-2', part: 0, chap: 0, name: '単体と化合物・同素体', steps: [
+    { go: 'oxygen', title: '単体', text: '1種類の元素だけでできている純物質を単体という。酸素 O₂、水素 H₂、窒素 N₂ など。' },
+    { go: 'water', title: '化合物', text: '2種類以上の元素でできている純物質を化合物という。水 H₂O は H と O の化合物。電気分解すると、単体の H₂ と O₂ に分けられる。', lab: 'p-elec' },
+    { go: 'cmp-o2-o3', title: '同素体', text: '同じ元素からできている単体で、性質がちがうものを同素体という。酸素 O₂ とオゾン O₃。' },
+    { go: 'cmp-diamond-graphite', title: '炭素の同素体', text: 'ダイヤモンドと黒鉛は、原子のつながり方がちがうので、かたさや電気の通しやすさがちがう。同素体があるのは S・C・O・P（「スコップ」と覚える）。' },
+    { go: 'nacl', title: '元素を調べる', text: '炎色反応：Na は黄色、Cu は青緑色などの炎の色で、ふくまれる元素がわかる。', lab: 'p-flame' },
+  ] },
+  { id: 'ls-state', no: '1-3', part: 0, chap: 0, name: '物質の三態と熱運動', steps: [
+    { go: 'ph-water', title: '固体', text: '粒子は決まった位置で、その場で振動している（熱運動）。粒子どうしが強く引き合っている。', phaseT: -20 },
+    { go: 'ph-water', title: '液体', text: '粒子はたがいに引き合いながら、位置を変えて動き回る。だから形が自由に変わる。', phaseT: 25 },
+    { go: 'ph-water', title: '気体', text: '粒子はばらばらに飛び回る。温度が高いほど熱運動は激しい。スライダーで温度を変えてみよう。', phaseT: 120 },
+    { go: 'ph-co2', title: '昇華', text: 'ドライアイス（CO₂ の固体）は、ふつうの気圧では液体にならず、−78 ℃で直接気体になる。', phaseT: -100 },
+    { go: 'ph-water', title: '物理変化と化学変化', text: '状態変化では分子そのものは変わらない（物理変化）。分子が別の物質に変わる化学変化とのちがいに注意。', phaseT: 100 },
+  ] },
+  // ---------- 第1編 第2章 ----------
+  { id: 'ls-atom', no: '2-1', part: 0, chap: 1, name: '原子の構造と同位体', steps: [
+    { go: 'atom-H', title: '原子のつくり', text: '原子は、中心の原子核と、そのまわりの電子でできている。水素原子は、陽子1個と電子1個。' },
+    { go: 'atom-He', title: '陽子・中性子・電子', text: '原子核は陽子と中性子でできている。He は陽子2・中性子2・電子2。陽子の数＝原子番号＝電子の数。' },
+    { go: 'atom-C', title: '質量数と同位体', text: '質量数＝陽子の数＋中性子の数。¹²C は陽子6・中性子6。中性子の数がちがう ¹³C・¹⁴C を同位体という。化学的な性質はほぼ同じ。' },
+  ] },
+  { id: 'ls-shell', no: '2-2', part: 0, chap: 1, name: '電子配置と周期表', steps: [
+    { go: 'atom-Li', title: '電子殻', text: '電子は内側の K殻（2個まで）、L殻（8個まで）、M殻…の順に入る。Li は K2 L1。' },
+    { go: 'atom-Ne', title: '貴ガスの電子配置', text: 'Ne は K2 L8。最外殻がいっぱいで、とても安定。貴ガス（He・Ne・Ar）はほかの物質と反応しにくい。' },
+    { go: 'atom-Na', title: '価電子', text: 'Na は K2 L8 M1。最外殻の1個の電子が価電子。Li・Na・K は価電子が1個で、性質がよくにている（アルカリ金属）。' },
+    { go: 'atom-Cl', title: 'ハロゲン', text: 'Cl は K2 L8 M7。価電子は7個。F・Cl はハロゲン（17族）で、電子を1個受け取りやすい。' },
+    { go: 'atom-Ca', title: '周期表', text: '元素を原子番号の順に並べた表。同じ縦の列（族）は価電子の数が同じで、性質がにている（周期律）。Ca は K2 L8 M8 N2。左の一覧から元素をえらんでみよう。' },
+  ] },
+  { id: 'ls-ion', no: '2-3', part: 0, chap: 1, name: 'イオンのでき方', steps: [
+    { go: 'atom-Na', title: 'ナトリウム原子', text: 'Na の電子配置は K2 L8 M1。最外殻（M殻）の電子は1個だけ。' },
+    { go: 'atom-Na', title: 'Na⁺ になる', text: 'M殻の電子1個を失うと K2 L8 になり、ネオンと同じ安定な電子配置になる。これが陽イオン Na⁺。', atomIon: true },
+    { go: 'atom-Mg', title: 'Mg²⁺', text: 'Mg は価電子2個を失って Mg²⁺ になる。失った電子の数がイオンの価数。', atomIon: true },
+    { go: 'atom-Cl', title: 'Cl⁻', text: 'Cl は電子を1個受け取ると M殻が8個になり、アルゴンと同じ電子配置の陰イオン Cl⁻ になる。', atomIon: true },
+    { go: 'atom-O', title: 'O²⁻', text: 'O は電子を2個受け取って O²⁻ になり、ネオンと同じ電子配置になる。', atomIon: true },
+    { go: 'so4', title: '多原子イオン', text: '原子のあつまり全体が電気をもつイオンもある。硫酸イオン SO₄²⁻、アンモニウムイオン NH₄⁺ など。' },
+  ] },
+  // ---------- 第1編 第3章 ----------
+  { id: 'ls-ionic', no: '3-1', part: 0, chap: 2, name: 'イオン結合とイオン結晶', steps: [
+    { go: 'ionic', title: 'イオン結合', text: 'Na の電子が Cl に移り、Na⁺ と Cl⁻ が静電気的な引力（クーロン力）で引き合う。これがイオン結合。' },
+    { go: 'nacl', title: 'イオン結晶', text: 'たくさんの Na⁺ と Cl⁻ が交互に規則正しく並んだ結晶。分子はないので、NaCl のような組成式で表す。', cells: 2 },
+    { go: 'nacl', title: 'イオン結晶の性質', text: '融点が高く、かたいが、強くたたくと割れやすい。固体は電気を通さないが、水溶液や融解した液体は電気を通す。', cells: 1 },
+  ] },
+  { id: 'ls-cov', no: '3-2', part: 0, chap: 2, name: '共有結合と分子', steps: [
+    { go: 'covalent', title: '共有結合', text: '2つの H 原子が、価電子を1個ずつ出し合って電子対をつくり、共有する。これが共有結合。' },
+    { go: 'water', title: '電子式・構造式', text: '水 H₂O：O のまわりに共有電子対2組と、非共有電子対2組（紫）。1組の共有電子対を1本の線（価標）で表したものが構造式 H–O–H。', show: { lp: true, labels: true } },
+    { go: 'co2', title: '二重結合', text: 'CO₂ は、C と O が電子対を2組共有している（二重結合 O=C=O）。', show: { lp: true } },
+    { go: 'nitrogen', title: '三重結合', text: '窒素 N₂ は電子対を3組共有する三重結合 N≡N。とても切れにくい。', show: { lp: true } },
+    { go: 'dative', title: '配位結合', text: 'NH₃ の非共有電子対を、H⁺ が受け取って結合する（配位結合）。できた NH₄⁺ の4本の結合は、区別がつかない。' },
+  ] },
+  { id: 'ls-shape', no: '3-3', part: 0, chap: 2, name: '分子の形', steps: [
     { go: 'methane', title: 'メタン CH₄', text: 'C原子のまわりに共有電子対が4組。4組の電子対はおたがいに反発して、いちばん離れた向きをとる。だから正四面体形（109.5°）になる。', show: { lp: true, angle: true, labels: true } },
     { go: 'ammonia', title: 'アンモニア NH₃', text: '電子対は4組のまま。でも1組は非共有電子対（紫）。原子だけを見ると三角錐形になる。', show: { lp: true, angle: true } },
     { go: 'water', title: '水 H₂O', text: '非共有電子対が2組。原子だけを見ると折れ線形（約104.5°）。非共有電子対の反発が強いので、角度が少し小さくなる。', show: { lp: true, angle: true } },
     { go: 'co2', title: '二酸化炭素 CO₂', text: '二重結合は1つの「かたまり」として数える。C原子のまわりのかたまりは2つなので、反対向きの直線形（180°）。', show: { lp: true, angle: true } },
     { go: 'cmp-ch4-nh3', title: 'まとめ', text: '形は「中心原子のまわりの電子対の数」と「そのうち非共有電子対がいくつか」で決まる。' },
   ] },
-  { id: 'ls-polar', name: '極性分子と無極性分子', steps: [
-    { go: 'hcl', title: '結合の極性', text: 'Cl は H より電気陰性度が大きいので、共有電子対を強く引きつける。Cl がδ−、H がδ+ になる。', show: { polar: true, cloud: true } },
+  { id: 'ls-polar', no: '3-4', part: 0, chap: 2, name: '電気陰性度と極性', steps: [
+    { go: 'hcl', title: '結合の極性', text: 'Cl は H より電気陰性度（電子を引きつける強さ）が大きいので、共有電子対を強く引きつける。Cl がδ−、H がδ+ になる。', show: { polar: true, cloud: true } },
     { go: 'water', title: '水は極性分子', text: '折れ線形なので、2本の O–H 結合の極性が打ち消し合わない。オレンジの矢印が、分子全体のかたより。', show: { polar: true } },
     { go: 'co2', title: '二酸化炭素は無極性分子', text: 'C=O 結合には極性がある。でも直線形なので、左右反対向きに打ち消し合う。', show: { polar: true } },
     { go: 'cmp-ccl4-chcl3', title: '形がにていても…', text: 'CCl₄ は打ち消し合って無極性、CHCl₃ は打ち消し合わず極性。' },
   ] },
-  { id: 'ls-hbond', name: '水素結合と沸点', steps: [
-    { go: 'hbond', title: '水素結合', text: 'O–H の H（δ+）が、となりの分子の O の非共有電子対（δ−）と引き合う。青い点線が水素結合。' },
+  { id: 'ls-hbond', no: '3-5', part: 0, chap: 2, name: '分子間力と水素結合', steps: [
+    { go: 'hbond', title: '水素結合', text: 'O–H の H（δ+）が、となりの分子の O の非共有電子対（δ−）と引き合う。青い点線が水素結合。ファンデルワールス力より強い分子間力。' },
     { go: 'ph-h2s', title: '硫化水素を温めると', text: '水素結合がないので、−60 ℃でもう気体。室温（25 ℃）では、分子がばらばらに飛び回っている。', phaseT: 25 },
     { go: 'ph-water', title: '水を温めると', text: '同じ25 ℃でも、水は液体。水素結合で引き合っているので、100 ℃まで気体にならない。スライダーで温度を上げてみよう。', phaseT: 25 },
-    { go: 'cmp-etoh-dme', title: '同じ分子式でも', text: 'エタノール（–OH あり）は78 ℃、ジメチルエーテル（–OH なし）は −24 ℃。水素結合のあるなしで、沸点が大きく変わる。' },
+    { go: 'cmp-etoh-dme', title: '同じ分子式でも', text: 'エタノール（–OH あり）は 78 ℃、ジメチルエーテル（–OH なし）は −24 ℃。水素結合のあるなしで、沸点が大きく変わる。' },
   ] },
-  { id: 'ls-ion', name: 'イオンのでき方', steps: [
-    { go: 'atom-Na', title: 'ナトリウム原子', text: 'Na の電子配置は K2 L8 M1。最外殻（M殻）の電子は1個だけ。' },
-    { go: 'atom-Na', title: 'Na⁺ になる', text: 'M殻の電子1個を失うと、K2 L8 になり、ネオンと同じ安定な電子配置になる。これが陽イオン Na⁺。', atomIon: true },
-    { go: 'atom-Cl', title: '塩素原子 → Cl⁻', text: 'Cl は K2 L8 M7。電子を1個受け取ると M殻が8個になり、アルゴンと同じ電子配置の陰イオン Cl⁻ になる。', atomIon: true },
-    { go: 'ionic', title: 'イオン結合', text: 'Na の電子が Cl に移り、Na⁺ と Cl⁻ がクーロン力で引き合う。' },
-    { go: 'nacl', title: '塩化ナトリウムの結晶', text: 'たくさんの Na⁺ と Cl⁻ が交互に並んで、イオン結晶をつくる。', cells: 2 },
+  { id: 'ls-cryst', no: '3-6', part: 0, chap: 2, name: '共有結合の結晶・分子結晶', steps: [
+    { go: 'diamond', title: '共有結合の結晶', text: 'ダイヤモンドは、すべての C 原子が4本の共有結合で立体的につながった巨大な結晶。とてもかたく、融点が非常に高い。電気を通さない。' },
+    { go: 'graphite', title: '黒鉛', text: 'C 原子が3本の共有結合で平面の層をつくり、層どうしは弱い力で重なる。うすくはがれやすく、残った価電子が動けるので電気を通す。' },
+    { go: 'dryice', title: '分子結晶', text: 'ドライアイスは、CO₂ 分子が分子間力で集まった結晶。分子間力は弱いので、やわらかく、融点が低い（昇華しやすい）。' },
+    { go: 'cmp-nacl-diamond', title: 'くらべてみよう', text: 'イオン結晶（NaCl）と共有結合の結晶（ダイヤモンド）。どちらもかたいが、結びつき方がちがう。' },
   ] },
-  { id: 'ls-rx', name: '化学反応式のつくり方', steps: [
+  { id: 'ls-metal', no: '3-7', part: 0, chap: 2, name: '金属結合と金属', steps: [
+    { go: 'metallic', title: '金属結合', text: '金属の原子は価電子を出して陽イオンになり、出た電子（自由電子）が全体を自由に動き回って、陽イオンどうしを結びつける。' },
+    { go: 'copper', title: '金属の性質', text: '自由電子があるので、電気や熱をよく通し、金属光沢がある。たたくと広がり（展性）、引っぱるとのびる（延性）。' },
+    { go: 'iron', title: '金属の結晶', text: '金属の原子は規則正しく、すき間が少なくなるように並ぶ。鉄・銅・アルミニウムなど、組成式（元素記号）で表す。' },
+  ] },
+  // ---------- 第2編 第1章 ----------
+  { id: 'ls-amass', no: '4-1', part: 1, chap: 0, name: '原子量・分子量・式量', steps: [
+    { go: 'mole-c', title: '原子量', text: '¹²C 1個の質量を 12 としたときの、原子の相対的な質量。C＝12、H＝1.0、O＝16。' },
+    { go: 'mole-water', title: '分子量', text: '分子にふくまれる原子の原子量の合計。H₂O＝1.0×2＋16＝18。' },
+    { go: 'mole-nacl', title: '式量', text: 'イオン結晶や金属は分子がないので、組成式の原子量の合計を式量という。NaCl＝23＋35.5＝58.5。' },
+  ] },
+  { id: 'ls-mol', no: '4-2', part: 1, chap: 0, name: '物質量（mol）', steps: [
+    { go: 'mole-water', title: '1 mol とは', text: '6.0×10²³ 個（アボガドロ定数）の粒子のあつまりを 1 mol という。水 1 mol は 18 g（分子量に g をつけた値）。' },
+    { go: 'mole-fe', title: 'モル質量', text: '1 mol あたりの質量。鉄は原子量 56 なので 56 g/mol。質量 ÷ モル質量 ＝ 物質量。' },
+    { go: 'mole-co2', title: '気体 1 mol の体積', text: '0 ℃・1.013×10⁵ Pa（標準状態）で、気体 1 mol は種類に関係なく 22.4 L。' },
+    { go: 'mole-h2', title: '軽い水素でも', text: '水素 1 mol は 2 g しかないのに、体積は二酸化炭素と同じ 22.4 L。' },
+  ] },
+  { id: 'ls-conc', no: '4-3', part: 1, chap: 0, name: '溶液の濃度', steps: [
+    { go: 'mole-nacl', title: '質量パーセント濃度', text: '溶液の質量に対する溶質の質量の割合（%）。水 90 g に NaCl 10 g を溶かすと 10 %。' },
+    { go: 'mole-nacl', title: 'モル濃度', text: '溶液 1 L にふくまれる溶質の物質量（mol/L）。0.100 mol/L の NaCl 水溶液 100 mL には 0.0100 mol（0.585 g）がふくまれる。', lab: 'p-volflask' },
+  ] },
+  { id: 'ls-rx', no: '4-4', part: 1, chap: 0, name: '化学反応式のつくり方', steps: [
     { go: 'rx-h2o', title: '水素の燃焼：反応前', text: 'H₂ + O₂ → H₂O のままだと、O 原子が左に2個、右に1個。原子の数が合っていない。' },
     { go: 'rx-h2o', title: '係数をそろえる', text: 'H₂O を2個にすると O がそろう。すると H が右に4個になるので、H₂ も2個にする。2H₂ + O₂ → 2H₂O。', solve: true },
     { go: 'rx-ch4', title: 'メタンの燃焼', text: 'C → H → O の順にそろえる。CH₄ + 2O₂ → CO₂ + 2H₂O。「反応させる」を押すと、原子が組みかわる様子が見られる。', solve: true },
     { go: 'rx-photo', title: '光合成', text: '6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂。大きな分子でも、左右の原子の数は必ず等しい（質量保存の法則）。', solve: true },
   ] },
-  { id: 'ls-mol', name: '物質量（mol）', steps: [
-    { go: 'mole-water', title: '1 mol とは', text: '6.0×10²³ 個の粒子のあつまりを 1 mol という。水 1 mol は 18 g（分子量に g をつけた値）。' },
-    { go: 'mole-co2', title: '気体 1 mol の体積', text: '0 ℃・1気圧で、気体 1 mol は種類に関係なく 22.4 L。' },
-    { go: 'mole-h2', title: '軽い水素でも', text: '水素 1 mol は 2 g しかないのに、体積は二酸化炭素と同じ 22.4 L。' },
+  { id: 'ls-qty', no: '4-5', part: 1, chap: 0, name: '化学反応式と量的関係', steps: [
+    { go: 'rx-ch4', title: '係数の比＝物質量の比', text: 'CH₄ + 2O₂ → CO₂ + 2H₂O。メタン 1 mol から、二酸化炭素 1 mol と水 2 mol ができる。', solve: true },
+    { go: 'rx-c3h8', title: '気体の体積', text: 'C₃H₈ + 5O₂ → 3CO₂ + 4H₂O。プロパン 1 mol（44 g）を燃やすには、酸素 5 mol（標準状態で 5×22.4＝112 L）が必要。', solve: true },
+    { go: 'rx-nahco3', title: '分解反応', text: '2NaHCO₃ → Na₂CO₃ + H₂O + CO₂。炭酸水素ナトリウム 2 mol から、CO₂ 1 mol が出る。', solve: true, lab: 'p-nahco3' },
   ] },
-  { id: 'ls-ph', name: '酸・塩基と中和', steps: [
-    { go: 'ph-scale', title: 'pH のものさし', text: 'pH 7 が中性。7 より小さいと酸性、大きいと塩基性。身近な液体のボタンを押してみよう。', ph: 2.2, ind: 'univ' },
-    { go: 'ph-scale', title: 'BTB 溶液', text: '酸性で黄色、中性で緑色、塩基性で青色になる。', ph: 11.5, ind: 'btb' },
-    { go: 'ph-neut', title: '中和', text: '酸の H⁺ と塩基の OH⁻ が結びついて水になる。NaOH を少しずつ加えて、緑色にしよう。' },
+  // ---------- 第2編 第2章 ----------
+  { id: 'ls-acid', no: '5-1', part: 1, chap: 1, name: '酸と塩基', steps: [
+    { go: 'hcl', title: '酸', text: '水に溶けて水素イオン H⁺ を出す物質を酸という（アレーニウスの定義）。HCl → H⁺ + Cl⁻。' },
+    { go: 'h3o', title: 'オキソニウムイオン', text: '水溶液中の H⁺ は、水分子と結びついて H₃O⁺ になっている。' },
+    { go: 'naoh', title: '塩基', text: '水に溶けて水酸化物イオン OH⁻ を出す物質を塩基という。NaOH → Na⁺ + OH⁻。' },
+    { go: 'cmp-nh3-nh4', title: 'ブレンステッドの定義', text: 'H⁺ をあたえるものが酸、受け取るものが塩基。NH₃ + H₂O ⇄ NH₄⁺ + OH⁻ では、NH₃ が塩基、H₂O が酸。' },
+    { go: 'h2so4', title: '価数', text: '酸1分子が出せる H⁺ の数を価数という。HCl は1価、H₂SO₄ は2価の酸。' },
+    { go: 'acetic', title: '強酸・弱酸', text: '水溶液中でほぼ完全に電離する酸が強酸（HCl など）。酢酸は一部しか電離しない弱酸。' },
+  ] },
+  { id: 'ls-ph', no: '5-2', part: 1, chap: 1, name: '水素イオン濃度と pH', steps: [
+    { go: 'ph-scale', title: 'pH のものさし', text: 'pH 7 が中性。7 より小さいと酸性、大きいと塩基性。pH が1小さくなると、H⁺ の濃度は10倍。身近な液体のボタンを押してみよう。', ph: 2.2, ind: 'univ' },
+    { go: 'ph-scale', title: '指示薬：BTB', text: 'BTB 溶液は、酸性で黄色、中性で緑色、塩基性で青色になる。', ph: 11.5, ind: 'btb' },
+    { go: 'ph-scale', title: '指示薬：フェノールフタレイン', text: '塩基性（pH 約 8.3 以上）で赤色。酸性・中性では無色。', ph: 10, ind: 'pp' },
+  ] },
+  { id: 'ls-neut', no: '5-3', part: 1, chap: 1, name: '中和反応と塩', steps: [
+    { go: 'rx-neut', title: '中和', text: '酸の H⁺ と塩基の OH⁻ が結びついて水ができる。HCl + NaOH → NaCl + H₂O。NaCl のように、酸の陰イオンと塩基の陽イオンからできる物質を塩という。', solve: true },
+    { go: 'ph-neut', title: '中和のようす', text: 'NaOH を少しずつ加えて、pH の変化を見よう。中和点の近くでは、1滴で pH が大きく変わる。' },
+    { go: 'rx-h2so4', title: '2価の酸', text: 'H₂SO₄ + 2NaOH → Na₂SO₄ + 2H₂O。2価の酸なので、同じ物質量の1価の塩基が2倍必要。' },
+    { go: 'ph-neut', title: '中和滴定', text: '（酸の価数）×（濃度）×（体積）＝（塩基の価数）×（濃度）×（体積）。この関係から、濃度のわからない酸や塩基の濃度を求める。', lab: 'p-titr' },
+  ] },
+  // ---------- 第2編 第3章 ----------
+  { id: 'ls-redox', no: '6-1', part: 1, chap: 2, name: '酸化と還元', steps: [
+    { go: 'rx-mgo', title: '酸素と結びつく＝酸化', text: '2Mg + O₂ → 2MgO。マグネシウムは酸素と結びついた（酸化された）。', solve: true },
+    { go: 'rx-cuo', title: '酸素を失う＝還元', text: 'CuO + H₂ → Cu + H₂O。酸化銅(II)は酸素を失って還元され、水素は酸化された。酸化と還元は同時に起こる。', solve: true, lab: 'p-cuox' },
+    { go: 'rx-nacl', title: '電子のやりとり', text: '2Na + Cl₂ → 2NaCl。Na は電子を失った（酸化された）。Cl は電子を受け取った（還元された）。酸素がなくても酸化還元反応。', solve: true },
+    { go: 'h2s', title: '酸化数', text: '酸化数が増える＝酸化、減る＝還元。H₂S の S の酸化数は −2、単体の S は 0、SO₂ の S は +4。' },
+    { go: 'h2o2', title: '酸化剤と還元剤', text: '相手を酸化する物質が酸化剤（自分は還元される）。過酸化水素は、ふつう酸化剤としてはたらく。' },
+  ] },
+  { id: 'ls-metalion', no: '6-2', part: 1, chap: 2, name: '金属のイオン化傾向', steps: [
+    { go: 'rx-zn', title: '金属と酸', text: 'Zn + 2HCl → ZnCl₂ + H₂。亜鉛は水素よりイオン化傾向が大きいので、塩酸に溶けて水素が出る。', solve: true },
+    { go: 'copper', title: '溶けない金属', text: '銅は水素よりイオン化傾向が小さいので、塩酸には溶けない。K Ca Na Mg Al Zn Fe Ni Sn Pb (H₂) Cu Hg Ag Pt Au。', lab: 'p-ionize' },
+  ] },
+  { id: 'ls-life', no: '6-3', part: 1, chap: 2, name: '酸化還元と私たちの生活', steps: [
+    { go: 'vitc', title: '酸化防止剤', text: 'ビタミンC は、自分が酸化されやすい還元剤。食品や飲み物に入れて、中身が酸化されるのを防ぐ。' },
+    { go: 'naclo', title: '漂白剤', text: '塩素系漂白剤の次亜塩素酸ナトリウム NaClO は強い酸化剤。酸性の洗剤とまぜると有毒な塩素が出るので「まぜるな危険」。' },
+    { go: 'iron', title: '金属の製錬', text: '鉄鉱石（酸化鉄）を、一酸化炭素などで還元して鉄を取り出す。' },
   ] },
 ];
-LESSONS.forEach(l => LIB.push({ id: l.id, cat: 'lesson', kind: 'lesson', name: l.name, f: `${l.steps.length}ステップ`, lesson: l }));
+LESSONS.forEach(l => LIB.push({ id: l.id, cat: 'lesson', kind: 'lesson', name: l.no + '　' + l.name, f: `${l.steps.length}ステップ`, lesson: l }));
 SECTIONS.push({ id: 'lesson', name: '授業モード', cats: ['lesson'] });
+const LESSON_DONE_KEY = 'molecule-lab:lessons';
+let lessonDone = new Set();
+try { lessonDone = new Set(JSON.parse(localStorage.getItem(LESSON_DONE_KEY) || '[]')); } catch (e) { /* 保存できなくても動く */ }
+function lessonMarkDone(id) { lessonDone.add(id); try { localStorage.setItem(LESSON_DONE_KEY, JSON.stringify([...lessonDone])); } catch (e) { /* 無視 */ } }
+function labURL(id) { const a = document.querySelector('.labnav'); return (a ? a.href.split('#')[0] : 'lab.html') + '#' + id; }
 function lessonStart(l) { state.lesson = { l, i: 0 }; document.body.classList.add('present'); lessonGo(); }
 function lessonExit() {
   if (!state.lesson) return;
@@ -2833,13 +2959,17 @@ function lessonGo() {
   setTimeout(() => R && fitCamera(), 60);
 }
 function lessonCardHTML() {
-  const { l, i } = state.lesson, st = l.steps[i];
-  return `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">授業モード</span><span class="pill">${esc(l.name)}</span></div>
+  const { l, i } = state.lesson, st = l.steps[i], last = i === l.steps.length - 1;
+  const next = LESSONS[LESSONS.indexOf(l) + 1];
+  if (last) lessonMarkDone(l.id);
+  return `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">授業 ${esc(l.no)}</span><span class="pill">${esc(l.name)}</span></div>
     <h2 class="ls-title">${esc(st.title)}</h2></div></div>
     <div class="card-body"><p class="ls-text">${esc(st.text)}</p>
+    ${st.lab ? `<p><a class="pbtn ghost ls-lab" href="${labURL(st.lab)}" target="_blank" rel="noopener">実験ラボでやってみる ↗</a></p>` : ''}
     <div class="ls-dots">${l.steps.map((_, k) => `<i class="${k === i ? 'on' : k < i ? 'done' : ''}"></i>`).join('')}<span>${i + 1} / ${l.steps.length}</span></div>
     <div class="ls-nav"><button type="button" class="pbtn ghost" data-act="lsprev" ${i === 0 ? 'disabled' : ''}>← 前へ</button>
-    ${i < l.steps.length - 1 ? '<button type="button" class="pbtn big" data-act="lsnext">次へ →</button>' : '<button type="button" class="pbtn big" data-act="lsexit">おわり</button>'}</div>
+    ${!last ? '<button type="button" class="pbtn big" data-act="lsnext">次へ →</button>' : next ? `<button type="button" class="pbtn big" data-go="${next.id}">次の授業 ${esc(next.no)} →</button>` : '<button type="button" class="pbtn big" data-act="lsexit">おわり</button>'}</div>
+    ${last && next ? `<p class="note">次は「${esc(next.no)}　${esc(next.name)}」</p>` : ''}
     <p class="note">キーボードの ← → でも進めます。右上のボタンで全画面にできます。</p>
     <button type="button" class="pbtn ghost" data-act="lsexit">授業モードをやめる</button></div>`;
 }
@@ -4168,8 +4298,9 @@ function showLessonMenu() {
   $('caption').hidden = true;
   if (R) { clearView(); buildMolView(); R.controls.autoRotate = true; fitCamera(); }
   $('card').innerHTML = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">授業モード</span></div><h2 class="mol-name">どの授業をする？</h2></div></div>
-    <div class="card-body"><p class="note">大きな文字の説明と3Dで、1画面ずつ進めます。プロジェクターに映すときは、右上のボタンで全画面に。</p>
-    <div class="qsets">${LESSONS.map(l => `<button type="button" class="qset" data-go="${l.id}"><b>${esc(l.name)}</b><span>${l.steps.length}ステップ</span></button>`).join('')}</div></div>`;
+    <div class="card-body"><p class="note">学習指導要領（化学基礎）の順に並んでいます。大きな文字の説明と3Dで、1画面ずつ進めます。プロジェクターに映すときは、右上のボタンで全画面に。</p>
+    ${(() => { const nx = LESSONS.find(l => !lessonDone.has(l.id)); return nx ? `<button type="button" class="qset hot" data-go="${nx.id}"><b>${lessonDone.size ? '続きから' : '最初から'}：${esc(nx.no)}　${esc(nx.name)}</b><span>→</span></button>` : '<p class="note">全部の授業を見終わりました！</p>'; })()}
+    ${LESSON_PARTS.map((pt, pi) => `<h3 class="ls-part">${esc(pt.name)}</h3>` + pt.chaps.map((ch, ci) => `<h4 class="ls-chap">${esc(ch)}</h4><div class="qsets">${LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<button type="button" class="qset" data-go="${l.id}"><b><span class="ls-no">${esc(l.no)}</span>${esc(l.name)}${lessonDone.has(l.id) ? ' <i class="ls-ok">✓</i>' : ''}</b><span>${l.steps.length}画面</span></button>`).join('')}</div>`).join('')).join('')}</div>`;
   $('card').classList.remove('collapsed'); state.cardOpen = true;
 }
 function renderTabs() {
@@ -4200,6 +4331,11 @@ function renderGrid() {
     return;
   }
   grid.className = 'grid';
+  if (state.sec === 'lesson') {
+    const cur2 = id => !!(state.lesson && state.lesson.l.id === id);
+    grid.innerHTML = LESSON_PARTS.map((pt, pi) => pt.chaps.map((ch, ci) => `<p class="ls-gh">${pi === 0 ? '第1編' : '第2編'} ${esc(ch.replace('　', ' '))}</p>` + LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<button type="button" class="card-btn wide" data-id="${l.id}" aria-current="${cur2(l.id)}"><span class="f">${esc(l.no)}　${esc(l.name)}</span><span class="n">${lessonDone.has(l.id) ? '<b class="done">✓</b>' : ''}${l.steps.length}画面</span></button>`).join('')).join('')).join('');
+    return;
+  }
   if (state.sec === 'quiz') {
     grid.innerHTML = `<button type="button" class="card-btn wide" data-id="ta-60" aria-current="${!!state.ta}"><span class="f">⏱ タイムアタック</span><span class="n">60秒で何問答えられる？</span></button>`
       + QUIZ_SETS.map(q => `<button type="button" class="card-btn wide" data-id="${q.id}" aria-current="${!state.ta && state.quiz && state.quiz.set.id === q.id}"><span class="f">${esc(q.name)}</span><span class="n">10問</span></button>`).join('');
