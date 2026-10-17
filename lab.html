@@ -121,6 +121,10 @@ ul.caution li b.o { background: var(--ok); } ul.caution li b.x { background: var
 .qprog { height: 5px; border-radius: 999px; background: var(--chip); overflow: hidden; margin: 6px 0; }
 .qprog i { display: block; height: 100%; background: var(--accent); }
 .purpose { background: var(--chip); border-left: 3px solid var(--accent); border-radius: 8px; padding: 8px 10px; margin: 8px 0; font-size: 14px; line-height: 1.65; }
+.series { display: flex; flex-wrap: wrap; gap: 3px; font-size: 12px; margin: 6px 0; }
+.series span { padding: 2px 5px; border-radius: 6px; background: var(--chip, rgba(127,127,127,.12)); }
+.series .me { background: #f59e0b; color: #fff; font-weight: 700; }
+.series .ion { background: #3b82f6; color: #fff; font-weight: 700; }
 .purpose > b:first-child { display: block; font-size: 12px; color: var(--accent); }
 .purpose b { color: var(--accent); }
 ol.whysteps { margin: 6px 0 0; padding-left: 22px; font-size: 14px; }
@@ -1852,6 +1856,546 @@ SAFETY_Q.push(
   ['蒸留の冷却水は、冷却器の下から入れて上から出す。', true, '冷却器の中が水で満たされ、よく冷える。'],
 );
 
+// ===== 実験 その2（銅の酸化・再結晶・イオン化傾向・鉄と硫黄・気体の発生装置・電子てんびん） =====
+function tripod(h, r) {
+  const g = new THREE.Group(), m = solid(0x2f343b, { shininess: 40 });
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.04, 8, 40), m); ring.rotation.x = Math.PI / 2; ring.position.y = h; g.add(ring);
+  for (let i = 0; i < 3; i++) {
+    const a = i * Math.PI * 2 / 3;
+    const leg = cyl(0.035, 0.035, 1, m, 8);
+    placeBetween(leg, new THREE.Vector3(Math.cos(a) * r, h, Math.sin(a) * r), new THREE.Vector3(Math.cos(a) * (r + 0.35), 0, Math.sin(a) * (r + 0.35)));
+    g.add(leg);
+  }
+  return g;
+}
+// 電子てんびん（表示部は文字を書きかえられる）
+function makeBalance() {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.5, 2.4), solid(0xe9ecef, { shininess: 60 })); body.position.y = 0.25; g.add(body);
+  const front = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.32, 0.5), solid(0xd5dae0)); front.position.set(0, 0.36, 1.3); front.rotation.x = 0.35; g.add(front);
+  const pan = cyl(0.85, 0.85, 0.05, metal(0x8e959e, 0.35), 48); pan.position.set(0, 0.56, -0.15); g.add(pan);
+  const stem = cyl(0.12, 0.12, 0.06, solid(0x9aa1aa)); stem.position.set(0, 0.52, -0.15); g.add(stem);
+  const c = document.createElement('canvas'); c.width = 256; c.height = 80;
+  const tex = new THREE.CanvasTexture(c);
+  const disp = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.4), new THREE.MeshBasicMaterial({ map: tex }));
+  disp.position.set(-0.35, 0.522, 1.358); disp.rotation.x = -Math.PI / 2 + 0.35; g.add(disp);
+  const btn = (x, col) => { const b = cyl(0.07, 0.07, 0.04, solid(col), 16); b.rotation.x = 0.35; b.position.set(x, 0.53, 1.36); g.add(b); return b; };
+  btn(0.65, 0x3b4350); btn(0.95, 0x2f6fc0);
+  const level = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), glassMat({ opacity: 0.5 })); level.position.set(0.9, 0.5, -1.0); g.add(level);
+  const bubble = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: 0x2a9d8f })); bubble.position.set(0.9, 0.58, -1.0); g.add(bubble);
+  g.add(contactShadow(3.4, 3.2, 0.5));
+  const show = (txt, on) => {
+    const x = c.getContext('2d');
+    x.fillStyle = on ? '#b9d7a8' : '#59625a'; x.fillRect(0, 0, 256, 80);
+    if (on) { x.fillStyle = '#18241a'; x.font = 'bold 54px Lexend, monospace'; x.textAlign = 'right'; x.textBaseline = 'middle'; x.fillText(txt, 230, 42); x.font = '22px Lexend'; x.fillText('g', 250, 58); }
+    tex.needsUpdate = true;
+  };
+  show('', false);
+  disp.userData.keepMap = false;
+  return { g, show, panY: 0.6, bubble };
+}
+function svgGraph(w, h, pts, line, xLab, yLab, xMax, yMax, extra) {
+  const X = v => 34 + v / xMax * (w - 44), Y = v => h - 22 - v / yMax * (h - 40);
+  let s = `<svg class="tcurve" viewBox="0 0 ${w} ${h}" role="img"><line x1="34" y1="${Y(0)}" x2="${w - 8}" y2="${Y(0)}" stroke="currentColor" stroke-opacity=".5"/><line x1="34" y1="8" x2="34" y2="${Y(0)}" stroke="currentColor" stroke-opacity=".5"/>`;
+  s += `<text x="${w - 8}" y="${Y(0) - 5}" font-size="9" text-anchor="end" fill="currentColor" fill-opacity=".75">${xLab}</text><text x="38" y="11" font-size="9" fill="currentColor" fill-opacity=".75">${yLab}</text>`;
+  [0.5, 1].forEach(f => { s += `<text x="30" y="${Y(yMax * f) + 3}" font-size="8" text-anchor="end" fill="currentColor">${+(yMax * f).toFixed(1)}</text><text x="${X(xMax * f)}" y="${Y(0) + 11}" font-size="8" text-anchor="middle" fill="currentColor">${+(xMax * f).toFixed(1)}</text>`; });
+  if (line) s += `<polyline points="${line.map(([a, b]) => `${X(a).toFixed(1)},${Y(b).toFixed(1)}`).join(' ')}" fill="none" stroke="#d9661f" stroke-width="2"${line.dashed ? ' stroke-dasharray="4 3"' : ''}/>`;
+  (extra || []).forEach(e => { s += e(X, Y); });
+  pts.forEach(([a, b]) => { s += `<circle cx="${X(a)}" cy="${Y(b)}" r="4" fill="#2753d6"/>`; });
+  return s + '</svg>';
+}
+
+// ---------- 銅の酸化（質量の変化） ----------
+PR['p-cuox'] = {
+  init() {
+    const g = R.group;
+    const s = { m0: 1.2, n: 0, f: 0, heating: 0, pts: (state.pr && state.pr.ptsKeep) || [], lastMass: null, stable: false };
+    state.pr = s;
+    const bm = MODELS.burner(); bm.g.scale.setScalar(0.62); bm.g.position.set(-1.6, 0, 0); g.add(bm.g);
+    bm.flame.size = 0.5; bm.flame.air = 0.9;
+    const tp = tripod(2.4, 0.7); tp.position.x = -1.6; g.add(tp);
+    const tri = new THREE.Group();
+    for (let i = 0; i < 3; i++) { const a = i * Math.PI * 2 / 3 + Math.PI / 6; const b = cyl(0.035, 0.035, 1.05, solid(0xd9d4c7), 8); b.rotation.z = Math.PI / 2; b.rotation.y = a; b.position.set(Math.cos(a + Math.PI / 2) * 0.3, 2.45, Math.sin(a + Math.PI / 2) * 0.3); tri.add(b); }
+    tri.position.x = -1.6; g.add(tri);
+    // ステンレス皿と銅の粉
+    const dish = shell([[0, 0.02], [0.55, 0.04], [0.8, 0.16], [0.86, 0.2]], 0.03, metal(0xc9ced5, 0.5)); dish.position.set(-1.6, 2.47, 0); g.add(dish);
+    const powder = [];
+    const r = (() => { let x = 7; return () => (x = (x * 9301 + 49297) % 233280) / 233280; })();
+    for (let i = 0; i < 90; i++) {
+      const a = r() * 6.28, rr = Math.sqrt(r()) * 0.55;
+      const p = new THREE.Mesh(new THREE.SphereGeometry(0.035 + r() * 0.02, 6, 5), solid(0xc06a32, { shininess: 70 }));
+      p.position.set(-1.6 + Math.cos(a) * rr, 2.53 + rr * 0.08 + r() * 0.03, Math.sin(a) * rr); p.userData.th = r(); g.add(p); powder.push(p);
+    }
+    const bal = makeBalance(); bal.g.position.set(2.1, 0, 0.2); bal.g.scale.setScalar(0.9); g.add(bal.g);
+    const pD = shell([[0, 0.02], [0.55, 0.04], [0.8, 0.16], [0.86, 0.2]], 0.03, metal(0xc9ced5, 0.5)); pD.position.set(2.1, 0.58, 0.07); pD.visible = false; g.add(pD);
+    const rod = glassRod(1.6, 0.04); g.add(rod); rod.visible = false;
+    s.bal = bal; s.powder = powder; s.pD = pD; s.bm = bm;
+    const mass = () => Math.round(s.m0 * (1 + 0.25 * s.f) * 100) / 100;
+    s.mass = mass;
+    bal.show('', false);
+    [['ステンレス皿', [-0.7, 2.75, 0]], ['電子てんびん', [2.1, 1.0, 1.0]], ['三角架', [-0.85, 2.45, 0.3]]].forEach(([n, p]) => { const L = addLabel(n, () => new THREE.Vector3(...p)); L.part = true; L.el.hidden = !state.parts; });
+    R.tick = t => {
+      const e = s.heating ? (performance.now() - s.heating) / 1000 : 99;
+      bm.flame.lit = e < 2.5; bm.flame.update(t);
+      rod.visible = e < 2.5;
+      if (rod.visible) placeBetween(rod, new THREE.Vector3(-1.6 + Math.sin(t * 6) * 0.3, 2.6, Math.cos(t * 6) * 0.3), new THREE.Vector3(-1.1, 3.9, 0.3));
+      const black = new THREE.Color(0x1c1a19), cu = new THREE.Color(0xc06a32);
+      powder.forEach(p => { p.material.color.copy(cu).lerp(black, p.userData.th < s.f ? 1 : s.f * 0.3); });
+    };
+    frame(1.6, 3.2, new THREE.Vector3(0.1, 0.35, 1));
+  },
+  html() {
+    const s = state.pr;
+    const line = [[0, 0], [2.2, 2.75]];
+    return `<div class="ctl"><p class="use">銅の粉を空気中で加熱して、質量がどう変わるか調べよう。</p>
+      <div class="sl"><label for="cuS">銅の質量</label><input id="cuS" type="range" min="0.4" max="2" step="0.2" value="${s.m0}" ${s.n ? 'disabled' : ''}><output>${s.m0.toFixed(2)} g</output></div>
+      <div class="row"><button type="button" class="btn main" data-a="cuheat">加熱してかき混ぜる（1回）</button><button type="button" class="btn" data-a="cuweigh">冷ましてはかる</button><button type="button" class="btn" data-a="cunew">新しい銅で</button></div>
+      <div class="elecv"><span>加熱した回数 <b>${s.n}</b></span><span>はかった質量 <b>${s.lastMass === null ? '—' : s.lastMass.toFixed(2)}</b> g</span></div>
+      ${s.stable ? `<div class="verdict ok">質量が変わらなくなった＝銅がすべて酸化銅(II)になった。<button type="button" class="btn" data-a="curec">グラフに記録</button></div>` : ''}
+      ${svgGraph(300, 150, s.pts, s.pts.length >= 2 ? line : null, '銅の質量 (g)', '酸化銅の質量 (g)', 2.2, 2.8)}
+      <p class="note">記録 ${s.pts.length} 点${s.pts.length >= 3 ? '：原点を通る直線になる → 銅：酸化銅 ＝ 4：5、銅：酸素 ＝ 4：1' : '（3点以上記録しよう）'}</p>
+      <div class="purpose"><b>反応式</b>2Cu + O₂ → 2CuO（赤かっ色の銅が、黒色の酸化銅(II)になる）</div></div>`;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'cu') { s.m0 = v; }
+    if (a === 'cuheat') { s.n++; s.f = 1 - Math.pow(0.42, s.n); if (s.n >= 6) s.f = 1; s.heating = performance.now(); s.stable = false; }
+    if (a === 'cuweigh') {
+      if (!s.n) { toast('まず加熱しよう。加熱前の銅の質量は ' + s.m0.toFixed(2) + ' g。', 'info'); }
+      const m = s.mass();
+      s.stable = s.lastMass !== null && Math.abs(m - s.lastMass) < 0.005 && s.n > 1;
+      s.lastMass = m;
+      s.pD.visible = true; s.bal.show(m.toFixed(2), true);
+      if (!s.stable && s.n) toast('まだ質量がふえている。もう一度加熱してかき混ぜよう。', 'info');
+    }
+    if (a === 'curec') { if (!s.pts.some(p => Math.abs(p[0] - s.m0) < 0.01)) s.pts.push([s.m0, s.lastMass]); if (s.pts.length >= 3) markDone('p-cuox'); s.stable = false; }
+    if (a === 'cunew') { const keep = s.pts; clearScene(); state.pr = { ptsKeep: keep }; this.init(); }
+    renderCard();
+  },
+};
+
+// ---------- 再結晶 ----------
+const KNO3 = [[0, 13.3], [10, 22], [20, 31.6], [30, 45.6], [40, 63.9], [50, 85.2], [60, 109], [70, 138], [80, 169]];
+const solub = T => { for (let i = 1; i < KNO3.length; i++) if (T <= KNO3[i][0]) { const [a, sa] = KNO3[i - 1], [b, sb] = KNO3[i]; return sa + (sb - sa) * (T - a) / (b - a); } return 169; };
+PR['p-recryst'] = {
+  init() {
+    const g = R.group;
+    const s = { T: 20, dissolvedOnce: false, filtered: false };
+    state.pr = s;
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.35, 2.2), solid(0xe1e4e8)); plate.position.y = 0.17; g.add(plate);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 0.04, 40), solid(0x3a3f46)); top.position.y = 0.36; g.add(top);
+    const knob = cyl(0.12, 0.12, 0.1, solid(0xc62828), 16); knob.rotation.x = Math.PI / 2; knob.position.set(0.7, 0.18, 1.12); g.add(knob);
+    const bk = MODELS.beaker(); bk.g.scale.setScalar(0.72); bk.g.position.y = 0.38; g.add(bk.g);
+    bk.g.children.forEach(c => { if (c.renderOrder === 1) { c.material.color.set(0xeaf3f8); c.material.opacity = 0.28; } });
+    const th = new THREE.Group();
+    { const tc = cyl(0.035, 0.035, 2.6, glassMat({ opacity: 0.5, color: 0xffffff }), 10); tc.position.set(0, 1.3, 0); th.add(tc); }
+    const red = cyl(0.012, 0.012, 1, new THREE.MeshBasicMaterial({ color: 0xd32f2f }), 6); th.add(red);
+    th.add(new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), new THREE.MeshBasicMaterial({ color: 0xd32f2f })));
+    th.position.set(0.35, 0.55, 0.2); th.rotation.z = -0.12; g.add(th);
+    const cryst = [];
+    for (let i = 0; i < 70; i++) {
+      const c = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.3 + Math.random() * 0.25), new THREE.MeshPhongMaterial({ color: 0xffffff, specular: 0xffffff, shininess: 160, emissive: 0x556070 }));
+      const a = Math.random() * 6.28, rr = Math.sqrt(Math.random()) * 0.65;
+      c.position.set(Math.cos(a) * rr, 0.55 + Math.random() * 0.06, Math.sin(a) * rr); c.rotation.set(Math.random() * 0.4, a, Math.random() * 0.4);
+      c.userData.k = i / 70; g.add(c); cryst.push(c);
+    }
+    s.cryst = cryst;
+    const L = addLabel('ホットプレート', () => new THREE.Vector3(0, 0.4, 1.1)); L.part = true; L.el.hidden = !state.parts;
+    R.tick = () => {
+      const ex = Math.max(0, 60 - solub(s.T));
+      const k = s.filtered ? 0 : ex / 47;
+      cryst.forEach(c => { c.visible = c.userData.k < k; });
+      red.scale.y = 0.4 + s.T / 50; red.position.y = red.scale.y / 2;
+    };
+    frame(1.3, 2.2, new THREE.Vector3(0.25, 0.55, 1));
+  },
+  html() {
+    const s = state.pr, S = solub(s.T), ex = Math.max(0, 60 - S);
+    const curve = KNO3.map(([t, v]) => [t, v]);
+    const extra = [(X, Y) => `<line x1="${X(0)}" y1="${Y(36)}" x2="${X(80)}" y2="${Y(38)}" stroke="#2a9d8f" stroke-width="2" stroke-dasharray="4 3"/><text x="${X(78)}" y="${Y(42)}" font-size="9" text-anchor="end" fill="#2a9d8f">NaCl</text><text x="${X(66)}" y="${Y(150)}" font-size="9" fill="#d9661f">KNO₃</text>
+      <line x1="${X(0)}" y1="${Y(60)}" x2="${X(80)}" y2="${Y(60)}" stroke="currentColor" stroke-opacity=".35" stroke-dasharray="2 3"/><circle cx="${X(s.T)}" cy="${Y(Math.min(S, 60))}" r="5" fill="#2753d6"/>`];
+    return `<div class="ctl"><p class="use">水 100 g に、硝酸カリウム 60 g と、不純物の塩化ナトリウム 5 g がまざっている。温度を変えて、硝酸カリウムだけを結晶として取り出そう。</p>
+      <div class="sl"><label for="rcS">水溶液の温度</label><input id="rcS" type="range" min="10" max="80" step="1" value="${s.T}"><output>${s.T} ℃</output></div>
+      <div class="elecv"><span>${s.T}℃ で溶ける KNO₃ <b>${S.toFixed(1)}</b> g</span><span>結晶（溶けきれない） <b>${ex.toFixed(1)}</b> g</span></div>
+      ${svgGraph(300, 160, [], curve, '温度 (℃)', '水100gに溶ける量 (g)', 80, 170, extra)}
+      <div class="row"><button type="button" class="btn main" data-a="rcfilter">ろ過して結晶を取り出す</button><button type="button" class="btn" data-a="rcreset">はじめから</button></div>
+      ${s.msg ? `<div class="verdict ${s.ok ? 'ok' : 'ng'}">${s.msg}</div>` : ''}</div>`;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'rc') { s.T = v; s.filtered = false; s.msg = ''; if (solub(v) >= 60) s.dissolvedOnce = true; }
+    if (a === 'rcreset') { s.T = 20; s.dissolvedOnce = false; s.filtered = false; s.msg = ''; }
+    if (a === 'rcfilter') {
+      const ex = Math.max(0, 60 - solub(s.T));
+      if (!s.dissolvedOnce) { s.ok = false; s.msg = 'まだ一度も全部溶かしていない。最初に溶け残っていた固体には、塩化ナトリウムもまざっている。いったん加熱して全部溶かそう（約40 ℃以上）。'; }
+      else if (ex < 1) { s.ok = false; s.msg = 'この温度ではまだ全部溶けているので、結晶が出てこない。温度を下げよう。'; }
+      else { s.ok = true; s.filtered = true; s.msg = `純粋な硝酸カリウムの結晶が ${ex.toFixed(1)} g 取り出せた！ 塩化ナトリウムは 5 g しかなく、低い温度でも溶けたまま（ろ液に残る）。`; markDone('p-recryst'); }
+    }
+    renderCard();
+  },
+};
+
+// ---------- 金属のイオン化傾向 ----------
+const SERIES = ['K', 'Ca', 'Na', 'Mg', 'Al', 'Zn', 'Fe', 'Ni', 'Sn', 'Pb', 'H₂', 'Cu', 'Hg', 'Ag', 'Pt', 'Au'];
+const METALS_X = [
+  { id: 'Mg', name: 'マグネシウム', c: 0xc9ced5 }, { id: 'Zn', name: '亜鉛', c: 0xa9b1ba }, { id: 'Fe', name: '鉄', c: 0x7d838a }, { id: 'Cu', name: '銅', c: 0xc8743b }, { id: 'Ag', name: '銀', c: 0xe6e8ea },
+];
+const SOLS = [
+  { id: 'cu', name: '硫酸銅(II)水溶液', ion: 'Cu', c: 0x2f86e0, op: 0.5, dep: 0xb4542a, depName: '銅（赤かっ色）' },
+  { id: 'ag', name: '硝酸銀水溶液', ion: 'Ag', c: 0xe8eef3, op: 0.3, dep: 0xd9dde2, depName: '銀（銀色の樹のような結晶＝銀樹）' },
+  { id: 'zn', name: '硫酸亜鉛水溶液', ion: 'Zn', c: 0xe8eef3, op: 0.3, dep: 0x8b939c, depName: '亜鉛（灰色）' },
+  { id: 'hcl', name: 'うすい塩酸', ion: 'H₂', c: 0xeef3f6, op: 0.3 },
+];
+PR['p-ionize'] = {
+  init() {
+    const g = R.group;
+    const s = { metal: (state.pr && state.pr.metalKeep) || 'Zn', sol: (state.pr && state.pr.solKeep) || 'cu', k: 0, t0: 0, dipped: false };
+    state.pr = s;
+    const bk = MODELS.beaker(); bk.g.scale.setScalar(0.8); g.add(bk.g);
+    bk.g.children.forEach(c => { if (c.renderOrder === 1) s.liq = c; });
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.5, 3.4, 0.05), metal(0xa9b1ba, 0.4)); g.add(plate);
+    const coat = new THREE.Group(); g.add(coat);
+    for (let i = 0; i < 70; i++) { const b = new THREE.Mesh(new THREE.DodecahedronGeometry(0.035 + Math.random() * 0.03), solid(0xb4542a)); b.position.set((Math.random() - 0.5) * 0.5, Math.random() * 1.2, (Math.random() < 0.5 ? -1 : 1) * 0.04); b.userData.k = Math.random(); coat.add(b); }
+    const bub = bubbleSet(16, 0xffffff, 0.04); bub.forEach(b => g.add(b));
+    s.plate = plate; s.coat = coat;
+    R.tick = t => {
+      const m = METALS_X.find(x => x.id === s.metal), so = SOLS.find(x => x.id === s.sol);
+      plate.material.color.set(m.c);
+      const reacts = SERIES.indexOf(m.id) < SERIES.indexOf(so.ion);
+      s.k = s.dipped ? Math.min(1, (performance.now() - s.t0) / 4000) : 0;
+      const y = s.dipped ? 1.6 : 3.6;
+      plate.position.set(0, s.plate.position.y + (y - s.plate.position.y) * 0.1, 0);
+      coat.position.set(0, plate.position.y - 1.7 + 0.05, 0);
+      const showCoat = s.dipped && reacts && so.dep;
+      coat.children.forEach(c => { c.visible = showCoat && c.userData.k < s.k; c.material.color.set(so.dep || 0); if (so.id === 'ag') c.scale.set(1, 2.5, 1); else c.scale.set(1, 1, 1); });
+      let col = new THREE.Color(so.c), op = so.op;
+      if (s.dipped && reacts && so.id === 'cu') { col.lerp(new THREE.Color(m.id === 'Fe' ? 0xb8d4b0 : 0xeef3f6), s.k * 0.85); op = so.op - 0.2 * s.k; }
+      if (s.dipped && reacts && so.id === 'ag' && m.id === 'Cu') { col.lerp(new THREE.Color(0x4a9be8), s.k * 0.7); op = 0.3 + 0.2 * s.k; }
+      s.liq.material.color.copy(col); s.liq.material.opacity = op;
+      bub.forEach((b, i) => {
+        b.visible = s.dipped && reacts && so.id === 'hcl';
+        const kk = (t * (m.id === 'Mg' ? 1.4 : m.id === 'Zn' ? 0.8 : 0.4) + b.userData.ph) % 1;
+        b.position.set((i % 2 ? 0.28 : -0.28) + Math.sin(i) * 0.05, 0.4 + kk * 1.0, Math.cos(i * 3) * 0.05);
+      });
+    };
+    frame(1.8, 2.4, new THREE.Vector3(0.2, 0.25, 1));
+  },
+  html() {
+    const s = state.pr, m = METALS_X.find(x => x.id === s.metal), so = SOLS.find(x => x.id === s.sol);
+    const reacts = SERIES.indexOf(m.id) < SERIES.indexOf(so.ion);
+    let res = '';
+    if (s.dipped && s.k > 0.3) {
+      if (m.id === so.ion) res = `<div class="verdict">同じ金属のイオンなので、変化しない。</div>`;
+      else if (!reacts) res = `<div class="verdict">変化なし。${m.name}（${m.id}）は ${so.ion} よりイオン化傾向が小さいので、反応しない。</div>`;
+      else if (so.id === 'hcl') res = `<div class="verdict ok">あわ（水素）が出て、${m.name}が溶ける。${m.id} は H₂ よりイオン化傾向が大きい。<br>${m.id} + 2H⁺ → ${m.id}²⁺ + H₂</div>`;
+      else res = `<div class="verdict ok">${m.name}の表面に${so.depName}が出てきた！ ${m.id} が電子を出してイオンになり、${so.ion} のイオンが電子を受け取って金属になる。<br>${m.id === 'Cu' && so.ion === 'Ag' ? 'Cu + 2Ag⁺ → Cu²⁺ + 2Ag' : `${m.id} + ${so.ion}²⁺ → ${m.id}²⁺ + ${so.ion}`}${so.id === 'cu' ? '（青色がうすくなる）' : ''}${m.id === 'Cu' && so.id === 'ag' ? '（水溶液が青くなる）' : ''}</div>`;
+    }
+    return `<div class="ctl"><p class="use">金属板と水溶液を選んで、ひたしてみよう。</p>
+      <p class="note">金属板</p><div class="row">${METALS_X.map(x => `<button type="button" class="btn" data-metal="${x.id}" aria-pressed="${s.metal === x.id}">${x.id} ${x.name}</button>`).join('')}</div>
+      <p class="note">水溶液</p><div class="row">${SOLS.map(x => `<button type="button" class="btn" data-sol="${x.id}" aria-pressed="${s.sol === x.id}">${x.name}</button>`).join('')}</div>
+      <button type="button" class="btn main" data-a="dip">${s.dipped ? '引き上げる' : '金属板をひたす'}</button>${res}
+      <div class="series">${SERIES.map(x => `<span class="${x === m.id ? 'me' : x === so.ion ? 'ion' : ''}">${x}</span>`).join('')}</div>
+      <p class="note">左ほどイオンになりやすい（イオン化傾向が大きい）。<b style="color:#d9661f">オレンジ</b>＝金属板、<b style="color:#2753d6">青</b>＝水溶液中のイオン。覚え方：「貸そうかな まあ あてにすな ひどすぎる借金」</p></div>`;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'metal') { s.metal = v; s.dipped = false; }
+    if (a === 'sol') { s.sol = v; s.dipped = false; }
+    if (a === 'dip') { s.dipped = !s.dipped; s.t0 = performance.now(); if (s.dipped) setTimeout(() => { if (state.pr === s) { renderCard(); const m = METALS_X.find(x => x.id === s.metal), so = SOLS.find(x => x.id === s.sol); if (SERIES.indexOf(m.id) < SERIES.indexOf(so.ion)) markDone('p-ionize'); } }, 1500); }
+    renderCard();
+  },
+};
+
+// ---------- 鉄と硫黄の反応 ----------
+PR['p-fes'] = {
+  init() {
+    const g = R.group;
+    const s = { phase: 'mix', t0: 0, sample: 'before' };
+    state.pr = s;
+    g.add(makeStand(5.0, 3.7, 1.5));
+    const tb = MODELS.tube(); const tube = new THREE.Group(); tube.add(tb.g); g.add(tube);
+    tb.g.children.forEach(c => { if (c.renderOrder === 1) c.visible = false; });
+    tube.position.set(0.15, 0.65, 0); tube.rotation.z = 0;
+    const mix = [];
+    for (let i = 0; i < 160; i++) {
+      const y = 0.08 + Math.random() * 1.5, a = Math.random() * 6.28, rr = Math.sqrt(Math.random()) * 0.22;
+      const p = new THREE.Mesh(new THREE.SphereGeometry(0.03, 5, 4), solid(i % 2 ? 0xe8d23a : 0x5f6570));
+      p.position.set(Math.cos(a) * rr, y + 0.06, Math.sin(a) * rr); p.userData.y = y; tube.add(p); mix.push(p);
+    }
+    const plug = cyl(0.2, 0.2, 0.2, new THREE.MeshPhongMaterial({ color: 0xf6f3ea, shininess: 5 }), 16); plug.position.y = 3.1; tube.add(plug);
+    const bm = MODELS.burner(); bm.g.scale.setScalar(0.55); bm.g.position.set(1.3, 0, 0.6); g.add(bm.g);
+    bm.flame.size = 0.55; bm.flame.air = 0.9;
+    const glow = new THREE.PointLight(0xff5a1a, 0, 3); g.add(glow);
+    const magnet = new THREE.Group();
+    const mag = new THREE.Mesh(new THREE.TorusGeometry(0.35, 0.12, 10, 24, Math.PI), solid(0xd32f2f)); mag.rotation.z = Math.PI; magnet.add(mag);
+    [-1, 1].forEach(sg => { const tip = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.2, 0.24), metal(0xd7dbe0)); tip.position.set(sg * 0.35, -0.1, 0); magnet.add(tip); });
+    magnet.visible = false; magnet.rotation.z = -Math.PI / 2; magnet.position.set(0.95, 1.3, 0.25); g.add(magnet);
+    s.mix = mix; s.magnet = magnet;
+    const L = addLabel('鉄粉と硫黄の粉の混合物', () => new THREE.Vector3(0.45, 1.5, 0)); L.part = true; L.el.hidden = !state.parts;
+    R.tick = t => {
+      const e = s.t0 ? (performance.now() - s.t0) / 1000 : 0;
+      if (s.phase === 'heat' && e > 2.5) { s.phase = 'react'; renderCard(); }
+      if (s.phase === 'react' && e > 10) { s.phase = 'done'; renderCard(); markDone('p-fes'); }
+      bm.flame.lit = s.phase === 'heat' || (s.phase === 'react' && !s.fireOff);
+      bm.g.position.x = bm.flame.lit ? 1.1 : 1.7; bm.g.rotation.z = bm.flame.lit ? 0.3 : 0; // 手で持って傾け、混合物の上部に炎を当てる
+      bm.flame.update(t);
+      const front = s.phase === 'react' ? 1.6 - Math.min(1.6, (e - 2.5) / 7.5 * 1.6) : s.phase === 'done' ? -1 : s.phase === 'heat' ? 1.6 : 9;
+      const hot = new THREE.Color(0xff4a12), black = new THREE.Color(0x232120);
+      mix.forEach((p, i) => {
+        const y = p.userData.y;
+        if (y > front + 0.25) p.material.color.copy(black);
+        else if (y > front - 0.05) p.material.color.copy(hot).lerp(new THREE.Color(0xffd040), Math.sin(t * 8 + i) * 0.3 + 0.3);
+        else p.material.color.set(i % 2 ? 0xe8d23a : 0x5f6570);
+      });
+      glow.intensity = s.phase === 'react' ? 2 : 0; glow.position.set(0.15, 0.65 + Math.max(0, front) + 0.1, 0.4);
+      magnet.visible = !!s.magnetOn;
+    };
+    frame(1.9, 2.8, new THREE.Vector3(0.3, 0.2, 1));
+  },
+  html() {
+    const s = state.pr;
+    let h = `<div class="ctl"><p class="use">鉄粉 7 g と硫黄 4 g をよく混ぜて試験管に入れた。混合物の上の方を加熱しよう。</p>
+      <div class="row"><button type="button" class="btn main" data-a="fesheat" ${s.phase !== 'mix' ? 'disabled' : ''}>混合物の上部を加熱する</button>
+      <button type="button" class="btn" data-a="fesoff" ${s.phase !== 'react' || s.fireOff ? 'disabled' : ''}>赤くなったら火を止める</button><button type="button" class="btn" data-a="fesreset">はじめから</button></div>`;
+    if (s.phase === 'react') h += `<div class="verdict ok">赤く光って反応が始まった！ ${s.fireOff ? '火を止めても、反応で出る熱で下の方へ反応が進んでいく（発熱反応）。' : 'ここで火を止めてみよう。'}</div>`;
+    if (s.phase === 'done') h += `<div class="verdict ok">反応が終わり、黒い硫化鉄(II) FeS ができた。　Fe + S → FeS</div>`;
+    h += `<p class="note">反応の前と後でくらべよう</p><div class="row"><button type="button" class="btn" data-fs="before" aria-pressed="${s.sample === 'before'}">反応前の混合物</button><button type="button" class="btn" data-fs="after" aria-pressed="${s.sample === 'after'}" ${s.phase !== 'done' ? 'disabled' : ''}>反応後の物質</button></div>
+      <div class="row"><button type="button" class="btn" data-a="fesmag">磁石を近づける</button><button type="button" class="btn" data-a="feshcl">うすい塩酸を加える</button></div>
+      <table class="gtab"><tr><th></th><td><b>反応前（混合物）</b></td><td><b>反応後（FeS）</b></td></tr><tr><th>色</th><td>灰色と黄色</td><td>黒色</td></tr><tr><th>磁石</th><td>鉄が引きつけられる</td><td>引きつけられない</td></tr><tr><th>塩酸</th><td>水素（においなし）</td><td>硫化水素（腐卵臭・有毒）</td></tr></table></div>`;
+    return h;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'fesheat') { s.phase = 'heat'; s.t0 = performance.now(); s.fireOff = false; }
+    if (a === 'fesoff') { s.fireOff = true; }
+    if (a === 'fesreset') { clearScene(); this.init(); }
+    if (a === 'fs') s.sample = v;
+    if (a === 'fesmag') { s.magnetOn = true; toast(s.sample === 'before' ? '鉄粉が磁石に引きつけられた（混合物なので鉄の性質が残っている）。' : '引きつけられない。鉄とはちがう物質（硫化鉄）になった。', 'ok'); setTimeout(() => { s.magnetOn = false; }, 2500); }
+    if (a === 'feshcl') toast(s.sample === 'before' ? 'においのない気体（水素）が出た。鉄が塩酸と反応した。' : '腐った卵のようなにおいの気体（硫化水素）が出た。有毒なので少量で、換気して行う。', s.sample === 'before' ? 'ok' : 'ng');
+    renderCard();
+  },
+};
+
+// ---------- 気体の発生装置（ふたまた試験管・キップの装置） ----------
+PR['p-kipp'] = {
+  init() {
+    const g = R.group;
+    const s = { mode: (state.pr && state.pr.modeKeep) || 'y', tilt: 0, tiltT: 0, open: false, k: 0 };
+    state.pr = s;
+    // ふたまた試験管：左に固体（くびれあり）、右に液体
+    const yg = new THREE.Group();
+    const leg = (x, ang, neck) => {
+      const lg = new THREE.Group();
+      const inner = [];
+      for (let k = 0; k <= 8; k++) { const a = -Math.PI / 2 + Math.PI / 2 * k / 8; inner.push([Math.cos(a) * 0.26, 0.28 + Math.sin(a) * 0.26]); }
+      if (neck) inner.push([0.26, 1.1], [0.15, 1.25], [0.26, 1.4]);
+      inner.push([0.26, 2.6]);
+      lg.add(shell(inner, 0.03));
+      lg.position.x = x; lg.rotation.z = ang; return lg;
+    };
+    const L = leg(-0.35, -0.22, true), Rr = leg(0.35, 0.22, false);
+    yg.add(L, Rr);
+    const top = shell([[0.26, 2.75], [0.24, 3.4], [0.27, 3.45]], 0.03); yg.add(top);
+    const st = rubberStopper(0.28, 0.22, 0.3); st.position.y = 3.5; yg.add(st);
+    yg.add(tubePath([[0, 3.6], [0, 4.0], [0.8, 4.2], [1.6, 3.8]], 0.05, glassMat({ opacity: 0.4 })));
+    const zn = new THREE.Group(); for (let i = 0; i < 9; i++) { const z = new THREE.Mesh(new THREE.DodecahedronGeometry(0.07), metal(0x9aa2ab, 0.3)); z.position.set((Math.random() - 0.5) * 0.25, 0.15 + i * 0.05, (Math.random() - 0.5) * 0.2); zn.add(z); } L.add(zn);
+    const acidR = liquid([[0, 0.04], [0.24, 0.28], [0.24, 2.6]], 0.9, 0xd9eef7); Rr.add(acidR);
+    const acidL = liquid([[0, 0.04], [0.24, 0.28], [0.24, 2.6]], 0.75, 0xd9eef7); L.add(acidL);
+    const ybub = bubbleSet(10, 0xffffff, 0.035); ybub.forEach(b => L.add(b));
+    yg.position.y = 0.3; g.add(yg);
+    // キップの装置
+    const kg = new THREE.Group();
+    const sph = (cy, r, from, to) => { const pts = []; for (let k = 0; k <= 12; k++) { const a = from + (to - from) * k / 12; pts.push([Math.cos(a) * r, cy + Math.sin(a) * r]); } return pts; };
+    const lower = [[0, 0.1]].concat(sph(1.0, 0.9, -Math.PI / 2 + 0.1, Math.PI / 2 - 0.35), [[0.28, 1.95], [0.28, 2.15]]);
+    const mid = sph(2.95, 0.8, -Math.PI / 2 + 0.35, Math.PI / 2 - 0.4).concat([[0.3, 3.8], [0.32, 3.85]]);
+    kg.add(shell(lower, 0.04)); kg.add(shell([[0.3, 2.15]].concat(mid), 0.04));
+    const topB = [[0.1, 3.95]].concat(sph(4.65, 0.65, -Math.PI / 2 + 0.2, Math.PI / 2 - 0.5), [[0.35, 5.35], [0.42, 5.42]]);
+    kg.add(shell(topB, 0.035));
+    const stem = cyl(0.07, 0.07, 4.2, glassMat({ opacity: 0.4 }), 12); stem.position.y = 2.15; kg.add(stem);
+    const outlet = tubePath([[0.72, 2.95], [1.2, 2.95], [1.35, 3.0]], 0.06, glassMat({ opacity: 0.4 })); kg.add(outlet);
+    const cockK = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.45, 0.1), solid(0x2b5fbf)); cockK.position.set(1.2, 2.95, 0); kg.add(cockK);
+    const plate = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.03, 24), solid(0xd9d4c7)); plate.position.y = 2.32; kg.add(plate);
+    const zn2 = new THREE.Group(); for (let i = 0; i < 26; i++) { const z = new THREE.Mesh(new THREE.DodecahedronGeometry(0.09), metal(0x9aa2ab, 0.3)); const a = Math.random() * 6.28, rr = 0.15 + Math.random() * 0.5; z.position.set(Math.cos(a) * rr, 2.42 + Math.random() * 0.25, Math.sin(a) * rr); zn2.add(z); } kg.add(zn2);
+    const acidLow = new THREE.Group(), acidMid = new THREE.Group(), acidTop = new THREE.Group(); kg.add(acidLow, acidMid, acidTop);
+    const kbub = bubbleSet(14, 0xffffff, 0.045); kbub.forEach(b => kg.add(b));
+    kg.position.x = 0; g.add(kg);
+    kg.add(withShadow(new THREE.Group(), 2.4));
+    s.yg = yg; s.kg = kg;
+    let lastLv = null;
+    const setAcid = (grp, prof, h) => { while (grp.children.length) grp.remove(grp.children[0]); if (h > prof[0][1] + 0.02) grp.add(liquid(prof, h, 0xd9eef7)); };
+    const labels = [['亜鉛（固体）', () => s.mode === 'y' ? new THREE.Vector3(-0.6, 0.7, 0) : new THREE.Vector3(0.7, 2.6, 0)], ['うすい塩酸', () => s.mode === 'y' ? new THREE.Vector3(0.8, 1.1, 0) : new THREE.Vector3(0.9, 0.9, 0)], ['くびれ', () => new THREE.Vector3(-0.75, 1.55, 0)], ['コック', () => new THREE.Vector3(1.25, 3.3, 0)]];
+    s.lbl = labels.map(([n, f], i) => { const Lb = addLabel(n, f); Lb.part = true; Lb.el.hidden = !state.parts; Lb.idx = i; return Lb; });
+    R.tick = t => {
+      yg.visible = s.mode === 'y'; kg.visible = s.mode === 'k';
+      s.lbl.forEach(Lb => { Lb.el.hidden = !state.parts || (s.mode === 'y' ? Lb.idx === 3 : Lb.idx === 2); });
+      if (s.mode === 'y') {
+        s.tiltT += ((s.tilt ? 1 : 0) - s.tiltT) * 0.06;
+        yg.rotation.z = s.tiltT * 0.95;
+        const onZn = s.tiltT > 0.85;
+        acidR.visible = s.tiltT < 0.5; acidL.visible = s.tiltT >= 0.5;
+        ybub.forEach((b, i) => { b.visible = onZn; const kk = (t * 0.9 + b.userData.ph) % 1; b.position.set((i % 3 - 1) * 0.08, 0.2 + kk * 0.6, 0); });
+      } else {
+        s.k += ((s.open ? 1 : 0) - s.k) * 0.03;
+        cockK.rotation.x = s.open ? Math.PI / 2 : 0;
+        const lv = Math.round(s.k * 40);
+        if (lv !== lastLv) {
+          lastLv = lv;
+          setAcid(acidLow, lower, 1.9);
+          setAcid(acidMid, [[0.3, 2.15]].concat(mid), 2.15 + s.k * 0.65);
+          setAcid(acidTop, topB, 4.0 + (1 - s.k) * 0.9);
+        }
+        const touching = s.k > 0.35;
+        kbub.forEach((b, i) => { b.visible = touching; const kk = (t * 1.0 + b.userData.ph) % 1; const a = i * 2.4; b.position.set(Math.cos(a) * 0.35, 2.45 + kk * 0.9, Math.sin(a) * 0.35); });
+      }
+    };
+    frame(2.4, 3.0, new THREE.Vector3(0.2, 0.2, 1));
+  },
+  html() {
+    const s = state.pr;
+    let h = `<div class="ctl"><div class="row"><button type="button" class="btn" data-kmode="y" aria-pressed="${s.mode === 'y'}">ふたまた試験管</button><button type="button" class="btn" data-kmode="k" aria-pressed="${s.mode === 'k'}">キップの装置</button></div>`;
+    if (s.mode === 'y') {
+      h += `<p class="use">くびれのある側に亜鉛（固体）、もう一方にうすい塩酸（液体）を入れてある。傾けて反応させたり止めたりしよう。</p>
+        <button type="button" class="btn main" data-a="ytilt">${s.tilt ? '傾けをもどす（液を右へ）' : '傾けて塩酸を亜鉛の側へ'}</button>
+        <div class="verdict ${s.tilt ? 'ok' : ''}">${s.tilt ? '塩酸が亜鉛にふれて、水素が発生している。' : '固体と液体が分かれていて、反応していない。'}</div>
+        <div class="purpose"><b>くびれのわけ</b>液をもとの側にもどすとき、固体がいっしょに流れていかないように、くびれで止める。だから固体はくびれのある側に入れる。</div>`;
+    } else {
+      h += `<p class="use">真ん中の球に亜鉛、下と上の球に塩酸が入っている。コックを開け閉めして、気体の発生を調節しよう。</p>
+        <button type="button" class="btn main" data-a="kcock">${s.open ? 'コックを閉じる' : 'コックを開く'}</button>
+        <div class="verdict ${s.open ? 'ok' : ''}">${s.open ? 'コックを開くと気体が出ていくので、塩酸が真ん中の球まで上がって亜鉛にふれ、水素が発生する。' : 'コックを閉じると、発生した気体の圧力で塩酸が押し下げられて上の球へ上がり、亜鉛から離れて反応が止まる。'}</div>
+        <div class="purpose"><b>キップの装置のよいところ</b>コックを開け閉めするだけで、気体を必要なときに必要な量だけ発生させられる。加熱しない反応（固体＋液体）で使う。例：水素（亜鉛＋塩酸）、二酸化炭素（石灰石＋塩酸）、硫化水素（硫化鉄＋塩酸）。</div>`;
+    }
+    return h + '</div>';
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'kmode') { s.mode = v; frame(2.4, 3.0, new THREE.Vector3(0.2, 0.2, 1)); }
+    if (a === 'ytilt') { s.tilt = !s.tilt; if (s.tilt) markDone('p-kipp'); }
+    if (a === 'kcock') { s.open = !s.open; }
+    renderCard();
+  },
+};
+
+// ---------- 電子てんびん ----------
+PR['p-balance'] = {
+  init() {
+    const g = R.group;
+    const s = { on: false, paper: false, tare: 0, amt: 0, leveled: false, returned: false };
+    state.pr = s;
+    const bal = makeBalance(); g.add(bal.g); s.bal = bal;
+    const paper = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.0, 2, 2), new THREE.MeshPhongMaterial({ color: 0xf3ecd6, side: THREE.DoubleSide, shininess: 5 }));
+    const pos = paper.geometry.attributes.position; pos.setZ(4, -0.06); pos.needsUpdate = true; paper.geometry.computeVertexNormals();
+    paper.rotation.x = -Math.PI / 2; paper.rotation.z = Math.PI / 4; paper.position.set(0, 0.64, -0.15); g.add(paper);
+    const pile = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.2, 24), new THREE.MeshLambertMaterial({ color: 0xc2c8d0 })); pile.position.set(0, 0.66, -0.15); g.add(pile);
+    const bottle = new THREE.Group();
+    bottle.add(shell([[0, 0.05], [0.4, 0.05], [0.42, 0.1], [0.42, 0.9], [0.25, 1.1], [0.22, 1.25]], 0.03, glassMat({ color: 0x9a6a3a, opacity: 0.55 })));
+    const lab = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 0.4, 24, 1, true, -0.8, 1.6), solid(0xffffff)); lab.position.y = 0.5; bottle.add(lab);
+    const salt = lathe([[0, 0.06], [0.39, 0.06], [0.39, 0.6], [0, 0.65]], solid(0xf4f4f4)); bottle.add(salt);
+    bottle.position.set(2.2, 0, -0.4); g.add(bottle);
+    const spat = new THREE.Group();
+    const sh = cyl(0.025, 0.025, 1.6, metal(0xd7dbe0, 0.6), 8); sh.rotation.z = Math.PI / 2; spat.add(sh);
+    const sc = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), metal(0xd7dbe0, 0.6)); sc.position.x = -0.85; spat.add(sc);
+    g.add(spat); s.spat = spat; s.spatT = 0;
+    const labels = [['水準器', [0.9, 0.7, -1.0]], ['表示部', [-0.35, 0.62, 1.4]], ['ゼロ（風袋）ボタン', [0.95, 0.6, 1.4]], ['薬包紙', [0.5, 0.75, -0.15]], ['薬品びん', [2.2, 1.4, -0.4]]];
+    labels.forEach(([n, p]) => { const L = addLabel(n, () => new THREE.Vector3(...p)); L.part = true; L.el.hidden = !state.parts; });
+    R.tick = t => {
+      paper.visible = s.paper; pile.visible = s.amt > 0.01;
+      pile.scale.setScalar(0.4 + Math.cbrt(s.amt / 5) * 0.8); pile.position.y = 0.645 + 0.1 * pile.scale.y;
+      const k = Math.max(0, 1 - (performance.now() - s.spatT) / 700);
+      spat.position.set(0.6 + 1.0 * (1 - k), 1.0 + 0.4 * (1 - k), -0.15); spat.rotation.z = -0.2 * k;
+      bal.bubble.position.x = s.leveled ? 0.9 : 0.97;
+      const reading = (s.paper ? 0.42 : 0) + s.amt - s.tare;
+      bal.show(reading.toFixed(2), s.on);
+    };
+    frame(0.6, 2.4, new THREE.Vector3(0.1, 0.65, 1));
+  },
+  html() {
+    const s = state.pr;
+    const reading = (s.paper ? 0.42 : 0) + s.amt - s.tare;
+    const ok = s.on && Math.abs(s.amt - 5) < 0.015 && s.paper && Math.abs(s.tare - 0.42) < 0.001;
+    if (ok) markDone('p-balance');
+    return `<div class="ctl"><p class="use">塩化ナトリウムを <b>5.00 g</b> はかりとろう。</p>
+      <div class="row"><button type="button" class="btn" data-a="blevel" aria-pressed="${s.leveled}">水平を確かめる</button><button type="button" class="btn" data-a="bon" aria-pressed="${s.on}">${s.on ? '電源を切る' : '電源を入れる'}</button>
+      <button type="button" class="btn" data-a="bpaper" aria-pressed="${s.paper}">${s.paper ? '薬包紙をとる' : '薬包紙をのせる'}</button><button type="button" class="btn" data-a="btare">ゼロ（風袋）ボタン</button></div>
+      <p class="note">薬さじで加える</p><div class="row"><button type="button" class="btn" data-add="1">＋多め（約1 g）</button><button type="button" class="btn" data-add="0.1">＋少し（約0.1 g）</button><button type="button" class="btn" data-add="0.01">＋ほんの少し（0.01 g）</button><button type="button" class="btn bad" data-a="bback">多すぎた分をびんにもどす</button><button type="button" class="btn" data-a="bremove">多すぎた分を薬さじでとって捨てる</button></div>
+      <div class="elecv"><span>表示 <b>${s.on ? reading.toFixed(2) : '—'}</b> g</span><span>実際の塩化ナトリウム <b>${s.amt.toFixed(2)}</b> g</span></div>
+      ${ok ? '<div class="verdict ok">ぴったり 5.00 g はかれた！</div>' : s.on && s.paper && s.tare === 0 && s.amt > 0 ? '<div class="verdict ng">ゼロにしないまま入れたので、表示には薬包紙の質量（0.42 g）がふくまれている。</div>' : ''}</div>`;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'blevel') { s.leveled = true; toast('水準器の泡がまん中に来るように、足の高さを調整した。', 'ok'); }
+    if (a === 'bon') { if (!s.leveled && !s.on) toast('先に水平を確かめよう。傾いていると正しくはかれない。', 'ng'); s.on = !s.on; if (!s.on) s.tare = 0; }
+    if (a === 'bpaper') { if (s.amt > 0) { toast('薬品がのっているので、薬包紙はとらない。', 'info'); return; } s.paper = !s.paper; s.tare = 0; }
+    if (a === 'btare') { if (!s.on) { toast('電源が入っていない。', 'info'); return; } s.tare = (s.paper ? 0.42 : 0) + s.amt; toast('表示が 0.00 g になった。のせた物の質量を引いて、ここからの分だけをはかれる。', 'ok'); }
+    if (a === 'add') {
+      if (!s.paper) { toast('てんびんに直接薬品をのせてはいけない。薬包紙をしこう。', 'ng'); return; }
+      const d = +v * (0.9 + Math.random() * 0.2);
+      s.amt = Math.round((s.amt + (+v === 0.01 ? 0.01 : d)) * 100) / 100; s.spatT = performance.now();
+    }
+    if (a === 'bback') { toast('一度とり出した薬品をびんにもどしてはいけない。びんの中の薬品がよごれる。', 'ng'); }
+    if (a === 'bremove') { s.amt = Math.max(0, Math.round((s.amt - 0.1) * 100) / 100); s.spatT = performance.now(); }
+    renderCard();
+  },
+};
+
+Object.assign(INFO, {
+  'p-cuox': {
+    purpose: '物質が結びつくとき、その質量の比はいつも決まっている（定比例の法則）ことを確かめる。銅と結びつく酸素の質量を調べる。',
+    steps: [['銅の粉の質量をはかり、ステンレス皿にうすく広げる', 'うすく広げると、空気（酸素）にふれる面積が大きくなり、全部反応しやすい。'], ['加熱してはかき混ぜ、冷ましてから質量をはかる', '熱いままのせるとてんびんがいたみ、上昇気流で正しくはかれない。'], ['質量が変わらなくなるまでくり返す', '変わらなくなったら、銅がすべて酸化銅になった（反応が終わった）しるし。'], ['銅の質量を変えて同じ実験をし、グラフにする', '原点を通る直線になれば、質量の比（銅：酸素＝4：1）がいつも一定とわかる。']],
+    mistakes: ['1回の加熱で終わりにする（内側の銅が反応していない）。', '熱いままはかる。', 'かき混ぜるとき、粉を皿の外にこぼす（質量が減る）。'],
+    danger: ['加熱したステンレス皿や三脚はとても熱い。るつぼばさみを使い、冷めるまでさわらない。'],
+  },
+  'p-recryst': {
+    purpose: '温度によって溶ける量が大きく変わる物質（硝酸カリウム）を、不純物（塩化ナトリウム）からとり出して純粋にする。',
+    steps: [['混合物を、少ない量の熱い水に全部溶かす', '高温では硝酸カリウムがたくさん溶ける。最初に全部溶かすことで、不純物と一度ばらばらにする。'], ['ゆっくり冷やす', '温度が下がると溶ける量が減り、溶けきれなくなった硝酸カリウムが結晶として出てくる。ゆっくり冷やすと大きな結晶になる。'], ['ろ過して結晶をとり出す', '塩化ナトリウムは量が少なく、温度で溶ける量もあまり変わらないので、溶けたままろ液に残る。']],
+    mistakes: ['全部溶かさずに冷やす（溶け残りに不純物がまざる）。', '溶解度曲線の読み方：水 100 g あたりの量であることを忘れる。'],
+    danger: ['熱い水溶液でやけどしないように注意する。ビーカーはふきんやビーカーばさみで持つ。'],
+  },
+  'p-ionize': {
+    purpose: '金属によって、陽イオンへのなりやすさ（イオン化傾向）がちがうことを確かめる。電池やめっきのしくみの基本になる。',
+    steps: [['金属板の表面をみがく', '表面のさびや汚れをとり、反応しやすくする。'], ['水溶液にひたして、表面と色の変化を見る', 'イオン化傾向が大きい金属はイオンになって溶け、小さい金属のイオンが電子を受け取って金属として出てくる。'], ['うすい塩酸にもひたす', '水素よりイオン化傾向の大きい金属は、塩酸と反応して水素を出す。']],
+    mistakes: ['反応しない組み合わせでも「変化した」と思いこむ（表面をよく見る）。', '銅を塩酸に入れても水素は出ない（銅は水素よりイオン化傾向が小さい）。'],
+    danger: ['硝酸銀水溶液は皮ふにつくと黒くなる。手袋をして、ついたらすぐ洗う。'],
+  },
+  'p-fes': {
+    purpose: '2つの物質が化学変化を起こすと、もとの物質とはちがう性質の新しい物質ができることを確かめる（化合）。',
+    steps: [['鉄粉と硫黄をよく混ぜて試験管に入れ、口に脱脂綿をつめる', 'よく混ぜると反応が進みやすい。脱脂綿は、気体が出るのを防ぐ。'], ['混合物の上の方を加熱する', '下から加熱すると、反応した部分が下になり観察しにくい。上から反応が下へ進む。'], ['赤くなったら加熱をやめる', '反応で熱が出る（発熱反応）ので、火を止めても反応が続く。'], ['反応前後の物質で、磁石・塩酸の反応をくらべる', '性質がちがえば、新しい物質ができたとわかる。']],
+    mistakes: ['反応後の物質も磁石につくと思う（硫化鉄は鉄とちがう物質）。', 'においを直接かぐ（手であおぐ）。'],
+    danger: ['反応後の物質に塩酸を加えると、有毒な硫化水素が出る。少量で行い、換気する。', '加熱した試験管はとても熱い。'],
+  },
+  'p-kipp': {
+    purpose: '固体と液体を反応させて、加熱せずに気体を発生させる。必要なときだけ気体を出せる装置のしくみを知る。',
+    steps: [['ふたまた試験管：くびれのある側に固体、ない側に液体を入れる', '液体をもどすとき、くびれで固体を止めて、反応を止められる。'], ['傾けて液体を固体の側に移すと反応が始まる', '傾けをもどせば反応が止まる。'], ['キップの装置：コックを開くと発生、閉じると停止', '閉じると発生した気体の圧力で液が押し下げられ、固体から離れる。']],
+    mistakes: ['ふたまた試験管で、固体をくびれのない側に入れる。', 'キップの装置を加熱が必要な反応に使う（使えない）。'],
+    danger: ['水素は空気とまざると爆発しやすい。発生させた水素に火を近づけるときは、空気を追い出してから少量で。'],
+  },
+  'p-balance': {
+    purpose: '薬品の質量を正確にはかる。正しい量をはかることは、すべての実験の基本。',
+    steps: [['水平な台に置き、水準器の泡をまん中に合わせる', '傾いていると、正しい質量が表示されない。'], ['電源を入れ、薬包紙をのせてからゼロ（風袋）ボタンを押す', '薬包紙の質量を引いて、薬品だけの質量を表示させる。'], ['薬さじで少しずつ加え、目標の質量に近づいたら少量ずつ', '一度に多く入れると、行きすぎてしまう。'], ['多すぎた分は、薬さじでとってびんにもどさず処分する', '一度出した薬品をもどすと、びんの中の薬品がよごれる。']],
+    mistakes: ['ゼロ（風袋）にしないまま入れる。', '直接てんびんの皿に薬品をのせる。', '熱いもの・ぬれたものをのせる。'],
+    danger: ['薬品をこぼしたら、すぐにふきとる（皿がさびたり、次の人の手についたりする）。'],
+  },
+});
+PRACTICES.push(
+  { id: 'p-cuox', name: '銅の酸化（質量の変化）', icon: '銅', item: 'dish', grp: '実験' },
+  { id: 'p-recryst', name: '再結晶', icon: '晶', item: null, grp: '実験' },
+  { id: 'p-ionize', name: '金属のイオン化傾向', icon: 'イ', item: null, grp: '実験' },
+  { id: 'p-fes', name: '鉄と硫黄の反応', icon: '鉄', item: 'tube', grp: '実験' },
+  { id: 'p-kipp', name: '気体の発生装置', icon: 'キ', item: null, grp: '実験' },
+  { id: 'p-balance', name: '電子てんびんの使い方', icon: 'g', item: null, grp: '基本操作' },
+);
+// 基本操作の練習を先にならべる
+PRACTICES.sort((a, b) => (a.grp === b.grp ? 0 : a.grp === '基本操作' ? -1 : 1));
+SAFETY_Q.push(
+  ['銅を加熱すると、質量が減る。', false, '空気中の酸素と結びつくので、質量はふえる（銅：酸素＝4：1）。'],
+  ['再結晶は、温度によって溶ける量が大きく変わる物質の精製に向いている。', true, '硝酸カリウムなど。高温で溶かし、冷やして結晶を出す。'],
+  ['亜鉛板を硫酸銅(II)水溶液にひたすと、表面に銅が出てくる。', true, '亜鉛のほうがイオン化傾向が大きいから。'],
+  ['銅をうすい塩酸に入れると、水素が発生する。', false, '銅は水素よりイオン化傾向が小さいので反応しない。'],
+  ['鉄と硫黄の反応では、反応が始まったら火を止めても反応が続く。', true, '反応で熱が出る（発熱反応）から。'],
+  ['ふたまた試験管では、くびれのある側に液体を入れる。', false, 'くびれのある側に固体を入れる。液をもどすとき固体を止めるため。'],
+  ['電子てんびんでは、薬包紙をのせてからゼロ（風袋）ボタンを押す。', true, '薬包紙の質量を引いて、薬品だけをはかれる。'],
+  ['多くとりすぎた薬品は、もとのびんにもどす。', false, 'びんの中の薬品がよごれるので、もどさない。'],
+);
+
 function quizStart(kind) {
   const qs = [];
   for (let i = 0; i < 10; i++) {
@@ -1972,7 +2516,7 @@ document.addEventListener('click', ev => {
     if (a.dataset.a === 'qnext') { state.quiz.i++; state.quiz.picked = null; if (state.quiz.i >= 10) renderCard(); else quizShow(); return; }
     PR[state.id].act(a.dataset.a); return;
   }
-  for (const [attr, act] of [['data-gas', 'gas'], ['data-method', 'method'], ['data-elyte', 'elyte'], ['data-sample', 'sample'], ['data-fq', 'fq']]) {
+  for (const [attr, act] of [['data-gas', 'gas'], ['data-method', 'method'], ['data-elyte', 'elyte'], ['data-sample', 'sample'], ['data-fq', 'fq'], ['data-metal', 'metal'], ['data-sol', 'sol'], ['data-fs', 'fs'], ['data-kmode', 'kmode'], ['data-add', 'add']]) {
     const b = t.closest('[' + attr + ']');
     if (b && state.pr) { PR[state.id].act(act, b.getAttribute(attr)); return; }
   }
@@ -1985,7 +2529,7 @@ document.addEventListener('click', ev => {
 });
 document.addEventListener('input', ev => {
   const id = ev.target.id, v = +ev.target.value;
-  const map = { gasS: 'gas', airS: 'air', amtS: 'amt', wickS: 'wick', fillS: 'fill', tubeS: 'amt', voltS: 'volt' };
+  const map = { gasS: 'gas', airS: 'air', amtS: 'amt', wickS: 'wick', fillS: 'fill', tubeS: 'amt', voltS: 'volt', cuS: 'cu', rcS: 'rc' };
   if (map[id] && state.pr) {
     PR[state.id].act(map[id], v);
     const el = $(id); if (el) el.focus();
