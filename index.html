@@ -376,6 +376,9 @@ details.more p { margin: 4px 0 0; line-height: 1.65; }
 .featbar .feat[aria-pressed="true"] { opacity: 1; box-shadow: 0 0 0 2px var(--accent); }
 .pt-note.filt { grid-column: 1 / -1; margin: 0 0 2px; }
 /* 状態変化 */
+.lbl-sep { font-size: 16px; font-family: var(--font-body); font-weight: 700; padding: 3px 12px; border-radius: 999px; color: #fff; background: var(--accent); }
+.lbl-sep.warm { background: #d9661f; font-family: var(--font-data); font-size: 18px; }
+.sep-stages { margin: 6px 0 10px; padding-left: 20px; font-size: 14px; line-height: 1.7; }
 .lbl-phase { font-size: 22px; font-family: var(--font-display); font-weight: 800; padding: 2px 14px; border-radius: 999px; color: #fff; background: #5d6b84; }
 .lbl-phase[data-ph="liquid"] { background: #128c9c; } .lbl-phase[data-ph="gas"] { background: #d9661f; }
 .temp-row { display: flex; align-items: center; gap: 10px; }
@@ -2776,18 +2779,20 @@ const LESSONS = [
   // ---------- 第1編 第1章 ----------
   { id: 'ls-pure', no: '1-1', part: 0, chap: 0, name: '純物質と混合物・物質の分離', steps: [
     { go: 'water', title: '純物質', text: '1種類の物質だけでできているものを純物質という。水 H₂O は純物質で、沸点（100 ℃）や融点（0 ℃）が決まっている。', show: { labels: true } },
-    { go: 'ph-ethanol', title: '混合物', text: 'ワインは、水とエタノールなどがまざった混合物。混合物は、まざっている割合で沸点などが変わる。3D はエタノールだけを取り出したようす（沸点 78 ℃）。水の沸点は 100 ℃。', phaseT: 25 },
-    { go: 'ph-ethanol', title: '蒸留', text: '沸点のちがいを利用して分ける。85 ℃にすると、エタノールは気体になる（3D）が、水は 100 ℃まで液体のまま。出てきた気体を冷やして液体にもどして集める。', phaseT: 85, lab: 'p-distill' },
-    { go: 'nacl', title: 'ろ過・再結晶', text: 'ろ過：液体に溶けない固体を、ろ紙で分ける。再結晶：温度による溶けやすさ（溶解度）のちがいを利用して、純粋な結晶を取り出す。', lab: 'p-recryst' },
-    { go: 'naphthalene', title: '昇華法', text: 'ナフタレンやヨウ素は、固体から直接気体になる（昇華）。この性質を利用して、昇華しない物質と分ける。', lab: 'p-sublime' },
-    { go: 'caffeine', title: '抽出・クロマトグラフィー', text: '抽出：溶媒への溶けやすさのちがいで取り出す（お茶の葉からカフェインなど）。クロマトグラフィー：ろ紙などへの吸着のしやすさのちがいで分ける。', lab: 'p-chroma' },
+    { go: 'sep-mix', title: '混合物', text: 'ワインは、水とエタノールなどがまざった混合物。2種類の分子がばらばらにまざっている。混合物は、まざっている割合で沸点などが変わる。' },
+    { go: 'sep-distill', title: '蒸留', text: '沸点のちがいで分ける。加熱すると、沸点の低いエタノール（78 ℃）の分子が先に気体になって出ていき、冷却器で液体にもどって受け器にたまる。', lab: 'p-distill' },
+    { go: 'sep-filter', title: 'ろ過', text: '粒の大きさのちがいで分ける。小さな水分子はろ紙のすき間を通りぬけ、大きな砂や泥の粒はろ紙の上に残る。', lab: 'p-filter' },
+    { go: 'sep-recryst', title: '再結晶', text: '溶解度のちがいで分ける。熱い水に溶かして冷やすと、溶けきれなくなった硝酸カリウムだけが結晶になる。少しだけまざった塩化ナトリウムは溶けたまま。', lab: 'p-recryst' },
+    { go: 'sep-sublime', title: '昇華法', text: 'ヨウ素は加熱すると固体から直接気体になる（昇華）。冷たいフラスコの底で固体にもどり、昇華しない砂と分けられる。', lab: 'p-sublime' },
+    { go: 'sep-extract', title: '抽出', text: '溶けやすさのちがいで分ける。ヨウ素は水よりヘキサンによく溶けるので、ふり混ぜるとヘキサンの層に移る。お茶をいれるのも抽出。' },
+    { go: 'sep-chroma', title: 'クロマトグラフィー', text: 'ろ紙への吸着のしやすさのちがいで分ける。水がしみ上がると、吸着しにくい色素ほど速く上がり、黒いインクが色ごとに分かれる。', lab: 'p-chroma' },
   ] },
   { id: 'ls-elem', no: '1-2', part: 0, chap: 0, name: '単体と化合物・同素体', steps: [
     { go: 'oxygen', title: '単体', text: '1種類の元素だけでできている純物質を単体という。酸素 O₂、水素 H₂、窒素 N₂ など。' },
-    { go: 'water', title: '化合物', text: '2種類以上の元素でできている純物質を化合物という。水 H₂O は H と O の化合物。電気分解すると、単体の H₂ と O₂ に分けられる。', lab: 'p-elec' },
+    { go: 'rx-elec', title: '化合物', text: '2種類以上の元素でできている純物質を化合物という。水 H₂O は H と O の化合物。電気分解すると、単体の H₂ と O₂ に分けられる（2H₂O → 2H₂ + O₂）。', solve: true, lab: 'p-elec' },
     { go: 'cmp-o2-o3', title: '同素体', text: '同じ元素からできている単体で、性質がちがうものを同素体という。酸素 O₂ とオゾン O₃。' },
     { go: 'cmp-diamond-graphite', title: '炭素の同素体', text: 'ダイヤモンドと黒鉛は、原子のつながり方がちがうので、かたさや電気の通しやすさがちがう。同素体があるのは S・C・O・P（「スコップ」と覚える）。' },
-    { go: 'nacl', title: '元素を調べる', text: '炎色反応：Na は黄色、Cu は青緑色などの炎の色で、ふくまれる元素がわかる。', lab: 'p-flame' },
+    { go: 'sep-flame', title: '元素を調べる', text: '炎色反応：金属元素をふくむ水溶液を炎に入れると、Li は赤、Na は黄、Cu は青緑…と元素ごとに決まった色が出る。', lab: 'p-flame' },
   ] },
   { id: 'ls-state', no: '1-3', part: 0, chap: 0, name: '物質の三態と熱運動', steps: [
     { go: 'ph-water', title: '固体', text: '粒子は決まった位置で、その場で振動している（熱運動）。粒子どうしが強く引き合っている。', phaseT: -20 },
@@ -2972,6 +2977,389 @@ function lessonCardHTML() {
     ${last && next ? `<p class="note">次は「${esc(next.no)}　${esc(next.name)}」</p>` : ''}
     <p class="note">キーボードの ← → でも進めます。右上のボタンで全画面にできます。</p>
     <button type="button" class="pbtn ghost" data-act="lsexit">授業モードをやめる</button></div>`;
+}
+// ===== 物質の分離・元素の検出（粒子が動くようすを見る） =====
+const SEP_LIST = [
+  { id: 'sep-mix', name: '混合物（ワイン）', en: '水 ＋ エタノール', scene: 'mix',
+    desc: 'ワインは、水分子とエタノール分子などがまざった混合物。2種類の分子がばらばらにまざり合っている。',
+    stages: ['水分子（小さい）とエタノール分子（大きい）がまざっている'],
+    point: '混合物は、まざっている物質の性質のちがい（沸点・溶けやすさ・粒の大きさなど）を利用して分けられる。' },
+  { id: 'sep-distill', name: '蒸留', en: '沸点のちがいで分ける', scene: 'distill',
+    desc: 'ワイン（水とエタノールの混合物）を加熱すると、沸点の低いエタノール（78 ℃）の分子が先に気体になって出ていく。冷却器で冷やされて液体にもどり、受け器にたまる。',
+    stages: ['① 加熱して温度を上げる', '② 沸点の低いエタノールが先に気体になる', '③ 冷却器で冷やされて液体にもどる', '④ 受け器にエタノールが多い液がたまる'],
+    point: '温度計の球部は枝の付け根の高さ（出ていく蒸気の温度をはかる）。水の分子も少しは出ていくので、純粋なエタノールにはならない。' },
+  { id: 'sep-filter', name: 'ろ過', en: '粒の大きさのちがいで分ける', scene: 'filter',
+    desc: '泥水をろ紙でこすと、水分子はろ紙のすき間を通りぬけるが、大きな砂や泥の粒は通れずにろ紙の上に残る。',
+    stages: ['① ガラス棒を伝わらせて注ぐ', '② 小さな水分子はろ紙のすき間を通る', '③ 大きな粒はろ紙の上に残る'],
+    point: 'ろ紙を通った液をろ液という。液体に溶けている物質（食塩など）は、ろ紙を通りぬけてしまうので、ろ過では分けられない。' },
+  { id: 'sep-recryst', name: '再結晶', en: '溶解度のちがいで分ける', scene: 'recryst',
+    desc: '少量の塩化ナトリウムがまざった硝酸カリウムを熱い水に溶かし、冷やす。温度が下がると溶けきれなくなった硝酸カリウムだけが結晶になって出てくる。',
+    stages: ['① 熱い水（60 ℃）にすべて溶かす', '② 冷やす（20 ℃）', '③ 硝酸カリウム（K⁺・NO₃⁻）だけが結晶になる', '④ 量の少ない Na⁺・Cl⁻ は溶けたまま残る'],
+    point: '硝酸カリウムは温度によって溶解度が大きく変わる。塩化ナトリウムは温度によってほとんど変わらず、量も少ないので溶けたまま。' },
+  { id: 'sep-sublime', name: '昇華法', en: '昇華しやすさのちがいで分ける', scene: 'sublime',
+    desc: 'ヨウ素と砂の混合物をおだやかに加熱すると、ヨウ素だけが固体から直接気体になる（昇華）。冷たい水を入れたフラスコの底で冷やされ、固体にもどってつく。',
+    stages: ['① おだやかに加熱する', '② ヨウ素分子 I₂ が気体になる（紫色）', '③ 冷たいフラスコの底で固体にもどる', '④ 砂はビーカーに残る'],
+    point: 'ヨウ素の気体は有毒なので換気をする。ナフタレンなども昇華する。' },
+  { id: 'sep-extract', name: '抽出', en: '溶けやすさのちがいで分ける', scene: 'extract',
+    desc: 'ヨウ素をふくむ水溶液にヘキサンを加えてよくふると、ヨウ素分子は水よりヘキサンによく溶けるので、ヘキサンの層に移る。',
+    stages: ['① 下が水の層、上がヘキサンの層（まざらない）', '② 分液ろうとをよくふる', '③ ヨウ素がヘキサンの層に移る（上が紫色に）'],
+    point: 'お茶をいれるのも抽出（茶葉から成分を湯に溶かし出す）。コーヒーの豆からカフェインを取り出すときにも使う。' },
+  { id: 'sep-chroma', name: 'ペーパークロマトグラフィー', en: '吸着のしやすさのちがいで分ける', scene: 'chroma',
+    desc: '黒い水性ペンのインクの点を、水につけたろ紙で展開すると、ろ紙に吸着しにくく水に溶けやすい色素ほど速く上がり、色ごとに分かれる。',
+    stages: ['① 鉛筆の線の上にインクの点をつける', '② 水がろ紙をしみ上がる', '③ 色素ごとに上がる速さがちがい、分かれる'],
+    point: 'Rf値 ＝（原点から色素までの距離）÷（原点から液の先端までの距離）。物質によって決まった値になる。' },
+  { id: 'sep-flame', name: '炎色反応', en: '元素を調べる', scene: 'flame',
+    desc: '金属元素をふくむ水溶液を白金線につけて炎に入れると、元素ごとに決まった色が出る。この色で、ふくまれている元素がわかる。',
+    stages: ['Li 赤', 'Na 黄', 'K 赤紫', 'Cu 青緑', 'Ca 橙赤', 'Ba 黄緑'],
+    point: '覚え方「リアカー（Li 赤）なき（Na 黄）K村（K 赤紫）動力（Cu 青緑）借りるとう（Ca 橙赤）するもくれない（Sr 紅）馬力（Ba 黄緑）」' },
+];
+SEP_LIST.forEach(s => LIB.push(Object.assign({ cat: 'sep', kind: 'sep', f: s.en }, s)));
+SECTIONS.push({ id: 'sep', name: '物質の分離', cats: ['sep'] });
+GROUPS.find(g => g.id === 'move').secs.push('sep');
+FIRST_OF.sep = 'sep-distill';
+
+// --- 部品 ---
+function sepGlass(prof, extra) {
+  const m = new THREE.Mesh(new THREE.LatheGeometry(prof.map(p => new THREE.Vector2(Math.max(0, p[0]), p[1])), 48),
+    new THREE.MeshPhongMaterial(Object.assign({ color: '#d9e8f5', transparent: true, opacity: 0.2, side: THREE.DoubleSide, depthWrite: false, shininess: 100 }, extra || {})));
+  m.renderOrder = 2;
+  return m;
+}
+function sepLiquid(prof, h, color, op) {
+  const pts = [[0, prof[0][1] + 0.02]];
+  for (let i = 0; i < prof.length; i++) {
+    const [r, y] = prof[i];
+    if (y < h) { pts.push([r * 0.97, Math.max(y, prof[0][1] + 0.02)]); continue; }
+    const [r0, y0] = prof[i - 1] || prof[0];
+    pts.push([(r0 + (r - r0) * (h - y0) / Math.max(1e-6, y - y0)) * 0.97, h]);
+    break;
+  }
+  pts.push([0, h]);
+  const m = new THREE.Mesh(new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), 48),
+    new THREE.MeshPhongMaterial({ color, transparent: true, opacity: op || 0.3, side: THREE.DoubleSide, depthWrite: false }));
+  m.renderOrder = 1;
+  return m;
+}
+function sepTube(pts, r, color, op) {
+  const curve = new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(p[0], p[1], p[2] || 0)));
+  const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 60, r, 12, false), new THREE.MeshPhongMaterial({ color, transparent: op < 1, opacity: op, depthWrite: op >= 1, side: THREE.DoubleSide }));
+  m.renderOrder = 2;
+  return { m, curve };
+}
+const _sepTpl = {};
+function sepMol(ref, s) {
+  const tpl = _sepTpl[ref] || (_sepTpl[ref] = speciesTemplate(ref));
+  const grp = new THREE.Group();
+  tpl.atoms.forEach(a => {
+    const m = new THREE.Mesh(R.SMALL, phong(EL[a.el].c));
+    m.scale.setScalar((EL[a.el].rc * 0.42 + 0.13) * s * 1.6);
+    m.position.set(a.p[0] * s, a.p[1] * s, a.p[2] * s);
+    grp.add(m);
+  });
+  return grp;
+}
+function sepI2(s) { // ヨウ素分子（紫の2つの球）
+  const g = new THREE.Group();
+  [-1, 1].forEach(k => { const m = new THREE.Mesh(R.SMALL, phong('#6b3fa0')); m.scale.setScalar(0.17 * s / 0.3); m.position.x = k * 0.15 * s / 0.3; g.add(m); });
+  return g;
+}
+function sepGrain(r, color) { const m = new THREE.Mesh(new THREE.DodecahedronGeometry(r), phong(color || '#9a7b52', { flatShading: true })); return m; }
+function sepFlame(color) {
+  const g = new THREE.Group();
+  const outer = new THREE.Mesh(new THREE.ConeGeometry(0.32, 1.5, 24, 1, true), basic(color || '#5b8dff', { transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }));
+  outer.position.y = 0.75; g.add(outer);
+  const inner = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.6, 20, 1, true), basic('#3a66ff', { transparent: true, opacity: 0.8, side: THREE.DoubleSide, depthWrite: false }));
+  inner.position.y = 0.3; g.add(inner);
+  g.userData = { outer, inner };
+  return g;
+}
+function sepBurner(x, z) {
+  const g = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.15, 32), phong('#4a5260')); base.position.y = 0.075; g.add(base);
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 1.5, 24), phong('#c7ccd3', { shininess: 120 })); barrel.position.y = 0.9; g.add(barrel);
+  const fl = sepFlame(); fl.position.y = 1.65; g.add(fl);
+  g.position.set(x, 0, z || 0);
+  g.userData.flame = fl;
+  return g;
+}
+const sepStageLabel = () => addLabel('lbl-sep', '', () => new THREE.Vector3(0, view.sepTop + 0.6, 0));
+const sepPart = (text, f) => addLabel('lbl-mol', text, f);
+// 0〜1 をくり返す時間
+const sepLoop = (t, P) => ((t - (view.sepT0 || 0)) / P) % 1;
+
+function buildSepView() {
+  const e = state.entry, g = R.group;
+  view.kind = 'sep';
+  view.sepT0 = null;
+  view.sepR = 5; view.sepTarget = new THREE.Vector3(0, 2.5, 0); view.sepTop = 5.5;
+  const r = rng(7);
+  const SC = SEP_SCENES[e.scene];
+  const tick = SC(g, r);
+  const stLbl = e.stages.length > 1 && e.scene !== 'flame' ? sepStageLabel() : null;
+  view.tick = t => {
+    if (view.sepT0 === null) view.sepT0 = t;
+    const st = tick(t);
+    if (stLbl && st !== undefined && stLbl.el.textContent !== e.stages[st]) stLbl.el.textContent = e.stages[st];
+  };
+  renderLegend();
+}
+const SEP_SCENES = {
+  mix(g, r) {
+    const prof = [[0, 0.05], [1.9, 0.05], [2.0, 0.15], [2.0, 4.0]];
+    g.add(sepGlass(prof)); g.add(sepLiquid(prof, 3.2, '#c9405f', 0.16));
+    const items = [];
+    for (let i = 0; i < 22; i++) { const isE = i % 3 === 0; const m = sepMol(isE ? 'ethanol' : 'water', 0.3); g.add(m); items.push({ m, home: new THREE.Vector3((r() - 0.5) * 3, 0.4 + r() * 2.5, (r() - 0.5) * 3), w: 0.4 + r() * 0.5, ph: r() * 6 }); }
+    sepPart('エタノール分子', () => items[0].m.position.clone().add(new THREE.Vector3(0, 0.4, 0)));
+    sepPart('水分子', () => items[1].m.position.clone().add(new THREE.Vector3(0, 0.3, 0)));
+    view.sepR = 3.6; view.sepTarget.set(0, 2, 0); view.sepTop = 4.2;
+    return t => { items.forEach(it => { it.m.position.set(it.home.x + 0.35 * Math.sin(it.w * t + it.ph), it.home.y + 0.3 * Math.sin(it.w * 1.3 * t + it.ph), it.home.z + 0.35 * Math.cos(it.w * t + it.ph)); it.m.rotation.set(t * 0.7 + it.ph, t * 0.5, 0); }); return 0; };
+  },
+  distill(g, r) {
+    // 枝付きフラスコ（球の中心 x=FX, y=3.6）をガスバーナーで加熱
+    const FX = -3.2, CY = 3.6, prof = [];
+    for (let k = 0; k <= 16; k++) { const a = -Math.PI / 2 + Math.PI * 0.82 * k / 16; prof.push([Math.cos(a) * 1.35, CY + Math.sin(a) * 1.35]); }
+    prof.push([0.32, 5.15], [0.32, 6.5]);
+    const fl = new THREE.Group(); fl.position.x = FX; g.add(fl);
+    fl.add(sepGlass(prof)); fl.add(sepLiquid(prof, CY, '#c9405f', 0.2));
+    const th = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 10), phong('#ffffff', { transparent: true, opacity: 0.6 })); th.position.y = 6.85; fl.add(th);
+    const red = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.2, 6), basic('#d32f2f')); red.position.y = 6.35; fl.add(red);
+    const bulb = new THREE.Mesh(R.SMALL, phong('#d32f2f')); bulb.scale.setScalar(0.09); bulb.position.y = 5.75; fl.add(bulb);
+    const stopper = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.3, 0.35, 20), phong('#6b4a3a')); stopper.position.y = 6.55; fl.add(stopper);
+    // 枝 → リービッヒ冷却器 → 受け器
+    const path = sepTube([[FX + 0.3, 5.75], [FX + 0.9, 5.55], [-0.6, 4.9], [2.4, 3.0], [2.75, 2.5], [2.85, 1.8]], 0.1, '#d9e8f5', 0.3);
+    g.add(path.m);
+    const cA = new THREE.Vector3(-0.4, 4.77, 0), cB = new THREE.Vector3(2.0, 3.25, 0);
+    const jacket = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, cA.distanceTo(cB), 32, 1, true), new THREE.MeshPhongMaterial({ color: '#7fc0ea', transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide }));
+    jacket.position.copy(cA).lerp(cB, 0.5); jacket.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), cB.clone().sub(cA).normalize()); g.add(jacket);
+    const rprof = [[0, 0.05], [0.9, 0.05], [0.95, 0.12], [0.95, 1.7]];
+    const rc = new THREE.Group(); rc.position.x = 2.9; g.add(rc); rc.add(sepGlass(rprof));
+    const burner = sepBurner(FX); g.add(burner);
+    const gauze = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.04, 2.2), phong('#8d939a')); gauze.position.set(FX, 2.2, 0); g.add(gauze);
+    burner.userData.flame.scale.setScalar(0.35);
+    // 分子：フラスコに水とエタノール（エタノールは先に出ていく。水も1個だけ出る）
+    const mols = [];
+    for (let i = 0; i < 18; i++) {
+      const isE = i % 2 === 0, m = sepMol(isE ? 'ethanol' : 'water', 0.26); g.add(m);
+      const a = r() * 6.28, rr = Math.sqrt(r()) * 0.85;
+      mols.push({ m, home: new THREE.Vector3(FX + Math.cos(a) * rr, 2.65 + r() * 0.8, Math.sin(a) * rr * 0.8), w: 0.6 + r() * 0.6, ph: r() * 6, go: isE ? (i / 2) / 9 : (i === 5 ? 0.95 : -1) });
+    }
+    const goers = mols.filter(o => o.go >= 0).sort((a, b) => a.go - b.go);
+    sepPart('枝付きフラスコ', () => new THREE.Vector3(FX - 1.4, 3.6, 0));
+    sepPart('温度計 78 ℃', () => new THREE.Vector3(FX, 7.9, 0));
+    sepPart('リービッヒ冷却器（水で冷やす）', () => cA.clone().lerp(cB, 0.5).add(new THREE.Vector3(0, 0.55, 0)));
+    sepPart('受け器', () => new THREE.Vector3(3.95, 1.0, 0));
+    view.sepR = 5.0; view.sepTarget.set(-0.2, 3.9, 0); view.sepTop = 8.4;
+    return t => {
+      const k = sepLoop(t, 16);
+      burner.userData.flame.scale.y = 0.35 * (1 + 0.06 * Math.sin(t * 20));
+      mols.forEach(o => {
+        const start = 0.12 + o.go * 0.6;
+        if (o.go >= 0 && k > start) {
+          const p = Math.min(1, (k - start) / 0.2);
+          if (p < 0.25) o.m.position.copy(o.home).lerp(new THREE.Vector3(FX, 5.75, 0), p / 0.25);
+          else if (p < 0.92) o.m.position.copy(path.curve.getPoint((p - 0.25) / 0.67));
+          else { const idx = goers.indexOf(o); o.m.position.set(2.9 + ((idx % 3) - 1) * 0.45, 0.35 + Math.floor(idx / 3) * 0.42, ((idx * 7) % 3 - 1) * 0.3); }
+        } else {
+          const hot = 1 + k * 1.5;
+          o.m.position.set(o.home.x + 0.2 * hot * Math.sin(o.w * hot * t + o.ph), o.home.y + 0.15 * hot * Math.sin(o.w * 1.3 * t + o.ph), o.home.z + 0.2 * Math.cos(o.w * t + o.ph));
+        }
+        o.m.rotation.set(t + o.ph, t * 0.6, 0);
+      });
+      return k < 0.12 ? 0 : k < 0.4 ? 1 : k < 0.75 ? 2 : 3;
+    };
+  },
+  filter(g, r) {
+    const prof = [[0.08, 1.2], [0.08, 2.4], [1.6, 4.4], [1.65, 4.45]];
+    g.add(sepGlass(prof));
+    const paper = new THREE.Mesh(new THREE.LatheGeometry([new THREE.Vector2(0.05, 2.55), new THREE.Vector2(1.45, 4.3)], 40), new THREE.MeshPhongMaterial({ color: '#fbfaf2', transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false }));
+    g.add(paper);
+    const bprof = [[0, 0.05], [1.3, 0.05], [1.35, 0.12], [1.35, 2.0]];
+    g.add(sepGlass(bprof));
+    const filt = sepLiquid(bprof, 0.2, '#9fd3f2', 0.35); g.add(filt);
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.6, 10), phong('#e8f4ff', { transparent: true, opacity: 0.6 })); rod.position.set(-0.7, 4.9, 0); rod.rotation.z = -0.5; g.add(rod);
+    const parts = [];
+    for (let i = 0; i < 26; i++) {
+      const big = i % 3 === 0, m = big ? sepGrain(0.17 + r() * 0.06) : sepMol('water', 0.26); g.add(m);
+      parts.push({ m, big, d: i / 26, a: r() * 6.28, rr: r() });
+    }
+    sepPart('ろ紙', () => new THREE.Vector3(1.3, 3.9, 0));
+    sepPart('ろ液（水）', () => new THREE.Vector3(1.4, 0.6, 0));
+    sepPart('砂・泥の粒（大きい）', () => new THREE.Vector3(-1.0, 3.2, 0.3));
+    view.sepR = 3.6; view.sepTarget.set(0, 3.0, 0); view.sepTop = 5.6;
+    return t => {
+      const k = sepLoop(t, 12);
+      let passed = 0;
+      parts.forEach((p, i) => {
+        const s = (k - p.d * 0.55) / 0.35;
+        if (s < 0) { p.m.visible = false; return; }
+        p.m.visible = true;
+        const cone = y => (y - 2.55) / (4.3 - 2.55) * 1.35;
+        if (p.big) {
+          const y = Math.max(2.75 + p.rr * 0.5, 5.4 - s * 3.5), rad = Math.min(cone(y) * 0.8, 0.2 + p.rr * 0.6);
+          p.m.position.set(Math.cos(p.a) * rad, y, Math.sin(p.a) * rad);
+        } else if (s < 0.6) { const y = 5.4 - s / 0.6 * 2.9; const rad = Math.max(0, cone(y) * 0.6); p.m.position.set(Math.cos(p.a) * rad, y, Math.sin(p.a) * rad); }
+        else if (s < 1) { p.m.position.set(0, 2.5 - (s - 0.6) / 0.4 * 2.0, 0); }
+        else { passed++; const j = i; p.m.position.set(Math.cos(p.a) * 0.9 * p.rr, 0.3 + 0.15 * Math.sin(t + j), Math.sin(p.a) * 0.9 * p.rr); }
+        p.m.rotation.set(t + i, t * 0.5, 0);
+      });
+      const lv = 0.15 + passed * 0.06;
+      filt.scale.y = lv / 0.2;
+      return k < 0.2 ? 0 : k < 0.6 ? 1 : 2;
+    };
+  },
+  recryst(g, r) {
+    const prof = [[0, 0.05], [1.9, 0.05], [2.0, 0.15], [2.0, 4.0]];
+    g.add(sepGlass(prof));
+    const liq = sepLiquid(prof, 3.3, '#bfe0f5', 0.25); g.add(liq);
+    const glow = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.08, 40), basic('#ff7043', { transparent: true, opacity: 0.4 })); glow.position.y = -0.06; g.add(glow);
+    const ions = [];
+    const add = (ref, kind, n) => { for (let i = 0; i < n; i++) { const m = sepMol(ref, 0.32); g.add(m); ions.push({ m, kind, home: new THREE.Vector3((r() - 0.5) * 3.0, 0.5 + r() * 2.5, (r() - 0.5) * 3.0), w: 0.5 + r() * 0.6, ph: r() * 6 }); } };
+    add('atom:K', 'K', 12); add('no3', 'NO3', 12); add('atom:Na', 'Na', 2); add('atom:Cl', 'Cl', 2);
+    // 陽イオンは原子より小さいので、K⁺・Na⁺ は小さく描く
+    ions.forEach(o => { if (o.kind === 'K' || o.kind === 'Na') o.m.scale.setScalar(0.55); });
+    // 結晶の位置（底に K⁺ と NO₃⁻ が交互に並ぶ）
+    let ki = 0, ni = 0;
+    ions.forEach(o => {
+      if (o.kind === 'K' || o.kind === 'NO3') {
+        const idx = o.kind === 'K' ? ki++ : ni++;
+        const cell = idx * 2 + (o.kind === 'K' ? 0 : 1), x = cell % 6, z = Math.floor(cell / 6) % 2, y = Math.floor(cell / 12);
+        o.lat = new THREE.Vector3((x - 2.5) * 0.48, 0.35 + y * 0.5, (z - 0.5) * 0.5 + ((x + y) % 2 ? 0.0 : 0));
+      }
+    });
+    const temp = addLabel('lbl-sep warm', '', () => new THREE.Vector3(2.6, 3.6, 0));
+    sepPart('K⁺', () => ions[0].m.position.clone().add(new THREE.Vector3(0, 0.35, 0)));
+    sepPart('NO₃⁻', () => ions[12].m.position.clone().add(new THREE.Vector3(0, 0.45, 0)));
+    sepPart('Na⁺（溶けたまま）', () => ions[24].m.position.clone().add(new THREE.Vector3(0, 0.35, 0)));
+    sepPart('Cl⁻', () => ions[26].m.position.clone().add(new THREE.Vector3(0, 0.4, 0)));
+    view.sepR = 3.8; view.sepTarget.set(0, 2.0, 0); view.sepTop = 4.3;
+    return t => {
+      const k = sepLoop(t, 14);
+      const cool = Math.min(1, Math.max(0, (k - 0.25) / 0.3));
+      const T = Math.round(60 - 40 * cool);
+      const txt = T + ' ℃';
+      if (temp.el.textContent !== txt) temp.el.textContent = txt;
+      glow.material.opacity = 0.4 * (1 - cool);
+      liq.material.color.set(cool > 0.5 ? '#cfe6fb' : '#f8d9c8');
+      const cr = Math.min(1, Math.max(0, (k - 0.45) / 0.35));
+      ions.forEach(o => {
+        const sp = 1.3 - 0.6 * cool;
+        const fx = o.home.x + 0.4 * Math.sin(o.w * sp * t + o.ph), fy = o.home.y + 0.35 * Math.sin(o.w * 1.2 * sp * t + o.ph), fz = o.home.z + 0.4 * Math.cos(o.w * sp * t + o.ph);
+        if (o.lat) o.m.position.set(fx + (o.lat.x - fx) * cr, fy + (o.lat.y - fy) * cr, fz + (o.lat.z - fz) * cr);
+        else o.m.position.set(fx, fy, fz);
+        if (!o.lat || cr < 1) o.m.rotation.set(t + o.ph, t * 0.5, 0);
+      });
+      return k < 0.25 ? 0 : k < 0.45 ? 1 : k < 0.8 ? 2 : 3;
+    };
+  },
+  sublime(g, r) {
+    const prof = [[0, 0.05], [1.5, 0.05], [1.55, 0.12], [1.55, 2.6]];
+    g.add(sepGlass(prof));
+    const fprof = []; for (let k = 0; k <= 16; k++) { const a = -Math.PI / 2 + Math.PI * 0.8 * k / 16; fprof.push([Math.cos(a) * 1.25, 1.25 + Math.sin(a) * 1.25]); } fprof.push([0.35, 2.6], [0.35, 3.6]);
+    const fg = new THREE.Group(); fg.position.y = 2.15; g.add(fg);
+    fg.add(sepGlass(fprof)); fg.add(sepLiquid(fprof, 1.4, '#9fd3f2', 0.28));
+    const burner = sepBurner(0); burner.position.y = -2.4; burner.userData.flame.scale.setScalar(0.45); g.add(burner);
+    const gauze = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.04, 3.6), phong('#8d939a')); gauze.position.y = -0.03; g.add(gauze);
+    for (let i = 0; i < 22; i++) { const s = sepGrain(0.13, '#cdb48a'); const a = r() * 6.28, rr = Math.sqrt(r()) * 1.2; s.position.set(Math.cos(a) * rr, 0.15, Math.sin(a) * rr); g.add(s); }
+    const iod = [];
+    for (let i = 0; i < 14; i++) { const m = sepI2(0.3); g.add(m); const a = r() * 6.28, rr = Math.sqrt(r()) * 1.1; iod.push({ m, home: new THREE.Vector3(Math.cos(a) * rr, 0.3, Math.sin(a) * rr), top: new THREE.Vector3(Math.cos(a) * rr * 0.45, 2.1 + Math.pow(rr * 0.45, 2) * 0.4, Math.sin(a) * rr * 0.45), d: i / 14, ph: r() * 6 }); }
+    const gas = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.45, 1.9, 32, 1, true), basic('#8e3fb8', { transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide })); gas.position.y = 1.2; g.add(gas);
+    sepPart('冷たい水', () => new THREE.Vector3(1.0, 3.6, 0));
+    sepPart('砂（残る）', () => new THREE.Vector3(1.3, 0.2, 0.3));
+    sepPart('ヨウ素 I₂', () => iod[0].m.position.clone().add(new THREE.Vector3(0, 0.3, 0)));
+    view.sepR = 3.7; view.sepTarget.set(0, 1.6, 0); view.sepTop = 5.9;
+    return t => {
+      const k = sepLoop(t, 13);
+      let flying = 0;
+      iod.forEach(o => {
+        const s = (k - 0.12 - o.d * 0.5) / 0.3;
+        if (s <= 0) o.m.position.copy(o.home).add(new THREE.Vector3(0.03 * Math.sin(t * 9 + o.ph), 0, 0));
+        else if (s < 1) { flying++; o.m.position.copy(o.home).lerp(o.top, s).add(new THREE.Vector3(0.4 * Math.sin(t * 2 + o.ph) * (1 - s), 0, 0.4 * Math.cos(t * 2 + o.ph) * (1 - s))); }
+        else o.m.position.copy(o.top);
+        o.m.rotation.set(0, t * (s > 0 && s < 1 ? 2 : 0) + o.ph, 0);
+      });
+      gas.material.opacity = 0.05 + 0.025 * flying;
+      return k < 0.12 ? 0 : k < 0.45 ? 1 : k < 0.8 ? 2 : 3;
+    };
+  },
+  extract(g, r) {
+    // 分液ろうと（洋なし形）
+    const prof = [[0.06, -1.2], [0.06, -0.2], [0.15, 0], [0.9, 1.2], [1.25, 2.4], [1.15, 3.3], [0.6, 4.0], [0.3, 4.3], [0.3, 4.8]];
+    const fn = new THREE.Group(); fn.position.y = 1.4; g.add(fn);
+    fn.add(sepGlass(prof));
+    const lower = sepLiquid(prof.slice(0, 5), 1.9, '#d6ecf8', 0.35); fn.add(lower);
+    const up = sepLiquid([[1.1, 1.9]].concat(prof.slice(4)), 3.1, '#fff6d0', 0.3); fn.add(up);
+    const cock = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.12), phong('#2b5fbf')); cock.position.y = -0.4; fn.add(cock);
+    const stopper = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.26, 0.4, 20), phong('#e8e8e8')); stopper.position.y = 4.95; fn.add(stopper);
+    const iod = [];
+    for (let i = 0; i < 14; i++) { const m = sepI2(0.3); fn.add(m); const a = r() * 6.28; iod.push({ m, a, rw: 0.2 + r() * 0.5, yw: 0.45 + r() * 1.2, yo: 2.05 + r() * 0.9, ph: r() * 6, d: r() }); }
+    sepPart('ヘキサンの層（上）', () => fn.localToWorld(new THREE.Vector3(1.25, 2.6, 0)));
+    sepPart('水の層（下）', () => fn.localToWorld(new THREE.Vector3(1.0, 1.2, 0)));
+    sepPart('ヨウ素 I₂', () => iod[0].m.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.3, 0)));
+    view.sepR = 3.8; view.sepTarget.set(0, 3.2, 0); view.sepTop = 6.6;
+    return t => {
+      const k = sepLoop(t, 12);
+      const shake = k > 0.2 && k < 0.45 ? Math.sin(t * 14) * 0.35 : 0;
+      fn.rotation.z = shake;
+      const mv = Math.min(1, Math.max(0, (k - 0.3) / 0.35));
+      iod.forEach(o => {
+        const y = o.yw + (o.yo - o.yw) * Math.min(1, Math.max(0, (mv - o.d * 0.3) / 0.7));
+        const rad = y < 1.9 ? Math.min(o.rw, 0.75 * (y - 0) / 1.2 + 0.1) : o.rw;
+        o.m.position.set(Math.cos(o.a + t * 0.4) * rad, y + 0.06 * Math.sin(t * 2 + o.ph), Math.sin(o.a + t * 0.4) * rad);
+        o.m.rotation.y = t + o.ph;
+      });
+      lower.material.color.set(new THREE.Color('#e6c79a').lerp(new THREE.Color('#d6ecf8'), mv));
+      up.material.color.set(new THREE.Color('#fff6d0').lerp(new THREE.Color('#b07ad6'), mv)); up.material.opacity = 0.3 + 0.2 * mv;
+      return k < 0.2 ? 0 : k < 0.45 ? 1 : 2;
+    };
+  },
+  chroma(g, r) {
+    const prof = [[0, 0.05], [1.3, 0.05], [1.35, 0.12], [1.35, 5.4]];
+    g.add(sepGlass(prof)); const solv = sepLiquid(prof, 0.6, '#cfe8f7', 0.35); g.add(solv);
+    const paper = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 4.9), new THREE.MeshLambertMaterial({ color: '#fbfaf4', side: THREE.DoubleSide })); paper.position.set(0, 2.85, 0); g.add(paper);
+    const wet = new THREE.Mesh(new THREE.PlaneGeometry(1.21, 1), new THREE.MeshLambertMaterial({ color: '#d7e7f2', side: THREE.DoubleSide, transparent: true, opacity: 0.7 })); wet.position.z = 0.005; g.add(wet);
+    const line = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.025, 0.01), basic('#555555')); line.position.set(0, 0.95, 0.012); g.add(line);
+    const front = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.02, 0.01), basic('#5b8db5')); front.position.z = 0.013; g.add(front);
+    const dyes = [['#f2c200', 0.85], ['#e0307a', 0.58], ['#2f5fd0', 0.3]].map(([c, rf]) => { const m = new THREE.Mesh(new THREE.CircleGeometry(0.16, 24), basic(c, { transparent: true, opacity: 0.85 })); m.position.set(0, 0.95, 0.015); g.add(m); return { m, rf }; });
+    const dot = new THREE.Mesh(new THREE.CircleGeometry(0.14, 24), basic('#222222')); dot.position.set(0, 0.95, 0.016); g.add(dot);
+    sepPart('鉛筆の線（原点）', () => new THREE.Vector3(0.6, 0.95, 0));
+    sepPart('液の先端', () => front.position.clone().add(new THREE.Vector3(0.6, 0, 0)));
+    sepPart('展開液（水）', () => new THREE.Vector3(1.3, 0.3, 0));
+    view.sepR = 3.4; view.sepTarget.set(0, 2.8, 0); view.sepTop = 5.7;
+    return t => {
+      const k = sepLoop(t, 12);
+      const p = Math.min(1, Math.max(0, (k - 0.12) / 0.7));
+      const fy = 0.6 + p * (5.0 - 0.6);
+      front.position.y = fy; front.visible = p > 0;
+      wet.scale.y = Math.max(0.01, fy - 0.35); wet.position.y = 0.35 + (fy - 0.35) / 2;
+      dyes.forEach(d => { const y = 0.95 + Math.max(0, fy - 0.95) * d.rf; d.m.position.y = y; d.m.scale.set(1 + p * 0.4, 1 + p * 0.9, 1); });
+      dot.visible = p < 0.08;
+      return k < 0.12 ? 0 : k < 0.4 ? 1 : 2;
+    };
+  },
+  flame(g) {
+    const burner = sepBurner(0); g.add(burner);
+    const fl = burner.userData.flame; fl.scale.setScalar(1.6);
+    const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 2.6, 8), phong('#d0d4d8', { shininess: 140 })); wire.position.set(1.4, 3.9, 0); wire.rotation.z = 0.9; g.add(wire);
+    const loop = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.02, 8, 20), phong('#d0d4d8')); loop.position.set(0.35, 3.1, 0); g.add(loop);
+    const COLS = [['Li', 'リチウム', '赤', '#ff2438'], ['Na', 'ナトリウム', '黄', '#ffc400'], ['K', 'カリウム', '赤紫', '#c77dd9'], ['Cu', '銅', '青緑', '#1fc7a0'], ['Ca', 'カルシウム', '橙赤', '#ff5a1f'], ['Ba', 'バリウム', '黄緑', '#a8e03c']];
+    const L = addLabel('lbl-sep', '', () => new THREE.Vector3(0, 6.0, 0));
+    view.sepR = 3.4; view.sepTarget.set(0, 2.9, 0); view.sepTop = 5.6;
+    return t => {
+      const k = sepLoop(t, 15), i = Math.floor(k * 6), c = COLS[i], local = (k * 6) % 1;
+      const on = local > 0.15;
+      fl.userData.outer.material.color.set(on ? c[3] : '#5b8dff'); fl.userData.outer.material.opacity = on ? 0.75 : 0.45;
+      fl.scale.set(1.6, 1.6 * (1 + 0.05 * Math.sin(t * 22)), 1.6);
+      const txt = on ? `${c[0]}（${c[1]}）… ${c[2]}色` : '白金線に水溶液をつけて、炎に入れる';
+      if (L.el.textContent !== txt) L.el.textContent = txt;
+      return i;
+    };
+  },
+};
+function sepCardHTML(e) {
+  return headHTML(e, esc(e.en)) + `<div class="card-body"><p class="desc">${esc(e.desc)}</p>
+    <ol class="sep-stages">${e.stages.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+    <div class="point"><h3>授業のポイント</h3><p>${esc(e.point)}</p></div>
+    <p class="note">動きはくり返し再生されます。ドラッグで回して見よう。</p></div>`;
 }
 
 // ===== 状態変化ラボ =====
@@ -4151,6 +4539,7 @@ function sceneRadius() {
   if (view.kind === 'demo') return e.demo === 'metal' ? 5.4 : e.demo === 'ionic' ? 5.2 : 2.7;
   if (view.kind === 'phase') return view.phaseInfo.H * 1.75;
   if (view.kind === 'ph') return 4.1;
+  if (view.kind === 'sep') return view.sepR;
   if (view.kind === 'compare') return view.cmpR;
   if (view.kind === 'reaction') return Math.max(view.rxWidth / 2 + 0.8, view.rxHeight / 2 + 1.8, 3);
   if (view.kind === 'mole') return e.phase === 'gas' ? view.moleExtent * 0.9 + 1.5 : view.moleExtent;
@@ -4178,6 +4567,7 @@ function fitCamera() {
   else if (view.kind === 'reaction') dir = new THREE.Vector3(0, 0.12, 1);
   else if (view.kind === 'phase') dir = new THREE.Vector3(0.55, 0.4, 1);
   else if (view.kind === 'ph') dir = new THREE.Vector3(0.15, 0.45, 1);
+  else if (view.kind === 'sep') dir = new THREE.Vector3(0.12, 0.2, 1);
   else if (view.kind === 'compare') dir = new THREE.Vector3(0.15, 0.2, 1);
   else if (view.kind !== 'mol') dir = new THREE.Vector3(0, 0, 1);
   else if (e.model.crystal) dir = new THREE.Vector3(0.75, 0.5, 1);
@@ -4185,6 +4575,7 @@ function fitCamera() {
   const target = new THREE.Vector3(0, 0, 0);
   if (view.kind === 'phase') target.set(0, view.phaseInfo.H, 0);
   if (view.kind === 'ph') target.set(0, 2.2, 0);
+  if (view.kind === 'sep') target.copy(view.sepTarget);
   if (view.kind === 'mole') target.set(e.phase === 'gas' ? view.moleExtent * 0.2 : -2.2, e.phase === 'gas' ? view.moleExtent * 0.4 : 0.8, 0);
   cam.position.copy(dir.normalize().multiplyScalar(dist)).add(target);
   R.controls.target.copy(target);
@@ -4345,10 +4736,10 @@ function renderGrid() {
   const fdef = state.sec === 'mol' && state.feat ? FEATURES.find(f => f.id === state.feat) : null;
   const items = LIB.filter(e => cats.includes(e.cat) && (!fdef || (getModel(e), fdef.test(e))));
   grid.innerHTML = (fdef ? `<p class="pt-note filt">「${fdef.name}」の物質：${items.length}種類${fdef.note ? `（${esc(fdef.note)}）` : ''}</p>` : '') + items.map(e => {
-    const f = ['compare', 'lesson', 'ph', 'neut'].includes(e.kind) ? esc(e.name) : formulaHTML(e.rational || displayFormula(e));
+    const f = ['compare', 'lesson', 'ph', 'neut', 'sep'].includes(e.kind) ? esc(e.name) : formulaHTML(e.rational || displayFormula(e));
     const done = (e.kind === 'reaction' && solvedRx.has(e.id)) || (e.kind === 'build' && doneMissions.has(e.id));
-    const wide = ['reaction', 'compare', 'lesson', 'ph', 'neut'].includes(e.kind) ? ' wide' : '';
-    return `<button type="button" class="card-btn${wide}" data-id="${e.id}" aria-current="${cur(e.id)}"><span class="f">${f}</span><span class="n">${done ? '<b class="done">✓</b>' : ''}${e.kind === 'compare' ? esc(e.cmp.diff.slice(0, 26)) + '…' : ['ph', 'neut', 'lesson'].includes(e.kind) ? esc(e.en || e.f) : esc(e.name)}${e.kind === 'reaction' || e.kind === 'phase' ? '　' + esc(e.en) : ''}${e.kind === 'lesson' || e.kind === 'ph' || e.kind === 'neut' ? '' : ''}</span></button>`;
+    const wide = ['reaction', 'compare', 'lesson', 'ph', 'neut', 'sep'].includes(e.kind) ? ' wide' : '';
+    return `<button type="button" class="card-btn${wide}" data-id="${e.id}" aria-current="${cur(e.id)}"><span class="f">${f}</span><span class="n">${done ? '<b class="done">✓</b>' : ''}${e.kind === 'compare' ? esc(e.cmp.diff.slice(0, 26)) + '…' : ['ph', 'neut', 'lesson', 'sep'].includes(e.kind) ? esc(e.en || e.f) : esc(e.name)}${e.kind === 'reaction' || e.kind === 'phase' ? '　' + esc(e.en) : ''}${e.kind === 'lesson' || e.kind === 'ph' || e.kind === 'neut' ? '' : ''}</span></button>`;
   }).join('');
 }
 const configText = c => c.map((n, i) => (n ? SHELL_NAMES[i] + n : '')).filter(Boolean).join(' ');
@@ -4381,6 +4772,9 @@ function renderLegend() {
     items.push(`<span class="lg"><i class="sw dot" style="--c:var(--red)"></i>H₃O⁺（酸性のもと）</span>`);
     items.push(`<span class="lg"><i class="sw dot" style="--c:var(--blue)"></i>OH⁻（塩基性のもと）</span>`);
     if (e.kind === 'neut') items.push(`<span class="lg"><i class="sw dot" style="--c:#8a96a8"></i>そのまま残るイオン</span>`);
+  } else if (view.kind === 'sep') {
+    if (['mix', 'distill'].includes(e.scene)) { items.push(`<span class="lg"><i class="sw dot" style="--c:#e53935"></i>O</span>`, `<span class="lg"><i class="sw dot" style="--c:#555"></i>C</span>`, `<span class="lg"><i class="sw dot" style="--c:#ddd"></i>H</span>`); }
+    if (['sublime', 'extract'].includes(e.scene)) items.push(`<span class="lg"><i class="sw dot" style="--c:#6b3fa0"></i>ヨウ素分子 I₂</span>`);
   } else if (view.kind === 'phase') {
     items.push(e.ph.hb ? `<span class="lg"><i class="sw dash n1" style="--c:${BOND_STYLE.hbond.color}"></i>水素結合（強い引き合い）</span>` : `<span class="lg"><i class="sw dash n1" style="--c:#9aa3b2"></i>分子間力（弱い引き合い）</span>`);
   } else if (view.kind === 'compare') {
@@ -4444,6 +4838,7 @@ function renderCard() {
   else if (e.kind === 'neut') html = neutCardHTML(e);
   else if (e.kind === 'reaction') html = rxCardHTML(e);
   else if (e.kind === 'phase') html = phaseCardHTML(e);
+  else if (e.kind === 'sep') html = sepCardHTML(e);
   else if (e.kind === 'compare') html = compareCardHTML(e);
   else if (e.kind === 'build') html = buildCardHTML(e);
   else if (e.kind === 'atom') html = atomCardHTML(e);
@@ -4732,6 +5127,7 @@ function selectEntry(e, opts) {
     else if (e.kind === 'reaction') buildReactionView();
     else if (e.kind === 'phase') buildPhaseView();
     else if (e.kind === 'ph' || e.kind === 'neut') buildPhView();
+    else if (e.kind === 'sep') buildSepView();
     else if (e.kind === 'compare') buildCompareView();
     else buildMolView();
     if (e.kind === 'build') { state.selected = state.bld.sel; bldCheck(); updatePositions(0); }
