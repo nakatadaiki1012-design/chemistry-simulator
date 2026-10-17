@@ -378,6 +378,10 @@ details.more p { margin: 4px 0 0; line-height: 1.65; }
 /* 状態変化 */
 .lbl-sep { font-size: 16px; font-family: var(--font-body); font-weight: 700; padding: 3px 12px; border-radius: 999px; color: #fff; background: var(--accent); }
 .lbl-sep.warm { background: #d9661f; font-family: var(--font-data); font-size: 18px; }
+.sep-ctl { margin: 4px 0 10px; display: grid; gap: 8px; }
+.sep-sl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: center; font-size: 14px; font-weight: 700; }
+.sep-sl input { width: 100%; accent-color: var(--accent); }
+.sep-sl b { grid-column: 1 / -1; font-family: var(--font-data); font-size: 18px; color: var(--warm); }
 .sep-stages { margin: 6px 0 10px; padding-left: 20px; font-size: 14px; line-height: 1.7; }
 .lbl-phase { font-size: 22px; font-family: var(--font-display); font-weight: 800; padding: 2px 14px; border-radius: 999px; color: #fff; background: #5d6b84; }
 .lbl-phase[data-ph="liquid"] { background: #128c9c; } .lbl-phase[data-ph="gas"] { background: #d9661f; }
@@ -458,6 +462,26 @@ details.more p { margin: 4px 0 0; line-height: 1.65; }
 .ls-score { display: flex; align-items: baseline; gap: 6px; font-size: 13px; color: var(--muted); }
 .ls-score b { font-size: 26px; font-family: var(--font-data); color: #b7791f; }
 .ls-row { display: flex; gap: 6px; }
+.ls-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; margin: 8px 16px 0; background: var(--chip); border-radius: 10px; padding: 3px; }
+.ls-tabs button { border: 0; background: transparent; border-radius: 8px; padding: 6px 4px; font-weight: 700; font-size: 14px; color: var(--muted); white-space: nowrap; }
+.ls-tabs button[aria-selected="true"] { background: var(--panel); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.ls-trybtn { display: block; width: 100%; text-align: left; border: 1.5px dashed var(--accent); background: transparent; color: var(--accent); border-radius: 12px; padding: 10px 14px; font-weight: 700; font-size: 15px; margin: -4px 0 12px; }
+.ls-try { margin-bottom: 8px; }
+.ls-exam { border: 1.5px solid #e0a526; border-radius: 12px; padding: 8px 14px; margin: 0 0 12px; background: color-mix(in srgb, #e0a526 8%, transparent); }
+.ls-exam h3 { margin: 0 0 4px; font-size: 14px; color: #b7791f; }
+.ls-exam ul { margin: 0; padding-left: 20px; font-size: 15px; line-height: 1.7; }
+.drill { border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; }
+.drill-h { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.drill-h b { color: var(--accent); font-size: 14px; }
+.drill-st { margin-left: auto; font-family: var(--font-data); }
+.drill-q { font-size: 18px; font-weight: 700; line-height: 1.65; margin: 6px 0 10px; }
+.drill-in { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.drill-in input { flex: 1 1 8em; min-width: 0; font: 600 20px var(--font-data); padding: 6px 10px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--panel); color: var(--ink); }
+.drill-in input.bad { border-color: #d33a2c; }
+.drill-in span { font-weight: 700; }
+.drill-sol { margin: 8px 0; padding-left: 22px; font-size: 15px; line-height: 1.8; }
+.drill-nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.drill-nav .pbtn.big { flex: 1; }
 .ls-course { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: var(--chip, #e8edf2); border-radius: 10px; padding: 3px; margin-bottom: 8px; }
 .ls-course button { border: 0; background: transparent; border-radius: 8px; padding: 6px; font-weight: 700; font-size: 15px; color: var(--muted); }
 .ls-course button small { margin-left: 6px; font-size: 11px; font-family: var(--font-data); }
@@ -3011,25 +3035,47 @@ function lessonGo() {
     view.bohr.setCounts(shellCounts(Z - ION_OF[el]), { now: performance.now() / 1000, t: performance.now() / 1000 });
   }
   if (st.phaseT !== undefined) state.phaseT = st.phaseT;
-  if (st.solve && state.rx) { state.rx.coef = state.entry.rx.ans.slice(); clearView(); buildReactionView(); }
+  if (st.solve && state.rx && state.entry.rx) { state.rx.coef = state.entry.rx.ans.slice(); clearView(); buildReactionView(); }
+  if (!state.lesson.keepTab) state.lesson.tab = st.drill ? 'calc' : 'learn';
+  state.lesson.keepTab = false;
   renderCard();
   setTimeout(() => R && fitCamera(), 60);
 }
+const TRY_KINDS = ['phase', 'ph', 'neut', 'mole', 'reaction', 'atom'];
+function lessonCanTry(e) { return TRY_KINDS.includes(e.kind) || (e.kind === 'sep' && typeof SEP_CTL !== 'undefined' && SEP_CTL[e.id]); }
+function lessonDrillTypes(l, st) { return st.drill || (l.drillTypes) || DRILL_OF[l.id] || null; }
 function lessonCardHTML() {
   if (state.lesson.quiz) return lsQuizHTML();
-  const { l, i } = state.lesson, st = l.steps[i], last = i === l.steps.length - 1;
-  const next = LESSONS[LESSONS.indexOf(l) + 1];
-  if (last) lessonMarkDone(l.id);
-  return `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">授業 ${esc(l.no)}</span><span class="pill">${esc(l.name)}</span></div>
-    <h2 class="ls-title">${esc(st.title)}</h2></div></div>
-    <div class="card-body"><p class="ls-text">${esc(st.text)}</p>
+  const { l, i } = state.lesson, st = l.steps[i], last = i === l.steps.length - 1, e = state.entry;
+  const idx = LESSONS.indexOf(l), next = idx >= 0 ? LESSONS[idx + 1] : null;
+  if (last && idx >= 0) lessonMarkDone(l.id);
+  const canTry = lessonCanTry(e), dtypes = lessonDrillTypes(l, st);
+  const tabs = l.drillOnly ? [['calc', '計算練習']] : [['learn', '説明']].concat(canTry ? [['try', '自分で試す']] : [], dtypes ? [['calc', '計算練習']] : []);
+  let tab = state.lesson.tab || 'learn';
+  if (!tabs.some(t => t[0] === tab)) tab = 'learn';
+  let body = '';
+  if (tab === 'try') {
+    state.noHead = true; body = entryCardHTML(e).replace(/^\s*<div class="card-body">/, '').replace(/<\/div>\s*$/, ''); state.noHead = false;
+    body = `<div class="ls-try">${body}</div>`;
+  } else if (tab === 'calc') {
+    const d = state.lesson.drill && dtypes.includes(state.lesson.drill.t) ? state.lesson.drill : (state.lesson.drill = drillNew(dtypes));
+    body = drillHTML(d, state.lesson.dstat);
+  } else {
+    body = `<p class="ls-text">${esc(st.text)}</p>
+    ${canTry ? '<button type="button" class="ls-trybtn" data-ltab="try">▶ 自分で条件を変えて試してみよう</button>' : ''}
     ${st.lab ? `<p><a class="pbtn ghost ls-lab" href="${labURL(st.lab)}" target="_blank" rel="noopener">実験ラボでやってみる ↗</a></p>` : ''}
-    <div class="ls-dots">${l.steps.map((_, k) => `<i class="${k === i ? 'on' : k < i ? 'done' : ''}"></i>`).join('')}<span>${i + 1} / ${l.steps.length}</span></div>
-    <div class="ls-nav"><button type="button" class="pbtn ghost" data-act="lsprev" ${i === 0 ? 'disabled' : ''}>← 前へ</button>
-    ${!last ? '<button type="button" class="pbtn big" data-act="lsnext">次へ →</button>' : `<button type="button" class="pbtn big" data-act="lsquiz">確認テストへ（${LESSON_QUIZ[l.id].length}問）${lessonPass.has(l.id) ? ' 🏅' : ''}</button>`}</div>
-    ${last && next ? `<p class="note">${lessonPass.has(l.id) ? `合格ずみ。<button type="button" class="linkbtn" data-go="${next.id}">次の授業 ${esc(next.no)} へ →</button>` : `${PASS_LINE}問以上正解で合格。合格をためていこう！（合格 ${lessonPass.size} / ${LESSONS.length}）`}</p>` : ''}
-    <p class="note">キーボードの ← → でも進めます。右上のボタンで全画面にできます。</p>
-    <button type="button" class="pbtn ghost" data-act="lsexit">授業モードをやめる</button></div>`;
+    ${last && typeof EXAM !== 'undefined' && EXAM[l.id] ? `<div class="ls-exam"><h3>テスト・入試に出るポイント</h3><ul>${EXAM[l.id].map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}`;
+  }
+  const quizBtn = l.drillOnly ? '' : `<button type="button" class="pbtn big" data-act="lsquiz">確認テストへ（${LESSON_QUIZ[l.id].length}問）${lessonPass.has(l.id) ? ' 🏅' : ''}</button>`;
+  return `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">${l.drillOnly ? '計算ドリル' : '授業 ' + esc(l.no)}</span><span class="pill">${esc(l.name)}</span></div>
+    <h2 class="ls-title">${esc(st.title)}</h2></div></div>
+    ${tabs.length > 1 ? `<div class="ls-tabs" role="tablist">${tabs.map(([k, n]) => `<button type="button" role="tab" data-ltab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div>` : ''}
+    <div class="card-body">${body}
+    ${l.steps.length > 1 ? `<div class="ls-dots">${l.steps.map((_, k) => `<i class="${k === i ? 'on' : k < i ? 'done' : ''}"></i>`).join('')}<span>${i + 1} / ${l.steps.length}</span></div>` : ''}
+    <div class="ls-nav">${l.steps.length > 1 ? `<button type="button" class="pbtn ghost" data-act="lsprev" ${i === 0 ? 'disabled' : ''}>← 前へ</button>` : ''}
+    ${!last ? '<button type="button" class="pbtn big" data-act="lsnext">次へ →</button>' : quizBtn}</div>
+    ${last && next && !l.drillOnly ? `<p class="note">${lessonPass.has(l.id) ? `合格ずみ。<button type="button" class="linkbtn" data-go="${next.id}">次の授業 ${esc(next.no)} へ →</button>` : `${PASS_LINE}問以上正解で合格。合格をためていこう！`}</p>` : ''}
+    <button type="button" class="pbtn ghost" data-act="lsexit">${l.drillOnly ? 'ドリルをやめる' : '授業モードをやめる'}</button></div>`;
 }
 // ===== 授業ごとの確認テスト（4問・3問以上で合格） =====
 // [問題, 正解, [まちがいの選択肢 3つ], 解説]
@@ -3433,6 +3479,343 @@ Object.assign(LESSON_QUIZ, {
     ['アルコール発酵でできるものは？', 'エタノールと二酸化炭素', ['グルコースと酸素', '酢酸と水', 'デンプン'], 'C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂。'],
   ],
 });
+// ===== 計算ドリル（数字を変えて何度でも。答えを入れると解き方が出る） =====
+const dpick = a => a[Math.floor(Math.random() * a.length)];
+const SUBST = [
+  ['水 H₂O', 18], ['二酸化炭素 CO₂', 44], ['酸素 O₂', 32], ['窒素 N₂', 28], ['メタン CH₄', 16], ['アンモニア NH₃', 17],
+  ['塩化ナトリウム NaCl', 58.5], ['水酸化ナトリウム NaOH', 40], ['グルコース C₆H₁₂O₆', 180], ['エタノール C₂H₅OH', 46], ['硫酸 H₂SO₄', 98],
+];
+const GASES = SUBST.filter(s => /CO₂|O₂|N₂|CH₄|NH₃/.test(s[0]) && !/H₂O/.test(s[0]));
+// 有効数字2〜3けたで表示
+function sig(x, n = 3) {
+  if (x === 0) return '0';
+  const e = Math.floor(Math.log10(Math.abs(x)));
+  if (e >= 4 || e <= -3) { const m = x / Math.pow(10, e); return `${+m.toFixed(n - 1)}×10<sup>${e}</sup>`; }
+  return String(+x.toPrecision(n));
+}
+const DRILLS = {
+  // ---- 化学基礎 ----
+  m2n: { name: '質量 → 物質量', gen() { const [s, M] = dpick(SUBST), n = dpick([0.1, 0.2, 0.25, 0.5, 1.5, 2, 2.5, 3]); const m = +(n * M).toPrecision(3);
+    return { q: `${s} ${m} g は何 mol？（モル質量 ${M} g/mol）`, a: n, unit: 'mol', sol: [`物質量 ＝ 質量 ÷ モル質量`, `${m} g ÷ ${M} g/mol ＝ ${sig(n)} mol`] }; } },
+  n2m: { name: '物質量 → 質量', gen() { const [s, M] = dpick(SUBST), n = dpick([0.1, 0.2, 0.5, 1.5, 2, 3]);
+    return { q: `${s} ${n} mol は何 g？（モル質量 ${M} g/mol）`, a: n * M, unit: 'g', sol: [`質量 ＝ 物質量 × モル質量`, `${n} mol × ${M} g/mol ＝ ${sig(n * M)} g`] }; } },
+  n2N: { name: '物質量 → 粒子の数', gen() { const n = dpick([0.1, 0.2, 0.5, 1.5, 2, 3, 0.25]);
+    return { q: `${n} mol の分子は何個？ 答えは「×10²³ 個」の前の数で入れよう（アボガドロ定数 6.0×10²³ /mol）`, a: n * 6, unit: '×10²³ 個', sol: [`粒子の数 ＝ 物質量 × 6.0×10²³`, `${n} × 6.0×10²³ ＝ ${sig(n * 6, 2)}×10²³ 個`] }; } },
+  gasV: { name: '気体の体積（標準状態）', gen() { const [s, M] = dpick(GASES), m = dpick([0.5, 1, 2, 4]) * M / 2; const n = m / M;
+    return { q: `標準状態（0 ℃、1.013×10⁵ Pa）で、${s} ${m} g の体積は何 L？（モル質量 ${M} g/mol）`, a: n * 22.4, unit: 'L', sol: [`① 物質量 ＝ ${m} ÷ ${M} ＝ ${sig(n)} mol`, `② 体積 ＝ ${sig(n)} mol × 22.4 L/mol ＝ ${sig(n * 22.4)} L`] }; } },
+  molar: { name: 'モル濃度', gen() { const n = dpick([0.05, 0.1, 0.2, 0.25]), V = dpick([100, 200, 250, 500]), m = +(n * 58.5).toFixed(3); const c = n / (V / 1000);
+    return { q: `塩化ナトリウム ${m} g（58.5 g/mol）を水に溶かして ${V} mL にした。モル濃度は何 mol/L？`, a: c, unit: 'mol/L', sol: [`① 物質量 ＝ ${m} ÷ 58.5 ＝ ${sig(n)} mol`, `② 体積 ＝ ${V} mL ＝ ${V / 1000} L`, `③ ${sig(n)} ÷ ${V / 1000} ＝ ${sig(c)} mol/L`] }; } },
+  percent: { name: '質量パーセント濃度', gen() { const a = dpick([5, 10, 20, 25]), w = dpick([45, 80, 95, 100, 150]);
+    return { q: `水 ${w} g に塩化ナトリウム ${a} g を溶かした。質量パーセント濃度は何 %？`, a: a / (a + w) * 100, unit: '%', sol: [`溶液の質量 ＝ ${w} ＋ ${a} ＝ ${a + w} g（水だけで割らない！）`, `${a} ÷ ${a + w} × 100 ＝ ${sig(a / (a + w) * 100)} %`] }; } },
+  dilute: { name: 'うすめる計算', gen() { const c1 = dpick([1.0, 2.0, 0.50]), v1 = dpick([10, 20, 50]), V = dpick([100, 200, 250, 500]); const c2 = c1 * v1 / V;
+    return { q: `${c1} mol/L の塩酸 ${v1} mL に水を加えて ${V} mL にした。何 mol/L？`, a: c2, unit: 'mol/L', sol: [`うすめても溶質の物質量は変わらない：c₁V₁ ＝ c₂V₂`, `${c1} × ${v1} ＝ c₂ × ${V}`, `c₂ ＝ ${sig(c2)} mol/L`] }; } },
+  stoich: { name: '反応式と量的関係', gen() {
+    const T = dpick([
+      () => { const m = dpick([8, 16, 32, 4]); const n = m / 16; return { q: `CH₄ + 2O₂ → CO₂ + 2H₂O。メタン ${m} g が完全に燃焼すると、CO₂ は何 g できる？（CH₄＝16、CO₂＝44）`, a: n * 44, unit: 'g', sol: [`① メタン ${m} ÷ 16 ＝ ${sig(n)} mol`, `② 係数の比 CH₄：CO₂ ＝ 1：1 → CO₂ ${sig(n)} mol`, `③ ${sig(n)} × 44 ＝ ${sig(n * 44)} g`] }; },
+      () => { const m = dpick([8, 16, 32]); const n = m / 16; return { q: `CH₄ + 2O₂ → CO₂ + 2H₂O。メタン ${m} g の燃焼に必要な酸素は、標準状態で何 L？（CH₄＝16）`, a: n * 2 * 22.4, unit: 'L', sol: [`① メタン ${sig(n)} mol`, `② 係数の比 CH₄：O₂ ＝ 1：2 → O₂ ${sig(2 * n)} mol`, `③ ${sig(2 * n)} × 22.4 ＝ ${sig(n * 44.8)} L`] }; },
+      () => { const m = dpick([2, 4, 8, 1]); const n = m / 2; return { q: `2H₂ + O₂ → 2H₂O。水素 ${m} g からできる水は何 g？（H₂＝2.0、H₂O＝18）`, a: n * 18, unit: 'g', sol: [`① 水素 ${m} ÷ 2.0 ＝ ${sig(n)} mol`, `② 係数の比 H₂：H₂O ＝ 2：2 ＝ 1：1 → 水 ${sig(n)} mol`, `③ ${sig(n)} × 18 ＝ ${sig(n * 18)} g`] }; },
+      () => { const m = dpick([6.5, 13, 3.25]); const n = m / 65; return { q: `Zn + 2HCl → ZnCl₂ + H₂。亜鉛 ${m} g を十分な塩酸に溶かすと、水素は標準状態で何 L 出る？（Zn＝65）`, a: n * 22.4, unit: 'L', sol: [`① 亜鉛 ${m} ÷ 65 ＝ ${sig(n)} mol`, `② Zn：H₂ ＝ 1：1 → H₂ ${sig(n)} mol`, `③ ${sig(n)} × 22.4 ＝ ${sig(n * 22.4)} L`] }; },
+    ]); return T(); } },
+  phS: { name: '強酸・強塩基の pH', gen() { const k = dpick([1, 2, 3, 4]), base = Math.random() < 0.4; const c = Math.pow(10, -k);
+    return base ? { q: `${sig(c, 2)} mol/L の水酸化ナトリウム水溶液の pH は？（完全に電離、水のイオン積 1.0×10⁻¹⁴）`, a: 14 - k, unit: '', abs: 0.05, sol: [`[OH⁻] ＝ ${sig(c, 2)} mol/L`, `[H⁺] ＝ 1.0×10⁻¹⁴ ÷ [OH⁻] ＝ 1.0×10<sup>${-(14 - k)}</sup> mol/L`, `pH ＝ ${14 - k}`] }
+      : { q: `${sig(c, 2)} mol/L の塩酸の pH は？（完全に電離する）`, a: k, unit: '', abs: 0.05, sol: [`[H⁺] ＝ ${sig(c, 2)} ＝ 1.0×10<sup>${-k}</sup> mol/L`, `pH ＝ −log[H⁺] ＝ ${k}`] }; } },
+  neutV: { name: '中和の計算', gen() { const acid = dpick([['塩酸', 1], ['硫酸', 2]]), ca = dpick([0.1, 0.2, 0.05]), va = dpick([10, 20, 25]), cb = dpick([0.1, 0.2]); const vb = acid[1] * ca * va / cb;
+    return { q: `${ca} mol/L の${acid[0]} ${va} mL をちょうど中和するのに、${cb} mol/L の水酸化ナトリウム水溶液は何 mL 必要？`, a: vb, unit: 'mL', sol: [`（酸の価数）×（濃度）×（体積）＝（塩基の価数）×（濃度）×（体積）`, `${acid[1]} × ${ca} × ${va} ＝ 1 × ${cb} × V`, `V ＝ ${sig(vb)} mL`] }; } },
+  // ---- 化学 ----
+  pvnrt: { name: '気体の状態方程式', gen() { const n = dpick([0.1, 0.2, 0.5, 1.0]), t = dpick([27, 127, 0, 77]), V = dpick([1.0, 2.0, 5.0, 10]); const T = t + 273, P = n * 8.3e3 * T / V;
+    return { q: `${n} mol の気体が ${t} ℃、${V} L の容器に入っている。圧力は何 Pa？（R ＝ 8.3×10³ Pa·L/(K·mol)）`, a: P, unit: 'Pa', sci: true, sol: [`T ＝ ${t} ＋ 273 ＝ ${T} K`, `P ＝ nRT ÷ V ＝ ${n} × 8.3×10³ × ${T} ÷ ${V}`, `＝ ${sig(P, 2)} Pa`] }; } },
+  boyle: { name: 'ボイル・シャルルの法則', gen() { const P1 = dpick([1.0, 2.0]), V1 = dpick([2.0, 3.0, 6.0]), t1 = dpick([27, 0]), t2 = dpick([127, 327, 273]), P2 = dpick([2.0, 4.0, 1.0]); const T1 = t1 + 273, T2 = t2 + 273, V2 = P1 * V1 / T1 * T2 / P2;
+    return { q: `${P1}×10⁵ Pa、${t1} ℃ で ${V1} L の気体を、${P2}×10⁵ Pa、${t2} ℃ にすると何 L？`, a: V2, unit: 'L', sol: [`P₁V₁/T₁ ＝ P₂V₂/T₂（温度は絶対温度！）`, `${P1}×${V1}/${T1} ＝ ${P2}×V₂/${T2}`, `V₂ ＝ ${sig(V2)} L`] }; } },
+  partial: { name: '分圧', gen() { const a = dpick([1, 2, 3]), b = dpick([1, 2, 3, 4]), P = dpick([1.0, 2.0, 1.5]); const pa = P * a / (a + b);
+    return { q: `窒素 ${a} mol と酸素 ${b} mol の混合気体の全圧が ${P}×10⁵ Pa。窒素の分圧は何 ×10⁵ Pa？`, a: pa, unit: '×10⁵ Pa', sol: [`分圧 ＝ 全圧 × モル分率`, `${P} × ${a}/(${a}＋${b}) ＝ ${sig(pa)} ×10⁵ Pa`] }; } },
+  bpe: { name: '沸点上昇・凝固点降下', gen() { const salt = Math.random() < 0.5; const n = dpick([0.05, 0.1, 0.2]), w = dpick([100, 200, 500]); const m = n / (w / 1000), i = salt ? 2 : 1, fp = Math.random() < 0.5; const K = fp ? 1.85 : 0.52, dT = K * m * i;
+    return { q: `水 ${w} g に${salt ? '塩化ナトリウム（完全に電離）' : 'グルコース'} ${n} mol を溶かした。${fp ? '凝固点は何 K 下がる？（K_f ＝ 1.85 K·kg/mol）' : '沸点は何 K 上がる？（K_b ＝ 0.52 K·kg/mol）'}`, a: dT, unit: 'K', sol: [`質量モル濃度 m ＝ ${n} ÷ ${w / 1000} kg ＝ ${sig(m)} mol/kg`, salt ? `NaCl → Na⁺ ＋ Cl⁻ で粒子は2倍` : `グルコースは電離しない`, `Δt ＝ K × m${salt ? ' × 2' : ''} ＝ ${sig(dT)} K`] }; } },
+  osm: { name: '浸透圧', gen() { const c = dpick([0.01, 0.02, 0.05, 0.1]), t = dpick([27, 37]); const P = c * 8.3e3 * (t + 273);
+    return { q: `${c} mol/L のスクロース水溶液の ${t} ℃ での浸透圧は何 Pa？（R ＝ 8.3×10³ Pa·L/(K·mol)）`, a: P, unit: 'Pa', sci: true, sol: [`ファントホッフの法則 Π ＝ cRT`, `${c} × 8.3×10³ × ${t + 273}`, `＝ ${sig(P, 2)} Pa`] }; } },
+  hess: { name: 'へスの法則', gen() { const T = dpick([
+      () => ({ q: 'C（黒鉛）＋ O₂ → CO₂　ΔH ＝ −394 kJ、CO ＋ ½O₂ → CO₂　ΔH ＝ −283 kJ のとき、C（黒鉛）＋ ½O₂ → CO の ΔH は何 kJ？', a: -111, sol: ['求める式 ＝ ①式 − ②式', '−394 −（−283）＝ −111 kJ'] }),
+      () => ({ q: 'H₂ ＋ ½O₂ → H₂O（液）ΔH ＝ −286 kJ、H₂O（液）→ H₂O（気）ΔH ＝ ＋44 kJ のとき、H₂ ＋ ½O₂ → H₂O（気）の ΔH は何 kJ？', a: -242, sol: ['求める式 ＝ ①式 ＋ ②式', '−286 ＋ 44 ＝ −242 kJ'] }),
+      () => ({ q: 'CH₄ の燃焼エンタルピー −891 kJ/mol、CO₂ の生成エンタルピー −394 kJ/mol、H₂O（液）の生成エンタルピー −286 kJ/mol。CH₄ の生成エンタルピーは何 kJ/mol？', a: -75, sol: ['CH₄ ＋ 2O₂ → CO₂ ＋ 2H₂O の ΔH ＝（生成物の生成エンタルピーの和）−（反応物の和）', '−891 ＝（−394 ＋ 2×(−286)）− x', 'x ＝ −966 ＋ 891 ＝ −75 kJ/mol'] }),
+    ]); const o = T(); o.unit = 'kJ'; o.abs = 1; return o; } },
+  faraday: { name: '電気分解（ファラデー）', gen() { const I = dpick([1.0, 2.0, 5.0]), t = dpick([965, 1930, 3860]); const Q = I * t, e = Q / 96500, m = e / 2 * 63.5;
+    return { q: `硫酸銅(II)水溶液を ${I} A で ${t} 秒 電気分解した。陰極に出る銅は何 g？（ファラデー定数 9.65×10⁴ C/mol、Cu＝63.5）`, a: m, unit: 'g', sol: [`電気量 ＝ ${I} × ${t} ＝ ${Q} C → 電子 ${Q} ÷ 96500 ＝ ${sig(e)} mol`, `Cu²⁺ ＋ 2e⁻ → Cu なので、Cu は電子の半分 ${sig(e / 2)} mol`, `${sig(e / 2)} × 63.5 ＝ ${sig(m)} g`] }; } },
+  weakpH: { name: '弱酸の pH', gen() { const c = dpick([0.1, 0.01]), Ka = 2.7e-5; const h = Math.sqrt(c * Ka), pH = -Math.log10(h);
+    return { q: `${c} mol/L の酢酸水溶液の [H⁺] は何 mol/L？（Ka ＝ 2.7×10⁻⁵ mol/L、電離度は1より十分小さい）`, a: h, unit: 'mol/L', sci: true, sol: [`[H⁺] ＝ √(c·Ka)`, `√(${c} × 2.7×10⁻⁵) ＝ ${sig(h, 2)} mol/L`, `（pH ＝ ${pH.toFixed(1)}）`] }; } },
+  kc: { name: '平衡定数', gen() { const a = dpick([0.2, 0.4, 0.5]), b = dpick([0.2, 0.5, 1.0]), c = dpick([0.4, 0.8, 1.0, 2.0]); const K = c * c / (a * b);
+    return { q: `H₂ ＋ I₂ ⇄ 2HI が平衡のとき、[H₂] ＝ ${a}、[I₂] ＝ ${b}、[HI] ＝ ${c} mol/L だった。平衡定数 K は？`, a: K, unit: '', sol: [`K ＝ [HI]² ÷（[H₂][I₂]）`, `${c}² ÷（${a} × ${b}）＝ ${sig(K)}`] }; } },
+};
+function parseAns(s) {
+  if (!s) return NaN;
+  s = String(s).trim().replace(/，/g, '.').replace(/[０-９．－]/g, c => '0123456789.-'['０１２３４５６７８９．－'.indexOf(c)]).replace(/−/g, '-').replace(/\s/g, '');
+  const m = s.match(/^([-+]?\d*\.?\d+)(?:[×x*]10\^?([-+]?\d+))?$/i);
+  if (m) return parseFloat(m[1]) * (m[2] ? Math.pow(10, +m[2]) : 1);
+  return parseFloat(s);
+}
+function drillCheck(p, v) {
+  if (!isFinite(v)) return false;
+  if (p.abs !== undefined) return Math.abs(v - p.a) <= p.abs + 1e-9;
+  return Math.abs(v - p.a) <= Math.abs(p.a) * 0.03 + 1e-12;
+}
+function drillNew(types) { const t = dpick(types); return { t, p: DRILLS[t].gen(), input: '', res: null }; }
+function drillHTML(d, stat) {
+  const p = d.p;
+  return `<div class="drill"><div class="drill-h"><b>計算練習</b><span>${esc(DRILLS[d.t].name)}</span>${stat ? `<span class="drill-st">正解 ${stat.ok} / ${stat.n}${stat.streak > 1 ? `　🔥${stat.streak}連続` : ''}</span>` : ''}</div>
+    <p class="drill-q">${p.q}</p>
+    <div class="drill-in"><input id="drillIn" type="text" inputmode="decimal" autocomplete="off" placeholder="${p.sci ? '例 1.2×10^5 または 1.2e5' : '答えを入力'}" value="${esc(d.input)}" ${d.res ? 'disabled' : ''}><span>${esc(p.unit || '')}</span>
+    ${d.res ? '' : '<button type="button" class="pbtn" data-act="drillgo">答え合わせ</button>'}</div>
+    ${d.res ? `<div class="verdict ${d.res === 'ok' ? 'good' : ''}">${d.res === 'ok' ? '正解！' : d.res === 'show' ? '解き方' : 'ざんねん…'}　答え：<b>${p.sci ? sig(p.a, 2) : sig(p.a)}</b> ${esc(p.unit || '')}</div>
+      <ol class="drill-sol">${p.sol.map(x => `<li>${x}</li>`).join('')}</ol>` : ''}
+    <div class="drill-nav">${d.res ? '<button type="button" class="pbtn big" data-act="drillnext">次の問題 →</button>' : '<button type="button" class="pbtn ghost" data-act="drillshow">解き方を見る</button><button type="button" class="pbtn ghost" data-act="drillnext">別の問題</button>'}</div>
+    <p class="note">${p.sci ? '大きい数・小さい数は「1.2×10^5」や「1.2e5」の形で入れられる。' : ''}有効数字のちがい（3%以内）は正解にします。</p></div>`;
+}
+// 授業ごとの計算練習
+const DRILL_OF = {
+  'ls-amass': ['m2n'], 'ls-mol': ['m2n', 'n2m', 'n2N', 'gasV'], 'ls-conc': ['molar', 'percent', 'dilute'], 'ls-qty': ['stoich'],
+  'ls-ph': ['phS'], 'ls-neut': ['neutV'], 'ls-c-gas': ['pvnrt', 'boyle', 'partial'], 'ls-c-colligative': ['bpe', 'osm'],
+  'ls-c-enthalpy': ['hess'], 'ls-c-cell': ['faraday'], 'ls-c-equil': ['kc'], 'ls-c-ion': ['weakpH'],
+};
+const DRILL_SETS = [
+  { id: 'dr-mol', base: 'mole-water', name: '物質量（mol）', types: ['m2n', 'n2m', 'n2N', 'gasV'] },
+  { id: 'dr-conc', base: 'mole-nacl', name: '濃度', types: ['molar', 'percent', 'dilute'] },
+  { id: 'dr-stoich', base: 'rx-ch4', name: '反応式と量的関係', types: ['stoich'] },
+  { id: 'dr-acid', base: 'ph-neut', name: 'pH・中和', types: ['phS', 'neutV'] },
+  { id: 'dr-gas', base: 'ch-boyle', name: '気体（化学）', types: ['pvnrt', 'boyle', 'partial'] },
+  { id: 'dr-sol', base: 'ch-osmosis', name: '溶液（化学）', types: ['bpe', 'osm'] },
+  { id: 'dr-energy', base: 'ch-daniell', name: '熱・電気分解（化学）', types: ['hess', 'faraday'] },
+  { id: 'dr-eq', base: 'ch-equil', name: '平衡（化学）', types: ['kc', 'weakpH'] },
+];
+DRILL_SETS.forEach(d => LIB.push({ id: d.id, cat: 'quiz', kind: 'drillset', name: d.name, f: '計算ドリル', types: d.types, base: d.base }));
+function drillAnswer(show) {
+  const L = state.lesson, d = L && L.drill;
+  if (!d || d.res) return;
+  const el = $('drillIn'); if (el) d.input = el.value;
+  const st = L.dstat || (L.dstat = { ok: 0, n: 0, streak: 0 });
+  if (show) { d.res = 'show'; st.n++; st.streak = 0; }
+  else {
+    const v = parseAns(d.input);
+    if (!isFinite(v)) { if (el) { el.focus(); el.classList.add('bad'); } return; }
+    const ok = drillCheck(d.p, v);
+    d.res = ok ? 'ok' : 'ng'; st.n++; if (ok) { st.ok++; st.streak++; } else st.streak = 0;
+  }
+  renderCard();
+  const nb = document.querySelector('#card [data-act="drillnext"]'); if (nb) nb.focus();
+}
+// ===== 受験・テスト対策：分子の追加、化学の章の追加、入試ポイント =====
+// 化学で使う分子を追加
+[
+  { id: 'phenol', name: 'フェノール', en: 'phenol', smiles: 'OC1=CC=CC=C1', desc: 'ベンゼン環に –OH が直接ついた化合物。弱い酸性を示し、塩化鉄(III)水溶液で紫色になる。消毒薬として使われた。', where: '樹脂や医薬品の原料' },
+  { id: 'salicylic', name: 'サリチル酸', en: 'salicylic acid', smiles: 'OC1=CC=CC=C1C(=O)O', desc: 'ベンゼン環に –OH と –COOH がとなり合ってついた化合物。アスピリンやサリチル酸メチル（湿布薬）の原料。', where: '医薬品の原料' },
+  { id: 'msalicylate', name: 'サリチル酸メチル', en: 'methyl salicylate', smiles: 'OC1=CC=CC=C1C(=O)OC', desc: 'サリチル酸とメタノールのエステル。湿布薬のにおいの成分（消炎鎮痛剤）。', where: '湿布薬' },
+  { id: 'aniline', name: 'アニリン', en: 'aniline', smiles: 'NC1=CC=CC=C1', desc: 'ベンゼン環にアミノ基 –NH₂ がついた化合物。弱い塩基性。さらし粉水溶液で赤紫色になる。染料の原料。', where: 'アゾ染料の原料' },
+  { id: 'nitrobenzene', name: 'ニトロベンゼン', en: 'nitrobenzene', smiles: 'O=[N+]([O-])C1=CC=CC=C1', desc: 'ベンゼンを濃硝酸と濃硫酸でニトロ化してできる。スズと塩酸で還元するとアニリンになる。', where: 'アニリンの原料' },
+  { id: 'toluene', name: 'トルエン', en: 'toluene', smiles: 'CC1=CC=CC=C1', desc: 'ベンゼン環にメチル基がついた化合物。溶媒として使われる。酸化すると安息香酸になる。', where: '溶媒・塗料' },
+  { id: 'benzoic', name: '安息香酸', en: 'benzoic acid', smiles: 'OC(=O)C1=CC=CC=C1', desc: 'ベンゼン環に –COOH がついた芳香族カルボン酸。食品の保存料に使われる。', where: '保存料' },
+  { id: 'acetaldehyde', name: 'アセトアルデヒド', en: 'acetaldehyde', smiles: 'CC=O', rational: 'CH3CHO', desc: 'エタノールを酸化するとできるアルデヒド。還元性があり、銀鏡反応・フェーリング液の還元を示す。ヨードホルム反応も示す。', where: 'お酒を飲んだあと体内でできる' },
+  { id: 'hexane', name: 'ヘキサン', en: 'hexane', smiles: 'CCCCCC', rational: 'CH3(CH2)4CH3', desc: '炭素6個のアルカン。無極性の溶媒で、抽出によく使われる。水とはまざらない。', where: '溶媒' },
+  { id: 'styrene', name: 'スチレン', en: 'styrene', smiles: 'C=CC1=CC=CC=C1', desc: 'ベンゼン環にビニル基がついた化合物。付加重合するとポリスチレン（発泡スチロール）になる。', where: 'ポリスチレンの原料' },
+  { id: 'vinylchloride', name: '塩化ビニル', en: 'vinyl chloride', smiles: 'C=CCl', rational: 'CH2=CHCl', desc: '付加重合するとポリ塩化ビニル（塩ビ）になる。水道管やホースに使われる。', where: 'ポリ塩化ビニルの原料' },
+  { id: 'alanine', name: 'アラニン', en: 'alanine', smiles: 'CC(N)C(=O)O', desc: '不斉炭素原子をもつアミノ酸。鏡像異性体（光学異性体）がある。', where: 'タンパク質の成分' },
+  { id: 'lacticopt', name: '乳酸', en: 'lactic acid', smiles: 'CC(O)C(=O)O', desc: '不斉炭素原子をもち、鏡像異性体（光学異性体）がある。生分解性プラスチック（ポリ乳酸）の原料。', where: 'ヨーグルト・ポリ乳酸' },
+].forEach(m => {
+  const e = Object.assign({ cat: 'organic', kind: 'mol', bond: '共有結合', props: [] }, m);
+  // 一覧の下ごしらえ（data.js と同じ）
+  e.def = parseSmiles(e.smiles); e.counts = countAtoms(e.def.atoms);
+  e.charge = e.def.atoms.reduce((s, a) => s + a.charge, 0); e.key = formulaKey(e.counts, e.charge);
+  LIB.push(e);
+});
+
+LESSON_PARTS[4].chaps.push('第2章　無機物質と人間生活');
+const LESSONS_CHEM_MORE = [
+  { id: 'ls-c-real', no: '化1-4', part: 2, chap: 0, name: '理想気体と実在気体', steps: [
+    { go: 'ch-boyle', title: '理想気体', text: '分子自身の体積がなく、分子間力もはたらかないと考えた気体。PV ＝ nRT にぴったり従う。' },
+    { go: 'ammonia', title: '実在気体', text: '実際の気体は、分子自身に体積があり、分子間力もはたらく。分子間力が強い NH₃ や、分子の大きい気体ほど理想気体からずれる。' },
+    { go: 'hydrogen', title: '理想気体に近づく条件', text: '高温（分子間力の影響が小さい）・低圧（分子の体積の影響が小さい）ほど、実在気体は理想気体に近づく。H₂ や He はずれが小さい。' },
+  ] },
+  { id: 'ls-c-ksp', no: '化4-4', part: 3, chap: 1, name: '溶解度積と沈殿', steps: [
+    { go: 'nacl', title: '溶解平衡', text: '水に溶けにくい塩でも、ごくわずかに溶けて、固体とイオンの間で平衡になる。AgCl（固）⇄ Ag⁺ ＋ Cl⁻。', cells: 1 },
+    { go: 'nacl', title: '溶解度積 Ksp', text: 'Ksp ＝ [Ag⁺][Cl⁻] は、温度が一定なら一定。混ぜた直後の [Ag⁺][Cl⁻] が Ksp をこえると沈殿ができる。', cells: 2 },
+    { go: 'hcl', title: '共通イオン効果', text: '飽和食塩水に塩化水素を通すと、Cl⁻ が増えて NaCl の結晶が出てくる。同じイオンを加えると、そのイオンが減る向きに平衡が移動する。' },
+  ] },
+  { id: 'ls-c-gasprep', no: '化5-3', part: 4, chap: 0, name: '気体の製法と性質', steps: [
+    { go: 'hydrogen', title: '水素', text: '亜鉛に希硫酸を加える（Zn ＋ H₂SO₄ → ZnSO₄ ＋ H₂）。水上置換。いちばん軽い気体。', lab: 'p-gas' },
+    { go: 'oxygen', title: '酸素', text: '過酸化水素水に酸化マンガン(IV)を加える（触媒）。水上置換。', lab: 'p-gas' },
+    { go: 'co2', title: '二酸化炭素', text: '石灰石に塩酸を加える。下方置換（水上置換も可）。石灰水を白くにごらせる。', lab: 'p-gas' },
+    { go: 'ammonia', title: 'アンモニア', text: '塩化アンモニウムと水酸化カルシウムを加熱する（弱塩基の遊離）。水によく溶け空気より軽いので上方置換。乾燥剤はソーダ石灰（酸性の乾燥剤は使えない）。', lab: 'p-gas' },
+    { go: 'chlorine', title: '塩素', text: '酸化マンガン(IV)に濃塩酸を加えて加熱する。水 → 濃硫酸の順に通して不純物を除き、下方置換。黄緑色・有毒。', lab: 'p-gas' },
+  ] },
+  { id: 'ls-c-ionsep', no: '化5-4', part: 4, chap: 0, name: '金属イオンの反応と分離', steps: [
+    { go: 'hcl', title: '塩化物の沈殿', text: 'Ag⁺・Pb²⁺ は、塩酸を加えると AgCl・PbCl₂ の白色沈殿になる。PbCl₂ は熱水に溶ける。' },
+    { go: 'h2s', title: '硫化物の沈殿', text: '酸性で H₂S を通すと Cu²⁺ は CuS（黒）として沈殿。中性〜塩基性では Zn²⁺ が ZnS（白）、Fe²⁺ が FeS（黒）として沈殿する。' },
+    { go: 'naoh', title: '水酸化物の沈殿', text: 'NaOH 水溶液を少量加えると多くの金属イオンが沈殿。Al(OH)₃・Zn(OH)₂ は過剰の NaOH に溶ける（両性）。' },
+    { go: 'ammonia', title: 'アンモニア水との反応', text: 'Cu(OH)₂・Zn(OH)₂・Ag₂O は、過剰のアンモニア水に錯イオンをつくって溶ける。Cu²⁺ は深青色になる。' },
+    { go: 'sep-flame', title: '炎色反応で確認', text: '最後に残る Na⁺（黄）・K⁺（赤紫）などは沈殿しにくいので、炎色反応で確かめる。', lab: 'p-flame' },
+  ] },
+  { id: 'ls-c-material', no: '化5-5', part: 4, chap: 1, name: 'セラミックス・金属の利用', steps: [
+    { go: 'diamond', title: 'ケイ素と二酸化ケイ素', text: 'ケイ素の単体はダイヤモンドと同じ構造で、半導体に使われる。二酸化ケイ素 SiO₂ は石英・水晶の成分で、光ファイバーにも使われる。' },
+    { go: 'nacl', title: 'セラミックス', text: 'ガラス・陶磁器・セメントなど、ケイ酸塩などを高温で処理してつくる。熱や薬品に強い。' },
+    { go: 'iron', title: '鉄の製錬', text: '溶鉱炉で鉄鉱石（Fe₂O₃）をコークスからできる CO で還元して銑鉄をつくり、転炉で炭素を減らして鋼にする。' },
+    { go: 'copper', title: '合金', text: '金属をまぜて性質を変える。ステンレス鋼（Fe・Cr・Ni：さびにくい）、黄銅（Cu・Zn）、ジュラルミン（Al・Cu・Mg：軽くて強い）。' },
+  ] },
+  { id: 'ls-c-fat', no: '化6-4', part: 5, chap: 0, name: '油脂とセッケン', steps: [
+    { go: 'glycerol', title: '油脂', text: 'グリセリン（3価のアルコール）と高級脂肪酸3分子のエステル。常温で液体の脂肪油は、不飽和脂肪酸（C=C をふくむ）が多い。' },
+    { go: 'rx-ester', title: 'けん化', text: '油脂に水酸化ナトリウムを加えて加熱すると、エステル結合が切れて、グリセリンとセッケン（脂肪酸のナトリウム塩）ができる。', solve: true },
+    { go: 'hexane', title: 'セッケンのはたらき', text: 'セッケンは油になじむ部分（疎水性の炭化水素の部分）と水になじむ部分（親水性の –COO⁻）をもち、油よごれを包みこんで水に分散させる（ミセル）。' },
+    { go: 'ph-scale', title: 'セッケンと合成洗剤', text: 'セッケンの水溶液は弱い塩基性（弱酸と強塩基の塩）。合成洗剤は中性で、硬水（Ca²⁺・Mg²⁺ が多い水）でも使える。', ph: 9.5, ind: 'pp' },
+  ] },
+  { id: 'ls-c-phenol', no: '化6-5', part: 5, chap: 0, name: 'フェノール類とサリチル酸', steps: [
+    { go: 'phenol', title: 'フェノール', text: 'ベンゼン環に –OH が直接ついている。弱い酸性（炭酸より弱い）で、NaOH とは反応するが NaHCO₃ とは反応しない。塩化鉄(III)水溶液で紫色。' },
+    { go: 'salicylic', title: 'サリチル酸', text: '–OH と –COOH をもつ。–COOH のほうが酸性が強い。' },
+    { go: 'aspirin', title: 'アセチルサリチル酸', text: 'サリチル酸の –OH を無水酢酸でアセチル化。解熱鎮痛剤。–OH がなくなるので塩化鉄(III)で呈色しない。' },
+    { go: 'msalicylate', title: 'サリチル酸メチル', text: 'サリチル酸の –COOH をメタノールでエステル化（濃硫酸が触媒）。湿布薬。–OH が残るので塩化鉄(III)で呈色する。' },
+  ] },
+  { id: 'ls-c-nitrogen', no: '化6-6', part: 5, chap: 0, name: '窒素をふくむ芳香族化合物', steps: [
+    { go: 'nitrobenzene', title: 'ニトロ化', text: 'ベンゼンに濃硝酸と濃硫酸を加えて加熱すると、ニトロベンゼンができる（置換反応）。' },
+    { go: 'aniline', title: 'アニリン', text: 'ニトロベンゼンをスズと塩酸で還元し、NaOH を加えるとアニリンが遊離する。弱い塩基性。さらし粉水溶液で赤紫色。' },
+    { go: 'aniline', title: 'ジアゾ化とカップリング', text: 'アニリンを低温（5 ℃以下）で亜硝酸ナトリウムと塩酸と反応させると塩化ベンゼンジアゾニウム。ナトリウムフェノキシドとカップリングさせると橙赤色のアゾ染料ができる。' },
+  ] },
+  { id: 'ls-c-organicsep', no: '化6-7', part: 5, chap: 0, name: '有機化合物の分離と構造決定', steps: [
+    { go: 'sep-extract', title: '分液ろうとで分ける', text: 'エーテルと水に分かれる性質を利用。酸性の物質（安息香酸・フェノール）は塩基と、塩基性の物質（アニリン）は酸と反応させて塩にすると、水層に移る。' },
+    { go: 'benzoic', title: '酸の強さの順', text: 'スルホン酸 ＞ カルボン酸 ＞ 炭酸 ＞ フェノール。NaHCO₃ 水溶液には、炭酸より強いカルボン酸だけが溶ける。' },
+    { go: 'co2', title: '元素分析', text: '試料を燃やし、H₂O を塩化カルシウム、CO₂ をソーダ石灰に吸収させて質量をはかる（順番が大事）。C・H・O の質量から組成式を求める。' },
+    { go: 'alanine', title: '鏡像異性体', text: '4つのちがう原子・原子団がついた炭素（不斉炭素原子）があると、鏡に映した関係の異性体ができる。アラニンや乳酸。' },
+  ] },
+  { id: 'ls-c-polymer2', no: '化7-3', part: 5, chap: 1, name: 'プラスチック・ゴム・機能性高分子', steps: [
+    { go: 'vinylchloride', title: '付加重合のプラスチック', text: 'ポリエチレン・ポリ塩化ビニル・ポリスチレンなど。加熱するとやわらかくなる熱可塑性樹脂が多い。' },
+    { go: 'styrene', title: 'イオン交換樹脂', text: 'スチレンと p-ジビニルベンゼンの共重合体にスルホ基を導入すると、陽イオン交換樹脂になる。水溶液中の陽イオンを H⁺ と交換する。' },
+    { go: 'ch-polymer', title: 'ゴム', text: '天然ゴムはイソプレンが付加重合したポリイソプレン。硫黄を加えて加熱（加硫）すると弾性が大きくなる。' },
+    { go: 'lacticopt', title: '生分解性高分子', text: 'ポリ乳酸などは、微生物に分解されるので、環境にやさしいプラスチックとして使われる。' },
+  ] },
+];
+LESSONS_CHEM_MORE.forEach(l => {
+  l.course = 'kagaku';
+  // 編・章の順に入れる
+  const at = LESSONS.findIndex(x => x.part > l.part || (x.part === l.part && x.chap > l.chap) || (x.part === l.part && x.chap === l.chap && x.no.localeCompare(l.no, 'ja', { numeric: true }) > 0));
+  if (at < 0) LESSONS.push(l); else LESSONS.splice(at, 0, l);
+  LIB.push({ id: l.id, cat: 'lesson', kind: 'lesson', name: l.no + '　' + l.name, f: `${l.steps.length}ステップ`, lesson: l });
+});
+// 有機の授業で、近い分子の代わりに正しい分子を見せる
+(() => {
+  const fix = (id, k, go) => { const l = LESSONS.find(x => x.id === id); if (l && l.steps[k]) l.steps[k].go = go; };
+  fix('ls-c-oxy', 2, 'acetaldehyde');
+  fix('ls-c-hc', 0, 'hexane');
+})();
+Object.assign(DRILL_OF, { 'ls-c-real': ['pvnrt'] });
+Object.assign(LESSON_QUIZ, {
+  'ls-c-real': [
+    ['実在気体が理想気体に近づく条件は？', '高温・低圧', ['低温・高圧', '低温・低圧', '高温・高圧'], '高温で分子間力の影響、低圧で分子の体積の影響が小さくなる。'],
+    ['理想気体の性質として正しいものは？', '分子間力がはたらかない', ['分子自身に大きな体積がある', '低温で液体になる', '圧力をかけると固体になる'], '理想気体は冷やしても液体にならない。'],
+    ['同じ条件で、理想気体からのずれがいちばん大きいのは？', 'アンモニア', ['水素', 'ヘリウム', '窒素'], 'NH₃ は極性分子で水素結合もつくり、分子間力が強い。'],
+    ['実在気体で PV/nRT が 1 より小さくなるおもな原因は？', '分子間力', ['分子自身の体積', '分子の質量', '容器の大きさ'], '分子どうしが引き合うので、圧力が理想気体より小さくなる。'],
+  ],
+  'ls-c-ksp': [
+    ['AgCl の溶解度積の式は？', 'Ksp ＝ [Ag⁺][Cl⁻]', ['Ksp ＝ [Ag⁺]＋[Cl⁻]', 'Ksp ＝ [AgCl]', 'Ksp ＝ [Ag⁺]/[Cl⁻]'], '固体の濃度はふくめない。'],
+    ['混ぜた直後に沈殿ができる条件は？', '[Ag⁺][Cl⁻] が Ksp より大きい', ['[Ag⁺][Cl⁻] が Ksp より小さい', '[Ag⁺] が [Cl⁻] と等しい', 'いつも沈殿する'], 'Ksp 以下なら溶けたまま。'],
+    ['飽和食塩水に HCl を通すと NaCl が析出する。この現象は？', '共通イオン効果', ['チンダル現象', '塩析', '昇華'], 'Cl⁻ が増え、NaCl が減る向きに平衡が移動する。'],
+    ['溶解度積の値が変わるのは？', '温度を変えたとき', ['水を加えたとき', 'Cl⁻ を加えたとき', '固体を加えたとき'], '平衡定数の一種なので、温度だけで決まる。'],
+  ],
+  'ls-c-gasprep': [
+    ['アンモニアの捕集法は？', '上方置換', ['水上置換', '下方置換', 'どれでもよい'], '水によく溶け、空気より軽い。'],
+    ['アンモニアの乾燥剤に使えるのは？', 'ソーダ石灰', ['濃硫酸', '十酸化四リン', '塩化カルシウム'], '塩基性の気体には塩基性の乾燥剤。CaCl₂ は NH₃ と反応する。'],
+    ['塩素の製法で、発生した気体を最初に水に通す目的は？', 'HCl を除く', ['水蒸気を除く', '酸素を除く', '塩素を溶かす'], 'そのあと濃硫酸で水蒸気を除く。順番が大事。'],
+    ['石灰水を白くにごらせる気体は？', '二酸化炭素', ['酸素', '水素', 'アンモニア'], 'CaCO₃ の白い沈殿ができる。'],
+  ],
+  'ls-c-ionsep': [
+    ['塩酸を加えると白色沈殿をつくるイオンは？', 'Ag⁺', ['Cu²⁺', 'Fe³⁺', 'Na⁺'], 'AgCl の白色沈殿。Pb²⁺ も PbCl₂ になる。'],
+    ['過剰の NaOH 水溶液に溶ける水酸化物は？', 'Al(OH)₃', ['Fe(OH)₃', 'Cu(OH)₂', 'Mg(OH)₂'], 'Al・Zn・Sn・Pb は両性金属。'],
+    ['Cu²⁺ に過剰のアンモニア水を加えたときの色は？', '深青色', ['無色', '赤褐色', '黄色'], '[Cu(NH₃)₄]²⁺ ができる。'],
+    ['酸性で H₂S を通すと沈殿するのは？', 'Cu²⁺', ['Zn²⁺', 'Fe²⁺', 'Na⁺'], 'CuS（黒）はイオン化傾向の小さい金属の硫化物で、酸性でも沈殿する。'],
+  ],
+  'ls-c-material': [
+    ['光ファイバーの材料は？', '二酸化ケイ素', ['鉄', '塩化ナトリウム', 'ポリエチレン'], '石英ガラス（SiO₂）。'],
+    ['溶鉱炉で鉄鉱石を還元するおもな物質は？', '一酸化炭素', ['酸素', '水素', '二酸化炭素'], 'Fe₂O₃ ＋ 3CO → 2Fe ＋ 3CO₂。'],
+    ['ステンレス鋼にふくまれ、さびにくくする金属は？', 'クロム', ['亜鉛', 'スズ', '鉛'], 'クロムが表面にち密な酸化被膜をつくる。'],
+    ['半導体に使われる元素は？', 'ケイ素', ['ナトリウム', '塩素', 'カルシウム'], 'ケイ素の単体はダイヤモンドと同じ構造の共有結合の結晶。'],
+  ],
+  'ls-c-fat': [
+    ['油脂は何と何のエステル？', 'グリセリンと高級脂肪酸', ['エタノールと酢酸', 'グルコースとアミノ酸', 'メタノールとサリチル酸'], 'グリセリン1分子に脂肪酸3分子。'],
+    ['油脂に NaOH を加えて加熱する反応は？', 'けん化', ['エステル化', '付加重合', '加硫'], 'セッケンとグリセリンができる。'],
+    ['セッケンの水溶液の性質は？', '弱い塩基性', ['強い酸性', '中性', '弱い酸性'], '弱酸と強塩基からできた塩。'],
+    ['常温で液体の油脂（脂肪油）に多くふくまれる脂肪酸は？', '不飽和脂肪酸', ['飽和脂肪酸', 'アミノ酸', '芳香族カルボン酸'], 'C=C があると分子が曲がり、融点が低くなる。'],
+  ],
+  'ls-c-phenol': [
+    ['塩化鉄(III)水溶液で紫色になるのは？', 'フェノール', ['ベンゼン', 'トルエン', 'アセチルサリチル酸'], 'ベンゼン環に直接ついた –OH（フェノール性ヒドロキシ基）で呈色。'],
+    ['NaHCO₃ 水溶液に溶けるのは？', '安息香酸', ['フェノール', 'アニリン', 'トルエン'], 'カルボン酸は炭酸より強い酸。フェノールは炭酸より弱い。'],
+    ['サリチル酸とメタノールからできる物質は？', 'サリチル酸メチル', ['アセチルサリチル酸', 'フェノール', '安息香酸'], '–COOH のエステル化。湿布薬。'],
+    ['サリチル酸を無水酢酸と反応させてできる物質は？', 'アセチルサリチル酸', ['サリチル酸メチル', 'アニリン', 'ニトロベンゼン'], '–OH のアセチル化。解熱鎮痛剤。'],
+  ],
+  'ls-c-nitrogen': [
+    ['ニトロベンゼンを還元してできるのは？', 'アニリン', ['フェノール', 'トルエン', '安息香酸'], 'スズと塩酸で還元し、NaOH でアニリンを遊離させる。'],
+    ['アニリンの水溶液の性質は？', '弱い塩基性', ['強い酸性', '中性', '強い塩基性'], 'アミノ基 –NH₂ は H⁺ を受け取る。'],
+    ['ジアゾ化を低温（5 ℃以下）で行う理由は？', 'ジアゾニウム塩が分解しやすいから', ['反応を速くするため', '水を凍らせるため', 'アニリンを蒸発させるため'], '温めると分解して N₂ が出てフェノールになる。'],
+    ['アゾ染料ができる反応は？', 'カップリング', ['けん化', 'エステル化', '加硫'], '塩化ベンゼンジアゾニウムとナトリウムフェノキシドから。'],
+  ],
+  'ls-c-organicsep': [
+    ['元素分析で CO₂ を吸収させる物質は？', 'ソーダ石灰', ['塩化カルシウム', '濃硫酸', '水'], 'H₂O を先に塩化カルシウムで吸収させる。逆にするとソーダ石灰が H₂O も吸ってしまう。'],
+    ['酸の強さの順として正しいのは？', 'カルボン酸 ＞ 炭酸 ＞ フェノール', ['フェノール ＞ 炭酸 ＞ カルボン酸', '炭酸 ＞ カルボン酸 ＞ フェノール', 'フェノール ＞ カルボン酸 ＞ 炭酸'], 'この順番は分離の問題で必ず使う。'],
+    ['エーテル層のアニリンを水層に移すには？', '塩酸を加える', ['NaOH 水溶液を加える', 'NaHCO₃ 水溶液を加える', '水を加える'], 'アニリン塩酸塩（塩）になって水に溶ける。'],
+    ['鏡像異性体（光学異性体）がある分子はどれ？', '乳酸', ['エタノール', '酢酸', 'アセトン'], '不斉炭素原子をもつ。'],
+  ],
+  'ls-c-polymer2': [
+    ['加熱するとやわらかくなる樹脂は？', '熱可塑性樹脂', ['熱硬化性樹脂', 'セラミックス', '合金'], 'ポリエチレンなど、鎖状の高分子が多い。'],
+    ['天然ゴムの単量体は？', 'イソプレン', ['エチレン', 'スチレン', 'グルコース'], 'ポリイソプレン。'],
+    ['ゴムに硫黄を加えて加熱する操作は？', '加硫', ['けん化', 'ジアゾ化', '電解精錬'], '鎖どうしが硫黄で橋かけされ、弾性が増す。'],
+    ['陽イオン交換樹脂に CaCl₂ 水溶液を通すと、出てくる液は？', '酸性（塩酸）', ['塩基性', '中性の CaCl₂ 水溶液', '純粋な水'], 'Ca²⁺ が H⁺ と交換される。'],
+  ],
+});
+// 授業ごとの「テストに出るポイント」（最後の画面に表示）
+const EXAM = {
+  'ls-pure': ['ろ過で分けられるのは「溶けていない」固体だけ', '蒸留：温度計の位置・沸騰石・冷却水の向きはよく出る', '昇華しやすい物質：ヨウ素・ナフタレン・ドライアイス'],
+  'ls-elem': ['同素体は S・C・O・P（スコップ）', '「元素」と「単体」の区別：「水は水素と酸素からなる」は元素', '炎色反応の色は語呂で覚える'],
+  'ls-state': ['状態変化の名前（融解・凝固・蒸発・凝縮・昇華・凝華）', '温度が高いほど熱運動が激しい'],
+  'ls-atom': ['質量数 ＝ 陽子 ＋ 中性子', '中性子の数 ＝ 質量数 − 原子番号', '同位体は化学的性質がほぼ同じ'],
+  'ls-shell': ['K2・L8・M18（n番目は 2n² 個）', '価電子：貴ガスは 0 とする', '典型元素は族の下1けた＝価電子の数'],
+  'ls-ion': ['イオン化エネルギー：周期表の右上ほど大きい（貴ガス最大）', '同じ電子配置のイオンは、原子番号が大きいほど小さい（O²⁻ ＞ F⁻ ＞ Na⁺ ＞ Mg²⁺）'],
+  'ls-ionic': ['組成式の書き方：陽イオンが先、電荷の合計を 0 に（Al₂O₃ など）', 'イオン結晶は固体では電気を通さない'],
+  'ls-cov': ['電子式・構造式は必ず書けるように（N₂ は三重結合）', '配位結合：NH₄⁺・H₃O⁺'],
+  'ls-shape': ['CH₄ 正四面体・NH₃ 三角錐・H₂O 折れ線・CO₂ 直線', '非共有電子対の数で形が決まる'],
+  'ls-polar': ['極性分子：H₂O・NH₃・HCl', '無極性分子：CO₂・CH₄・CCl₄（形で打ち消し合う）'],
+  'ls-hbond': ['水素結合をつくるのは F・O・N に結合した H', 'H₂O・HF・NH₃ の沸点が同族の中で異常に高い'],
+  'ls-cryst': ['4種類の結晶（イオン・共有結合・分子・金属）の性質の表は丸暗記', '黒鉛だけは共有結合の結晶なのに電気を通す'],
+  'ls-metal': ['金属の性質は自由電子で説明する', '展性・延性'],
+  'ls-amass': ['原子量は同位体の存在比を使った平均値', '分子量・式量の計算はミスなく速く'],
+  'ls-mol': ['「÷ モル質量」「÷ 22.4」「÷ 6.0×10²³」で必ず mol にそろえてから考える', '気体の 22.4 L は標準状態（0 ℃、1.013×10⁵ Pa）だけ'],
+  'ls-conc': ['質量パーセント濃度は「溶液」の質量で割る', 'モル濃度は「溶液」1 L あたり（溶媒 1 L ではない）', '濃度の換算：密度を使って 1 L の溶液の質量を出す'],
+  'ls-rx': ['係数は「原子の数がいちばん多い物質を1」としてそろえる', 'イオン反応式は電荷の合計もそろえる'],
+  'ls-qty': ['係数の比 ＝ 物質量の比（質量の比ではない！）', '過不足のある反応は、足りない方を基準に計算する'],
+  'ls-acid': ['強酸：HCl・HNO₃・H₂SO₄、強塩基：NaOH・KOH・Ca(OH)₂・Ba(OH)₂', '価数と強弱は関係ない'],
+  'ls-ph': ['pH が 1 小さい ＝ [H⁺] が 10 倍', '酸をうすめても pH は 7 をこえない'],
+  'ls-neut': ['中和の公式：価数 × 濃度 × 体積 が等しい', '指示薬：強酸＋弱塩基はメチルオレンジ、弱酸＋強塩基はフェノールフタレイン', '正塩の水溶液が中性とはかぎらない（CH₃COONa は塩基性）'],
+  'ls-redox': ['酸化数のルール：単体 0、化合物中の H ＋1、O −2（H₂O₂ は −1）', '酸化剤・還元剤の半反応式を書けるように（MnO₄⁻・Cr₂O₇²⁻）'],
+  'ls-metalion': ['イオン化列「貸そうかな まあ あてにすな ひどすぎる借金」', 'Pt・Au は王水にだけ溶ける。Al・Fe・Ni は濃硝酸で不動態'],
+  'ls-life': ['電池：負極で酸化、正極で還元', '鉄の製錬・銅の電解精錬は化学でくわしく'],
+  'ls-c-vapor': ['蒸気圧曲線の読み取り：外圧と等しくなる温度が沸点', '容器内に液体が残っていれば、圧力は飽和蒸気圧で一定'],
+  'ls-c-gas': ['PV ＝ nRT の単位（Pa・L・K）をそろえる', '分圧 ＝ 全圧 × モル分率', '水上置換は水蒸気圧を引く'],
+  'ls-c-lattice': ['面心立方：4個・配位数12・充填率74%', '体心立方：2個・配位数8・充填率68%', '密度 ＝（単位格子中の原子の質量）÷（a³）'],
+  'ls-c-solution': ['溶解度曲線の読み取りと、析出量の計算', 'ヘンリーの法則：溶ける気体の物質量（体積ではない）が圧力に比例'],
+  'ls-c-colligative': ['電解質は電離した粒子の数で計算（NaCl は ×2）', 'Π ＝ cRT の c はモル濃度'],
+  'ls-c-enthalpy': ['ΔH は 発熱で負', '反応エンタルピー ＝（生成物の生成エンタルピーの和）−（反応物の和）', '結合エネルギーからは：（切る結合の和）−（できる結合の和）'],
+  'ls-c-cell': ['ダニエル電池・鉛蓄電池・燃料電池の両極の反応', '流れた電子の物質量 ＝ 電気量 ÷ 9.65×10⁴'],
+  'ls-c-rate': ['v ＝ k[A]ᵃ[B]ᵇ（次数は実験で決まる）', '触媒は平衡を移動させない'],
+  'ls-c-equil': ['ルシャトリエの原理：温度・圧力・濃度の変化の向き', '触媒・平衡定数と温度の関係'],
+  'ls-c-ion': ['弱酸の [H⁺] ＝ √(cKa)', '緩衝液の pH：[H⁺] ＝ Ka × [酸]/[塩]'],
+  'ls-c-nonmetal': ['工業的製法（接触法・オストワルト法・ハーバー・ボッシュ法）の反応式', 'ハロゲンの酸化力と反応の向き'],
+  'ls-c-metal': ['アンモニアソーダ法の5つの反応', '錯イオンの名前と形（[Cu(NH₃)₄]²⁺ 正方形）'],
+  'ls-c-hc': ['付加反応（臭素水の脱色）で不飽和結合を確認', '異性体の数え上げ（C₄H₁₀ は2種類、C₅H₁₂ は3種類）'],
+  'ls-c-oxy': ['アルコールの酸化：第一級→アルデヒド→カルボン酸、第二級→ケトン', 'ヨードホルム反応：CH₃CO– や CH₃CH(OH)– をもつ'],
+  'ls-c-arom': ['ベンゼンの置換反応（ニトロ化・スルホン化・ハロゲン化）', 'o-・m-・p- の位置の区別'],
+  'ls-c-poly': ['付加重合と縮合重合の区別', 'ナイロン66：アジピン酸 ＋ ヘキサメチレンジアミン'],
+  'ls-c-natural': ['還元性：単糖・マルトースは示す、スクロースは示さない', 'タンパク質の検出：ビウレット反応・キサントプロテイン反応・ニンヒドリン反応'],
+  'ls-c-real': ['高温・低圧ほど理想気体に近い', 'PV/nRT のグラフの読み取り'],
+  'ls-c-ksp': ['[A][B] と Ksp をくらべて沈殿の有無を判断', '共通イオン効果'],
+  'ls-c-gasprep': ['製法・捕集法・乾燥剤の表を覚える', '塩素の精製：水 → 濃硫酸の順'],
+  'ls-c-ionsep': ['系統分析の順番（HCl → H₂S（酸性）→ NH₃ → H₂S（塩基性）→ (NH₄)₂CO₃）', '両性金属と、アンモニア水に溶ける金属'],
+  'ls-c-material': ['鉄の製錬・銅の電解精錬・アルミニウムの溶融塩電解', '合金の成分と特徴'],
+  'ls-c-fat': ['けん化価・ヨウ素価の計算', 'セッケンと合成洗剤の違い'],
+  'ls-c-phenol': ['サリチル酸からの2つの反応（アセチル化・エステル化）と塩化鉄(III)反応', 'フェノールの製法（クメン法）'],
+  'ls-c-nitrogen': ['ベンゼン → ニトロベンゼン → アニリン → ジアゾニウム塩 → アゾ染料 の流れ', 'アニリンの検出：さらし粉で赤紫色'],
+  'ls-c-organicsep': ['酸の強さの順を使った抽出の問題', '元素分析：塩化カルシウム → ソーダ石灰 の順'],
+  'ls-c-polymer2': ['付加重合の高分子と単量体の組み合わせ', 'イオン交換樹脂のはたらき'],
+};
 // ===== 物質の分離・元素の検出（粒子が動くようすを見る） =====
 const SEP_LIST = [
   { id: 'sep-mix', name: '混合物（ワイン）', en: '水 ＋ エタノール', scene: 'mix',
@@ -3545,7 +3928,7 @@ const sepLoop = (t, P) => ((t - (view.sepT0 || 0)) / P) % 1;
 function buildSepView() {
   const e = state.entry, g = R.group;
   view.kind = 'sep';
-  view.sepT0 = null;
+  view.sepT0 = null; view.sepCtl = null; view.sepReset = false;
   view.sepR = 5; view.sepTarget = new THREE.Vector3(0, 2.5, 0); view.sepTop = 5.5;
   const r = rng(7);
   const SC = SEP_SCENES[e.scene];
@@ -3811,7 +4194,7 @@ const SEP_SCENES = {
   },
 };
 function sepCardHTML(e) {
-  return headHTML(e, esc(e.en)) + `<div class="card-body"><p class="desc">${esc(e.desc)}</p>
+  return headHTML(e, esc(e.en)) + `<div class="card-body">${typeof sepCtlHTML === 'function' ? sepCtlHTML(e) : ''}<p class="desc">${esc(e.desc)}</p>
     <ol class="sep-stages">${e.stages.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
     <div class="point"><h3>授業のポイント</h3><p>${esc(e.point)}</p></div>
     <p class="note">動きはくり返し再生されます。ドラッグで回して見よう。</p></div>`;
@@ -3888,7 +4271,8 @@ Object.assign(SEP_SCENES, {
     return t => {
       const dt = sepLast(t), k = sepLoop(t, 22);
       if (k < 0.02) { mols.forEach(o => { o.st = 'liq'; }); evap = cond = 0; }
-      if (t > next) { next = t + 0.45; const c = mols.filter(o => o.st === 'liq'); if (c.length) { const o = c[Math.floor(r() * c.length)]; o.st = 'gas'; o.m.position.set(o.home.x, LV + 0.1, o.home.z); o.v.set((r() - 0.5) * 2.4, 1.6 + r(), (r() - 0.5) * 2.4); evap++; } }
+      const TV = view.sepCtl != null ? view.sepCtl : 60;
+      if (t > next) { next = t + 0.95 - 0.8 * (TV - 20) / 80; const c = mols.filter(o => o.st === 'liq'); if (c.length) { const o = c[Math.floor(r() * c.length)]; o.st = 'gas'; o.m.position.set(o.home.x, LV + 0.1, o.home.z); o.v.set((r() - 0.5) * 2.4, 1.6 + r(), (r() - 0.5) * 2.4); evap++; } }
       mols.forEach(o => {
         if (o.st === 'liq') o.m.position.set(o.home.x + 0.12 * Math.sin(t * 3 + o.ph), o.home.y + 0.1 * Math.sin(t * 4 + o.ph), o.home.z + 0.12 * Math.cos(t * 3 + o.ph));
         else {
@@ -3897,7 +4281,7 @@ Object.assign(SEP_SCENES, {
         }
         o.m.rotation.set(t + o.ph, t * 0.7, 0);
       });
-      const ng = mols.filter(o => o.st === 'gas').length, txt = `気体の分子 ${ng} 個`;
+      const ng = mols.filter(o => o.st === 'gas').length, txt = `${Math.round(TV)} ℃　気体の分子 ${ng} 個`;
       if (cnt.el.textContent !== txt) cnt.el.textContent = txt;
       return k < 0.2 ? 0 : k < 0.5 ? 1 : 2;
     };
@@ -4026,11 +4410,16 @@ Object.assign(SEP_SCENES, {
     const reset = hot => { phaseHot = hot; made = 0; ps.forEach(o => { o.done = false; o.m.visible = true; o.m.material.color.set(o.a ? '#e53935' : '#3050f8'); o.m.scale.setScalar(0.2); o.m.position.copy(o.p0); o.v.copy(rv(r, hot ? 2.6 : 0.8)); }); };
     view.sepR = 3.6; view.sepTarget.set(0, 1.8, 0); view.sepTop = 4.2;
     return t => {
-      const dt = sepLast(t), k = sepLoop(t, 16), hot = k >= 0.5;
-      if (hot !== phaseHot) reset(hot);
+      const dt = sepLast(t), k = sepLoop(t, 16), C = view.sepCtl;
+      const x = C != null ? C : (k >= 0.5 ? 1 : 0), hot = x >= 0.5;
+      if (C == null && hot !== phaseHot) reset(hot);
+      if (phaseHot === null) reset(hot);
+      if (view.sepReset) { view.sepReset = false; reset(hot); }
+      const sp = 0.8 + 1.8 * x;
+      ps.forEach(o => o.v.setLength(sp));
       ps.forEach(o => { if (o.m.visible) bounceIn(o.m.position, o.v, lo, hi, dt); });
-      for (let i = 0; i < ps.length; i++) { const A = ps[i]; if (!A.a || A.done || !A.m.visible) continue; for (let j = 0; j < ps.length; j++) { const B = ps[j]; if (B.a || !B.m.visible || B.done) continue; if (A.m.position.distanceTo(B.m.position) < 0.42 && r() < (hot ? 0.6 : 0.04)) { A.done = true; B.m.visible = false; A.m.material.color.set('#8e3fb8'); A.m.scale.setScalar(0.27); made++; break; } } }
-      const txt = `${hot ? '高い温度' : '低い温度'}　できた生成物 ${made} 個`;
+      for (let i = 0; i < ps.length; i++) { const A = ps[i]; if (!A.a || A.done || !A.m.visible) continue; for (let j = 0; j < ps.length; j++) { const B = ps[j]; if (B.a || !B.m.visible || B.done) continue; if (A.m.position.distanceTo(B.m.position) < 0.42 && r() < 0.04 + 0.56 * x * x) { A.done = true; B.m.visible = false; A.m.material.color.set('#8e3fb8'); A.m.scale.setScalar(0.27); made++; break; } } }
+      const txt = `${C != null ? Math.round(300 + 100 * x) + ' K' : hot ? '高い温度' : '低い温度'}　できた生成物 ${made} 個`;
       if (lbl.el.textContent !== txt) lbl.el.textContent = txt;
       return hot ? 1 : 0;
     };
@@ -4050,8 +4439,9 @@ Object.assign(SEP_SCENES, {
     view.sepR = 3.6; view.sepTarget.set(0, 1.6, 0); view.sepTop = 4.2;
     return t => {
       const dt = sepLast(t), k = sepLoop(t, 20), hot = k >= 0.5;
-      flame.visible = hot;
-      const kd = hot ? 0.55 : 0.12, ka = hot ? 0.18 : 0.4;
+      const C = view.sepCtl, x = C != null ? C : (hot ? 1 : 0);
+      flame.visible = x > 0.5;
+      const kd = 0.12 + 0.43 * x, ka = 0.4 - 0.22 * x;
       let nNO2 = 0;
       pairs.forEach(o => {
         if (o.joined && r() < kd * dt) { o.joined = false; o.vB = rv(r, hot ? 1.8 : 1.1); }
@@ -4063,7 +4453,7 @@ Object.assign(SEP_SCENES, {
         if (!o.joined) nNO2 += 2;
       });
       tank.material.opacity = 0.03 + nNO2 / 24 * 0.32;
-      const txt = `${hot ? '加熱中' : 'ふつうの温度'}　NO₂ ${nNO2} 個（赤褐色）`;
+      const txt = `${C != null ? (x < 0.35 ? '冷やす' : x > 0.65 ? '加熱' : 'ふつうの温度') : hot ? '加熱中' : 'ふつうの温度'}　NO₂ ${nNO2} 個（赤褐色）`;
       if (lbl.el.textContent !== txt) lbl.el.textContent = txt;
       return hot ? 1 : 0;
     };
@@ -4102,7 +4492,7 @@ Object.assign(SEP_SCENES, {
   },
 });
 function pistonScene(g, r, kind) {
-  const RAD = 1.4, cyl = sepGlass([[RAD, 0.1], [RAD, 5.2]]); g.add(cyl);
+  const RAD = 1.4, cyl = sepGlass([[RAD, 0.1], [RAD, 6.4]]); g.add(cyl);
   const base = new THREE.Mesh(new THREE.CylinderGeometry(RAD + 0.08, RAD + 0.08, 0.1, 40), phong('#9aa6b8')); g.add(base);
   const piston = new THREE.Mesh(new THREE.CylinderGeometry(RAD - 0.02, RAD - 0.02, 0.25, 40), phong('#7d8794', { shininess: 90 })); g.add(piston);
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2, 12), phong('#7d8794')); g.add(rod);
@@ -4115,12 +4505,13 @@ function pistonScene(g, r, kind) {
     const dt = sepLast(t), k = sepLoop(t, 14);
     // ボイル：4 → 2 → 4　シャルル：温度 300 → 600 → 300 K、体積は T に比例
     const w = k < 0.15 ? 0 : k < 0.35 ? (k - 0.15) / 0.2 : k < 0.7 ? 1 : k < 0.9 ? 1 - (k - 0.7) / 0.2 : 0;
-    const e = w * w * (3 - 2 * w);
-    const H = kind === 'boyle' ? 4.0 - 2.0 * e : 2.2 + 2.2 * e;
-    const T = kind === 'boyle' ? 300 : 300 + 300 * e;
+    const e = w * w * (3 - 2 * w), C = view.sepCtl;
+    // 自分で動かすとき：ボイルは体積（0.5〜1.5 V₀）、シャルルは温度（150〜600 K）
+    const H = kind === 'boyle' ? (C != null ? 4.0 * C : 4.0 - 2.0 * e) : (C != null ? 2.2 * C / 300 : 2.2 + 2.2 * e);
+    const T = kind === 'boyle' ? 300 : (C != null ? C : 300 + 300 * e);
     const sp = 2.0 * Math.sqrt(T / 300);
     piston.position.y = H + 0.13; rod.position.y = H + 1.2;
-    flame.visible = kind === 'charles' && k > 0.12 && k < 0.7;
+    flame.visible = kind === 'charles' && (C != null ? T > 300 : k > 0.12 && k < 0.7);
     const lo = new THREE.Vector3(-RAD + 0.2, 0.25, -RAD + 0.2), hi = new THREE.Vector3(RAD - 0.2, H - 0.12, RAD - 0.2);
     mols.forEach(o => {
       o.v.setLength(sp);
@@ -4134,8 +4525,25 @@ function pistonScene(g, r, kind) {
     const V = kind === 'boyle' ? H / 4 : H / 2.2, P = kind === 'boyle' ? 4 / H : 1;
     const txt = kind === 'boyle' ? `体積 ${V.toFixed(2)} V₀　圧力 ${P.toFixed(2)} P₀` : `${Math.round(T)} K　体積 ${V.toFixed(2)} V₀`;
     if (lbl.el.textContent !== txt) lbl.el.textContent = txt;
-    return k < 0.35 ? 0 : k < 0.7 ? 1 : 2;
+    return C != null ? 1 : k < 0.35 ? 0 : k < 0.7 ? 1 : 2;
   };
+}
+
+// 自分で条件を変えられる現象（つまみ）
+const SEP_CTL = {
+  'ch-boyle': { label: '体積', min: 0.5, max: 1.5, step: 0.05, init: 1, fmt: v => `${v.toFixed(2)} V₀ → 圧力 ${(1 / v).toFixed(2)} P₀`, note: '体積を半分にすると、圧力は2倍。PV ＝ 一定。' },
+  'ch-charles': { label: '温度', min: 150, max: 600, step: 10, init: 300, fmt: v => `${v} K（${v - 273} ℃）→ 体積 ${(v / 300).toFixed(2)} V₀`, note: '体積は絶対温度に比例する。V/T ＝ 一定。' },
+  'ch-vapor': { label: '温度', min: 20, max: 100, step: 5, init: 60, fmt: v => `${v} ℃`, note: '温度を上げると、液面から飛び出す分子が増え、蒸気圧が大きくなる。' },
+  'ch-rate': { label: '温度', min: 0, max: 1, step: 0.05, init: 0.2, fmt: v => `${Math.round(300 + 100 * v)} K`, note: '温度を上げて「はじめから」を押し、生成物ができる速さをくらべよう。', reset: true },
+  'ch-equil': { label: '温度', min: 0, max: 1, step: 0.05, init: 0.5, fmt: v => (v < 0.35 ? '冷やす' : v > 0.65 ? '加熱' : 'ふつう'), note: '加熱すると、吸熱反応の向き（NO₂ が増える向き）に平衡が移動して色が濃くなる。冷やすと逆。' },
+};
+function sepCtlHTML(e) {
+  const c = SEP_CTL[e.id];
+  if (!c) return '';
+  const on = view.sepCtl != null, v = on ? view.sepCtl : c.init;
+  return `<div class="sep-ctl"><div class="seg sm"><button type="button" data-sepmode="auto" aria-pressed="${!on}">自動で再生</button><button type="button" data-sepmode="hand" aria-pressed="${on}">自分で動かす</button></div>
+    ${on ? `<label class="sep-sl"><span>${esc(c.label)}</span><input type="range" id="sepCtl" min="${c.min}" max="${c.max}" step="${c.step}" value="${v}"><b id="sepCtlV">${esc(c.fmt(v))}</b></label>
+    ${c.reset ? '<button type="button" class="pbtn ghost" data-act="sepreset">はじめから</button>' : ''}<p class="note">${esc(c.note)}</p>` : ''}</div>`;
 }
 
 // ===== 状態変化ラボ =====
@@ -5510,6 +5918,7 @@ function renderGrid() {
   }
   if (state.sec === 'quiz') {
     grid.innerHTML = `<button type="button" class="card-btn wide" data-id="ta-60" aria-current="${!!state.ta}"><span class="f">⏱ タイムアタック</span><span class="n">60秒で何問答えられる？</span></button>`
+      + DRILL_SETS.map(d => `<button type="button" class="card-btn wide" data-id="${d.id}" aria-current="${!!(state.lesson && state.lesson.l.id === d.id)}"><span class="f">✏️ ${esc(d.name)}</span><span class="n">計算ドリル</span></button>`).join('')
       + QUIZ_SETS.map(q => `<button type="button" class="card-btn wide" data-id="${q.id}" aria-current="${!state.ta && state.quiz && state.quiz.set.id === q.id}"><span class="f">${esc(q.name)}</span><span class="n">10問</span></button>`).join('');
     return;
   }
@@ -5587,6 +5996,7 @@ function fact(label, value, cls) {
   return `<div class="fact ${cls || ''}"><dt>${label}</dt><dd>${value}</dd></div>`;
 }
 function headHTML(e, sub) {
+  if (state.noHead) return '';
   const cat = e.auto ? '分子式から組み立て' : (CATS.find(c => c.id === e.cat) || SECTIONS.find(s => s.cats.includes(e.cat)) || {}).name || '';
   return `<div class="card-head">
     <div class="ch-main">
@@ -5615,7 +6025,15 @@ function renderCard() {
   if (state.lesson) html = lessonCardHTML();
   else if (state.quizActive && state.ta) html = taCardHTML();
   else if (state.quizActive && state.quiz) html = quizCardHTML();
-  else if (e.kind === 'ph') html = phCardHTML(e);
+  else html = entryCardHTML(e);
+  $('card').innerHTML = html;
+  $('card').classList.toggle('collapsed', !state.cardOpen);
+  $('stageWrap').classList.toggle('card-closed', !state.cardOpen);
+}
+// 物質・現象ごとの説明パネル（授業モードの「自分で試す」でも使う）
+function entryCardHTML(e) {
+  let html = '';
+  if (e.kind === 'ph') html = phCardHTML(e);
   else if (e.kind === 'neut') html = neutCardHTML(e);
   else if (e.kind === 'reaction') html = rxCardHTML(e);
   else if (e.kind === 'phase') html = phaseCardHTML(e);
@@ -5628,9 +6046,7 @@ function renderCard() {
     html = headHTML(e, formulaHTML(e.f)) + '<div class="card-body">' + stepsHTML(e)
       + `<p class="desc">${esc(e.desc)}</p><div class="point"><h3>授業のポイント</h3><p>${esc(e.point)}</p></div></div>`;
   } else html = molCardHTML(e);
-  $('card').innerHTML = html;
-  $('card').classList.toggle('collapsed', !state.cardOpen);
-  $('stageWrap').classList.toggle('card-closed', !state.cardOpen);
+  return html;
 }
 function bondSummary(e) {
   const counts = {};
@@ -5876,6 +6292,7 @@ function selectEntry(e, opts) {
   opts = opts || {};
   if (e.kind === 'lesson') { lessonExit(); state.sec = 'lesson'; lessonStart(e.lesson); return; }
   if (e.kind === 'ta') { lessonExit(); state.sec = 'quiz'; taStart(); return; }
+  if (e.kind === 'drillset') { lessonExit(); leaveQuiz(); state.sec = 'quiz'; lessonStart({ id: e.id, no: 'ドリル', name: e.name, course: 'kiso', drillOnly: true, drillTypes: e.types, steps: [{ go: e.base || 'mole-water', title: e.name, text: '', drill: e.types }] }); return; }
   if (!opts.lesson) lessonExit();
   if (e.kind === 'quizset') { leaveQuiz(); state.sec = 'quiz'; state.quizActive = true; stashShow(); quizStart(e.quiz); return; }
   if (opts.quiz) { state.quizActive = true; } else leaveQuiz();
@@ -6046,6 +6463,10 @@ function bindUI() {
   $('card').addEventListener('click', ev => {
     const go = ev.target.closest('[data-go]');
     if (go) { selectEntry(LIB.find(e => e.id === go.dataset.go)); return; }
+    const lt2 = ev.target.closest('[data-ltab]');
+    if (lt2 && state.lesson) { state.lesson.tab = lt2.dataset.ltab; renderCard(); return; }
+    const sm = ev.target.closest('[data-sepmode]');
+    if (sm) { const c = SEP_CTL[state.entry.id]; view.sepCtl = sm.dataset.sepmode === 'hand' ? c.init : null; view.sepReset = true; renderCard(); return; }
     const lc = ev.target.closest('[data-lcourse]');
     if (lc) { state.lessonCourse = lc.dataset.lcourse; showLessonMenu(); renderGrid(); return; }
     const lt = ev.target.closest('[data-lstest]');
@@ -6086,13 +6507,16 @@ function bindUI() {
     if (!act) return;
     const a = act.dataset.act;
     if (a === 'tastart') { taStart(); return; }
+    if (a === 'sepreset') { view.sepReset = true; return; }
+    if (a === 'drillgo' || a === 'drillshow') { drillAnswer(a === 'drillshow'); return; }
+    if (a === 'drillnext') { const L = state.lesson; L.drill = drillNew(lessonDrillTypes(L.l, L.l.steps[L.i])); renderCard(); const x = $('drillIn'); if (x) x.focus(); return; }
     if (a === 'lsnext') { state.lesson.i++; lessonGo(); return; }
     if (a === 'lsquiz' || a === 'lsqretry') { lsQuizStart(); renderCard(); return; }
     if (a === 'lsqpick') { const qz = state.lesson.quiz, q = qz.qs[qz.i]; qz.picked = q.choices[+act.dataset.k]; if (qz.picked === q.a) qz.score++; renderCard(); return; }
     if (a === 'lsqnext') { const qz = state.lesson.quiz; qz.i++; qz.picked = null; renderCard(); if (qz.i >= qz.qs.length) renderGrid(); return; }
     if (a === 'lsqback') { state.lesson.quiz = null; state.lesson.i = 0; lessonGo(); return; }
     if (a === 'lsprev') { state.lesson.i--; lessonGo(); return; }
-    if (a === 'lsexit') { const l = state.lesson; lessonExit(); goSection('lesson'); return; }
+    if (a === 'lsexit') { const l = state.lesson; lessonExit(); goSection(l && l.l.drillOnly ? 'quiz' : 'lesson'); return; }
     if (a === 'heat' || a === 'cool') { const d = a === 'heat' ? 1 : -1; state.phaseAnim = state.phaseAnim === d ? 0 : d; syncPhaseUI(); return; }
     if (a === 'react') { state.rx.phase = 'anim'; state.rx.t0 = performance.now(); solvedRx.add(state.entry.id); saveSet(SOLVED_KEY, solvedRx); renderCard(); renderGrid(); return; }
     if (a === 'rxreset') { state.rx.phase = 'edit'; renderCard(); return; }
@@ -6123,6 +6547,8 @@ function bindUI() {
       renderCard(); const s = $('phSlider'); if (s) s.focus(); const b = card.querySelector('.card-body'); if (b) b.scrollTop = y;
       return;
     }
+    if (ev.target.id === 'drillIn' && state.lesson && state.lesson.drill) { state.lesson.drill.input = ev.target.value; return; }
+    if (ev.target.id === 'sepCtl') { view.sepCtl = +ev.target.value; const c = SEP_CTL[state.entry.id], o = $('sepCtlV'); if (o) o.textContent = c.fmt(view.sepCtl); return; }
     if (ev.target.id === 'phRange') { state.phaseT = +ev.target.value; state.phaseAnim = 0; syncPhaseUI(); return; }
     if (ev.target.id === 'moleRange') { setMole(+ev.target.value, 'range'); return; }
     if (ev.target.id === 'moleVal') {
@@ -6172,6 +6598,7 @@ function bindUI() {
     else { w.classList.toggle('is-max'); done(); }
   });
   document.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter' && document.activeElement && document.activeElement.id === 'drillIn') { ev.preventDefault(); drillAnswer(false); return; }
     if (state.lesson && !state.lesson.quiz && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) {
       const l = state.lesson;
       if (ev.key === 'ArrowRight' && l.i < l.l.steps.length - 1) { l.i++; lessonGo(); }
