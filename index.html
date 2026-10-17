@@ -678,6 +678,47 @@ h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display)
   .note { font-size: 12px; }
 }
 @media (max-width: 380px) { .brand { display: none; } }
+
+/* ===== 周期表（全118元素） ===== */
+body.sec-atom .app { grid-template-columns: 520px minmax(0, 1fr); }
+.grid.ptable { display: grid; grid-template-columns: 16px repeat(18, minmax(0, 1fr)); grid-template-rows: 14px repeat(7, auto) 6px auto auto; gap: 2px; align-content: start; }
+.grid.ptable .pt { aspect-ratio: 1; width: auto; height: auto; min-width: 0; padding: 0; border: 1px solid var(--line); border-left: 3px solid var(--cc, var(--line)); border-radius: 2px; background: var(--panel); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.grid.ptable .pt b { font-family: var(--font-data); font-size: 11.5px; font-weight: 600; }
+.grid.ptable .pt .z { font-size: 7.5px; color: var(--muted); }
+.grid.ptable .pt.kiso { border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-top-color: var(--ink); border-right-color: var(--ink); border-bottom-color: var(--ink); }
+.grid.ptable .pt[aria-current="true"] { background: var(--ink); color: var(--panel); }
+.grid.ptable .pt[aria-current="true"] .z { color: var(--panel); }
+.grid.ptable .pt:hover { outline: 1.5px solid var(--accent); }
+.pt-g, .pt-p, .pt-ph { font-size: 9px; color: var(--muted); display: grid; place-items: center; font-family: var(--font-data); }
+.pt-p.lan { font-family: var(--font-body); font-size: 9.5px; justify-items: end; padding-right: 4px; }
+.pt-ph { border: 1px dashed var(--line); font-size: 7px; border-radius: 2px; }
+.pt-legend { grid-column: 1 / -1; grid-row: 12; display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 10.5px; color: var(--muted); margin-top: 6px; }
+.pt-legend i { display: inline-block; width: 8px; height: 8px; margin-right: 3px; vertical-align: 0; }
+.pt-legend .kiso-mark { width: 100%; }
+.pt.c-alkali { --cc: #d9534f; }
+.pt.c-alkearth { --cc: #e08a3c; }
+.pt.c-trans { --cc: #b9a14a; }
+.pt.c-lanthanoid { --cc: #8fae5a; }
+.pt.c-actinoid { --cc: #5aa08a; }
+.pt.c-metal { --cc: #7d8fa8; }
+.pt.c-nonmetal { --cc: #4f86c6; }
+.pt.c-halogen { --cc: #8a6cc4; }
+.pt.c-noble { --cc: #c45aa0; }
+.pt.c-hydrogen { --cc: #6b7280; }
+
+.el-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 8px; font-size: 12px; }
+.el-tags span { border: 1px solid var(--line); padding: 1px 7px; border-radius: 3px; }
+.el-tags .el-cat { border-left: 4px solid var(--c); font-weight: 700; }
+.note.orb { font-family: var(--font-data); font-size: 12px; word-break: break-word; }
+@media (max-width: 1180px) { body.sec-atom .app { grid-template-columns: 440px minmax(0, 1fr); } }
+@media (max-width: 900px) {
+  .grid.ptable:not([hidden]) { display: grid !important; grid-template-columns: 12px repeat(18, 21px) !important; grid-template-rows: 10px repeat(7, 21px) 3px 21px 21px !important; grid-auto-rows: auto; overflow: auto; max-height: 34vh; gap: 1.5px !important; }
+  .grid.ptable .pt { width: 21px !important; height: 21px !important; aspect-ratio: auto; border-left-width: 2px; }
+  .grid.ptable .pt .z { display: none; }
+  .grid.ptable .pt b { font-size: 9.5px; }
+  .pt-p.lan { font-size: 0; }
+  .pt-legend { display: none; }
+}
 </style>
 </head>
 <body>
@@ -1383,8 +1424,8 @@ function analyze(mol) {
 }
 
 // ===== 電子殻（K・L・M・N殻）への電子の入り方：原子番号20までの化学基礎の範囲 =====
-const SHELL_NAMES = ['K', 'L', 'M', 'N'];
-const SHELL_MAX = [2, 8, 18, 32];
+const SHELL_NAMES = ['K', 'L', 'M', 'N', 'O', 'P', 'Q'];
+const SHELL_MAX = [2, 8, 18, 32, 50, 72, 98];
 function shellCounts(electrons) {
   const e = Math.max(0, electrons);
   return [Math.min(e, 2), Math.min(Math.max(e - 2, 0), 8), Math.min(Math.max(e - 10, 0), 8), Math.max(e - 18, 0)];
@@ -3156,7 +3197,7 @@ function lessonGo() {
   if (st.atomIon) {
     state.atomIon = true;
     const el = state.entry.el, Z = EL[el].z;
-    view.bohr.setCounts(shellCounts(Z - ION_OF[el]), { now: performance.now() / 1000, t: performance.now() / 1000 });
+    view.bohr.setCounts(ionShells(el, ionOf(el)), { now: performance.now() / 1000, t: performance.now() / 1000 });
   }
   if (st.phaseT !== undefined) state.phaseT = st.phaseT;
   if (st.solve && state.rx && state.entry.rx) { state.rx.coef = state.entry.rx.ans.slice(); clearView(); buildReactionView(); }
@@ -3942,6 +3983,182 @@ const EXAM = {
   'ls-c-organicsep': ['酸の強さの順を使った抽出の問題', '元素分析：塩化カルシウム → ソーダ石灰 の順'],
   'ls-c-polymer2': ['付加重合の高分子と単量体の組み合わせ', 'イオン交換樹脂のはたらき'],
 };
+// ===== 原子と電子：全118元素 =====
+// [記号, 名前, 原子量]（原子量のない元素は、いちばん安定な同位体の質量数）
+const ELEMENTS_ALL = [
+  ['H', '水素', 1.008], ['He', 'ヘリウム', 4.003], ['Li', 'リチウム', 6.94], ['Be', 'ベリリウム', 9.012], ['B', 'ホウ素', 10.81], ['C', '炭素', 12.01], ['N', '窒素', 14.01], ['O', '酸素', 16.00], ['F', 'フッ素', 19.00], ['Ne', 'ネオン', 20.18],
+  ['Na', 'ナトリウム', 22.99], ['Mg', 'マグネシウム', 24.31], ['Al', 'アルミニウム', 26.98], ['Si', 'ケイ素', 28.09], ['P', 'リン', 30.97], ['S', '硫黄', 32.07], ['Cl', '塩素', 35.45], ['Ar', 'アルゴン', 39.95], ['K', 'カリウム', 39.10], ['Ca', 'カルシウム', 40.08],
+  ['Sc', 'スカンジウム', 44.96], ['Ti', 'チタン', 47.87], ['V', 'バナジウム', 50.94], ['Cr', 'クロム', 52.00], ['Mn', 'マンガン', 54.94], ['Fe', '鉄', 55.85], ['Co', 'コバルト', 58.93], ['Ni', 'ニッケル', 58.69], ['Cu', '銅', 63.55], ['Zn', '亜鉛', 65.38],
+  ['Ga', 'ガリウム', 69.72], ['Ge', 'ゲルマニウム', 72.63], ['As', 'ヒ素', 74.92], ['Se', 'セレン', 78.97], ['Br', '臭素', 79.90], ['Kr', 'クリプトン', 83.80], ['Rb', 'ルビジウム', 85.47], ['Sr', 'ストロンチウム', 87.62], ['Y', 'イットリウム', 88.91], ['Zr', 'ジルコニウム', 91.22],
+  ['Nb', 'ニオブ', 92.91], ['Mo', 'モリブデン', 95.95], ['Tc', 'テクネチウム', 98], ['Ru', 'ルテニウム', 101.1], ['Rh', 'ロジウム', 102.9], ['Pd', 'パラジウム', 106.4], ['Ag', '銀', 107.9], ['Cd', 'カドミウム', 112.4], ['In', 'インジウム', 114.8], ['Sn', 'スズ', 118.7],
+  ['Sb', 'アンチモン', 121.8], ['Te', 'テルル', 127.6], ['I', 'ヨウ素', 126.9], ['Xe', 'キセノン', 131.3], ['Cs', 'セシウム', 132.9], ['Ba', 'バリウム', 137.3], ['La', 'ランタン', 138.9], ['Ce', 'セリウム', 140.1], ['Pr', 'プラセオジム', 140.9], ['Nd', 'ネオジム', 144.2],
+  ['Pm', 'プロメチウム', 145], ['Sm', 'サマリウム', 150.4], ['Eu', 'ユウロピウム', 152.0], ['Gd', 'ガドリニウム', 157.3], ['Tb', 'テルビウム', 158.9], ['Dy', 'ジスプロシウム', 162.5], ['Ho', 'ホルミウム', 164.9], ['Er', 'エルビウム', 167.3], ['Tm', 'ツリウム', 168.9], ['Yb', 'イッテルビウム', 173.0],
+  ['Lu', 'ルテチウム', 175.0], ['Hf', 'ハフニウム', 178.5], ['Ta', 'タンタル', 180.9], ['W', 'タングステン', 183.8], ['Re', 'レニウム', 186.2], ['Os', 'オスミウム', 190.2], ['Ir', 'イリジウム', 192.2], ['Pt', '白金', 195.1], ['Au', '金', 197.0], ['Hg', '水銀', 200.6],
+  ['Tl', 'タリウム', 204.4], ['Pb', '鉛', 207.2], ['Bi', 'ビスマス', 209.0], ['Po', 'ポロニウム', 209], ['At', 'アスタチン', 210], ['Rn', 'ラドン', 222], ['Fr', 'フランシウム', 223], ['Ra', 'ラジウム', 226], ['Ac', 'アクチニウム', 227], ['Th', 'トリウム', 232.0],
+  ['Pa', 'プロトアクチニウム', 231.0], ['U', 'ウラン', 238.0], ['Np', 'ネプツニウム', 237], ['Pu', 'プルトニウム', 239], ['Am', 'アメリシウム', 243], ['Cm', 'キュリウム', 247], ['Bk', 'バークリウム', 247], ['Cf', 'カリホルニウム', 252], ['Es', 'アインスタイニウム', 252], ['Fm', 'フェルミウム', 257],
+  ['Md', 'メンデレビウム', 258], ['No', 'ノーベリウム', 259], ['Lr', 'ローレンシウム', 262], ['Rf', 'ラザホージウム', 267], ['Db', 'ドブニウム', 268], ['Sg', 'シーボーギウム', 271], ['Bh', 'ボーリウム', 272], ['Hs', 'ハッシウム', 277], ['Mt', 'マイトネリウム', 276], ['Ds', 'ダームスタチウム', 281],
+  ['Rg', 'レントゲニウム', 280], ['Cn', 'コペルニシウム', 285], ['Nh', 'ニホニウム', 286], ['Fl', 'フレロビウム', 289], ['Mc', 'モスコビウム', 290], ['Lv', 'リバモリウム', 293], ['Ts', 'テネシン', 294], ['Og', 'オガネソン', 294],
+];
+// 周期・族
+function elPeriod(Z) { return Z <= 2 ? 1 : Z <= 10 ? 2 : Z <= 18 ? 3 : Z <= 36 ? 4 : Z <= 54 ? 5 : Z <= 86 ? 6 : 7; }
+function elGroup(Z) {
+  if (Z === 1) return 1; if (Z === 2) return 18;
+  if (Z <= 18) { const p = Z <= 10 ? Z - 2 : Z - 10; return p <= 2 ? p : p + 10; }
+  if (Z <= 54) return Z - (Z <= 36 ? 18 : 36);
+  const st = Z <= 86 ? 54 : 86, k = Z - st;
+  if (k <= 2) return k;
+  if (k <= 17) return 3; // ランタノイド・アクチノイド
+  return k - 14;
+}
+const isLanAct = Z => (Z >= 57 && Z <= 71) || (Z >= 89 && Z <= 103);
+// 電子の入り方（構成原理）。実際の電子配置がちがう元素は直す
+const ORBITALS = [['1s', 2], ['2s', 2], ['2p', 6], ['3s', 2], ['3p', 6], ['4s', 2], ['3d', 10], ['4p', 6], ['5s', 2], ['4d', 10], ['5p', 6], ['6s', 2], ['4f', 14], ['5d', 10], ['6p', 6], ['7s', 2], ['5f', 14], ['6d', 10], ['7p', 6]];
+const CONFIG_FIX = {
+  24: { '3d': 1, '4s': -1 }, 29: { '3d': 1, '4s': -1 }, 41: { '4d': 1, '5s': -1 }, 42: { '4d': 1, '5s': -1 }, 44: { '4d': 1, '5s': -1 }, 45: { '4d': 1, '5s': -1 },
+  46: { '4d': 2, '5s': -2 }, 47: { '4d': 1, '5s': -1 }, 57: { '5d': 1, '4f': -1 }, 58: { '5d': 1, '4f': -1 }, 64: { '5d': 1, '4f': -1 }, 78: { '5d': 1, '6s': -1 },
+  79: { '5d': 1, '6s': -1 }, 89: { '6d': 1, '5f': -1 }, 90: { '6d': 2, '5f': -2 }, 91: { '6d': 1, '5f': -1 }, 92: { '6d': 1, '5f': -1 }, 93: { '6d': 1, '5f': -1 },
+  96: { '6d': 1, '5f': -1 }, 103: { '7p': 1, '6d': -1 },
+};
+function orbitalConfig(Z) {
+  let left = Z; const c = {};
+  ORBITALS.forEach(([o, cap]) => { const n = Math.min(cap, left); if (n > 0) c[o] = n; left -= n; });
+  Object.entries(CONFIG_FIX[Z] || {}).forEach(([o, d]) => { c[o] = (c[o] || 0) + d; if (!c[o]) delete c[o]; });
+  return c;
+}
+function elemShells(Z) {
+  const s = [0, 0, 0, 0, 0, 0, 0];
+  Object.entries(orbitalConfig(Z)).forEach(([o, n]) => { s[+o[0] - 1] += n; });
+  return s;
+}
+// イオン：陽イオンは外側の殻から電子を失い、陰イオンは最外殻に電子を受け取る
+function ionShells(el, ion) {
+  const Z = EL[el].z, s = elemShells(Z);
+  if (!ion) return s;
+  if (ion > 0) { let k = ion; for (let i = 6; i >= 0 && k > 0; i--) { const d = Math.min(s[i], k); s[i] -= d; k -= d; } }
+  else { let i = 6; while (i > 0 && !s[i]) i--; s[i] += -ion; }
+  return s;
+}
+const SUP = { 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹', 10: '¹⁰', 11: '¹¹', 12: '¹²', 13: '¹³', 14: '¹⁴' };
+const NOBLE_CORE = [[86, 'Rn'], [54, 'Xe'], [36, 'Kr'], [18, 'Ar'], [10, 'Ne'], [2, 'He']];
+function orbitalText(Z, short) {
+  const c = orbitalConfig(Z), order = ORBITALS.map(o => o[0]).sort((a, b) => a[0] - b[0] || 'spdf'.indexOf(a[1]) - 'spdf'.indexOf(b[1]));
+  let core = null, coreSet = {};
+  if (short) { const nc = NOBLE_CORE.find(([z]) => z < Z); if (nc) { core = nc[1]; coreSet = orbitalConfig(nc[0]); } }
+  return (core ? `[${core}] ` : '') + order.filter(o => c[o] && !(coreSet[o] && coreSet[o] === c[o])).map(o => o + SUP[c[o]]).join(' ');
+}
+// 分類
+const NONMETAL = new Set(['H', 'He', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Si', 'P', 'S', 'Cl', 'Ar', 'As', 'Se', 'Br', 'Kr', 'Te', 'I', 'Xe', 'At', 'Rn']);
+const EL_CAT = {
+  alkali: ['アルカリ金属', '#d9534f'], alkearth: ['アルカリ土類金属', '#e08a3c'], trans: ['遷移元素', '#b9a14a'], lanthanoid: ['ランタノイド', '#8fae5a'], actinoid: ['アクチノイド', '#5aa08a'],
+  metal: ['典型元素（金属）', '#7d8fa8'], nonmetal: ['典型元素（非金属）', '#4f86c6'], halogen: ['ハロゲン', '#8a6cc4'], noble: ['貴ガス', '#c45aa0'], hydrogen: ['水素', '#6b7280'],
+};
+function elCat(Z, el) {
+  const g = elGroup(Z);
+  if (Z === 1) return 'hydrogen';
+  if (Z >= 57 && Z <= 71) return 'lanthanoid';
+  if (Z >= 89 && Z <= 103) return 'actinoid';
+  if (g === 1) return 'alkali'; if (g === 2) return 'alkearth';
+  if (g >= 3 && g <= 12) return 'trans';
+  if (g === 18) return 'noble'; if (g === 17 && Z <= 85) return 'halogen';
+  return NONMETAL.has(el) ? 'nonmetal' : 'metal';
+}
+const GAS25 = new Set(['H', 'He', 'N', 'O', 'F', 'Ne', 'Cl', 'Ar', 'Kr', 'Xe', 'Rn']);
+const LIQ25 = new Set(['Br', 'Hg']);
+// よく出るイオン（化学基礎の 20 元素は ION_OF。ここはそれ以外）
+const ION_EXT = { Fe: 2, Cu: 2, Zn: 2, Ag: 1, Ba: 2, Sr: 2, Rb: 1, Cs: 1, Br: -1, I: -1, Pb: 2, Sn: 2, Mn: 2, Ni: 2, Co: 2, Cr: 3, Hg: 2, Cd: 2, Se: -2 };
+const ION_EXT_NAME = { Fe: '鉄(II)イオン', Cu: '銅(II)イオン', Zn: '亜鉛イオン', Ag: '銀イオン', Ba: 'バリウムイオン', Sr: 'ストロンチウムイオン', Rb: 'ルビジウムイオン', Cs: 'セシウムイオン', Br: '臭化物イオン', I: 'ヨウ化物イオン', Pb: '鉛(II)イオン', Sn: 'スズ(II)イオン', Mn: 'マンガン(II)イオン', Ni: 'ニッケル(II)イオン', Co: 'コバルト(II)イオン', Cr: 'クロム(III)イオン', Hg: '水銀(II)イオン', Cd: 'カドミウムイオン', Se: 'セレン化物イオン' };
+const ionOf = el => (ION_OF[el] !== undefined ? ION_OF[el] : ION_EXT[el]);
+const ionNameOf = el => ION_NAME[el] || ION_EXT_NAME[el] || '';
+const neutronsOf = el => (NEUTRONS[el] !== undefined ? NEUTRONS[el] : Math.round(EL[el].m) - EL[el].z);
+// 元素ごとのひとこと（よく出る元素）
+const EL_NOTE = {
+  Fe: '鉄。もっとも多く使われている金属。Fe²⁺（淡緑色）と Fe³⁺（黄褐色）のイオンになる。', Cu: '銅。電気をよく通し、電線に使われる。Cu²⁺ の水溶液は青色。', Zn: '亜鉛。トタン（鉄に亜鉛をめっき）や乾電池に使われる。両性金属。',
+  Ag: '銀。電気・熱の伝導性がもっとも大きい金属。Ag⁺ は Cl⁻ と白色沈殿をつくる。', Au: '金。イオン化傾向が小さく、王水にしか溶けない。', Pt: '白金。触媒や電極に使われる。王水にしか溶けない。',
+  Hg: '水銀。常温で液体の唯一の金属。', Br: '臭素。常温で液体の唯一の非金属（赤褐色）。', I: 'ヨウ素。黒紫色の固体で、昇華しやすい。デンプンと反応して青紫色になる。',
+  Cr: 'クロム。ステンレス鋼やめっきに使われる。二クロム酸イオン Cr₂O₇²⁻（赤橙色）は酸化剤。', Mn: 'マンガン。過マンガン酸イオン MnO₄⁻（赤紫色）は強い酸化剤。MnO₂ は触媒。',
+  Ba: 'バリウム。炎色反応は黄緑色。BaSO₄ は白色沈殿で、胃のX線撮影の造影剤。', Sr: 'ストロンチウム。炎色反応は紅色（花火）。', Cs: 'セシウム。イオン化エネルギーがもっとも小さい元素の一つ。',
+  Pb: '鉛。蓄電池の電極に使われる。PbCl₂・PbSO₄ は白色沈殿。', Sn: 'スズ。ブリキ（鉄にスズをめっき）やはんだに使われる。両性金属。', Ni: 'ニッケル。めっきや合金（ステンレス）に使われる。',
+  Ti: 'チタン。軽くて強く、さびにくい。光触媒の酸化チタン(IV) TiO₂。', W: 'タングステン。融点がもっとも高い金属（3422 ℃）。電球のフィラメント。', U: 'ウラン。原子力発電の燃料（²³⁵U）。',
+  Nh: 'ニホニウム。日本の理化学研究所が合成し、命名した元素（2016年）。', Kr: 'クリプトン。貴ガス。電球に封入される。', Xe: 'キセノン。貴ガス。ストロボやヘッドライトに使われる。', Rn: 'ラドン。放射性の貴ガス。',
+  Ge: 'ゲルマニウム。半導体。', Ga: 'ガリウム。融点が約 30 ℃で、手の上でとける。青色LED（GaN）の材料。', Co: 'コバルト。リチウムイオン電池の正極に使われる。', Cd: 'カドミウム。イタイイタイ病の原因となった。',
+};
+// EL にない元素を追加
+ELEMENTS_ALL.forEach(([el, n, m], i) => {
+  const Z = i + 1;
+  if (!EL[el]) EL[el] = { n, z: Z, m, en: 0, ve: 0, c: EL_CAT[elCat(Z, el)][1], rc: 1.4, rv: 2.0 };
+});
+// 原子の一覧（21番以降）
+ELEMENTS_ALL.slice(20).forEach(([el], i) => {
+  LIB.push({ id: 'atom-' + el, cat: 'atom', kind: 'atom', el, name: EL[el].n + 'の原子', f: el, en: '原子番号 ' + (i + 21) });
+});
+function ptableHTML(cur) {
+  const cell = (Z) => {
+    const [el] = ELEMENTS_ALL[Z - 1], g = elGroup(Z), p = elPeriod(Z), la = isLanAct(Z);
+    const row = la ? (Z < 89 ? 9 : 10) : p, col = la ? 3 + (Z - (Z < 89 ? 57 : 89)) : g;
+    return `<button type="button" class="pt c-${elCat(Z, el)}${Z <= 20 ? ' kiso' : ''}" style="grid-column:${col + 1};grid-row:${row + 1}" data-id="atom-${el}" aria-current="${cur('atom-' + el)}" title="${esc(EL[el].n)}（${Z}）"><span class="z">${Z}</span><b>${el}</b></button>`;
+  };
+  let h = '';
+  for (let g = 1; g <= 18; g++) h += `<span class="pt-g" style="grid-column:${g + 1};grid-row:1">${g}</span>`;
+  for (let p = 1; p <= 7; p++) h += `<span class="pt-p" style="grid-column:1;grid-row:${p + 1}">${p}</span>`;
+  h += `<span class="pt-ph" style="grid-column:4;grid-row:7">57–71</span><span class="pt-ph" style="grid-column:4;grid-row:8">89–103</span>`;
+  h += `<span class="pt-p lan" style="grid-column:1 / 4;grid-row:10">ランタノイド</span><span class="pt-p lan" style="grid-column:1 / 4;grid-row:11">アクチノイド</span>`;
+  for (let Z = 1; Z <= 118; Z++) h += cell(Z);
+  return h;
+}
+function ptLegendHTML() {
+  return `<div class="pt-legend">${Object.values(EL_CAT).map(([n, c]) => `<span><i style="background:${c}"></i>${n}</span>`).join('')}<span class="kiso-mark">太わく＝化学基礎の範囲（1〜20）</span></div>`;
+}
+function atomCardHTML(e) {
+  const el = e.el, d = EL[el], Z = d.z, nN = neutronsOf(el);
+  const ion = ionOf(el), ionOn = state.atomIon && ion !== undefined;
+  const electrons = ionOn ? Z - ion : Z;
+  const c = ionOn ? ionShells(el, ion) : elemShells(Z);
+  const g = elGroup(Z), p = elPeriod(Z), cat = elCat(Z, el), la = isLanAct(Z);
+  const outer = (() => { for (let i = 6; i >= 0; i--) if (elemShells(Z)[i]) return elemShells(Z)[i]; return 0; })();
+  const valence = g === 18 ? 0 : (g >= 3 && g <= 12) || la ? null : (g <= 2 ? g : g - 10);
+  const ionSym = ion === undefined ? '' : el + '<sup>' + chargeSup(ion) + '</sup>';
+  const head = ionOn ? `${ionSym}<small>${esc(ionNameOf(el))}</small>` : `${esc(el)}<small>原子番号 ${Z}・${g}族・第${p}周期</small>`;
+  let html = headHTML(e, head) + '<div class="card-body">';
+  html += `<div class="el-tags"><span class="el-cat" style="--c:${EL_CAT[cat][1]}">${EL_CAT[cat][0]}</span><span>${NONMETAL.has(el) ? '非金属元素' : Z > 103 ? '金属元素（性質はまだよくわからない）' : '金属元素'}</span><span>${(g >= 3 && g <= 12) || la ? '遷移元素' : '典型元素'}</span><span>常温：${Z > 100 ? '不明' : GAS25.has(el) ? '気体' : LIQ25.has(el) ? '液体' : '固体'}</span></div>`;
+  html += '<div class="shells">' + c.map((n, i) => {
+    if (!n && c.slice(i).every(x => !x)) return '';
+    const max = 2 * (i + 1) * (i + 1);
+    return `<div class="shell"><span class="sn">${SHELL_NAMES[i]}殻</span><span class="bar"><i style="width:${Math.min(100, n / max * 100).toFixed(0)}%"></i></span><span class="sc"><b>${n}</b> / 最大${max}</span></div>`;
+  }).join('') + '</div>';
+  html += '<dl class="facts">';
+  html += fact('陽子', Z + '<span class="u">個</span>');
+  html += fact('中性子', nN + '<span class="u">個</span>');
+  html += fact('電子', electrons + '<span class="u">個</span>');
+  html += fact('原子量', d.m >= 100 && Number.isInteger(d.m) ? `(${d.m})` : String(d.m));
+  html += fact(valence === null ? '最外殻電子' : '価電子', (valence === null ? outer : valence) + '<span class="u">個</span>');
+  html += fact('電子配置', esc(configText(c) || 'なし'));
+  html += '</dl>';
+  html += `<p class="note orb">くわしい電子配置（化学・大学）：${orbitalText(Z, Z > 10)}${CONFIG_FIX[Z] ? '　※ 例外的な電子配置' : ''}</p>`;
+  if (ion !== undefined) html += `<button type="button" class="pbtn" data-act="ion">${ionOn ? '原子にもどす' : (ion > 0 ? `電子を${ion}個失って陽イオン ${ionSym} にする` : `電子を${-ion}個受け取って陰イオン ${ionSym} にする`)}</button>`;
+  let point;
+  if (Z <= 20 && !ionOn) {
+    const v = valenceElectrons(Z);
+    if (v === 0) point = `最外殻の電子が${Z === 2 ? '2個（K殻がいっぱい）' : '8個'}で安定しているので、ほかの原子とほとんど結びつかない。貴ガスの価電子は0とする。`;
+    else if (ion > 0 && el !== 'H') point = `価電子は${v}個。この電子を失って陽イオン ${ionSym} になりやすい。`;
+    else if (ion < 0) point = `価電子は${v}個。あと${-ion}個の電子を受け取ると最外殻が8個になるので、陰イオン ${ionSym} になりやすい。`;
+    else point = `価電子は${v}個。` + (HANDS[el] ? `ほかの原子と共有結合をつくる（価標${HANDS[el]}本）。` : '');
+  } else if (ionOn) {
+    const nob = { '2': 'He', '2,8': 'Ne', '2,8,8': 'Ar', '2,8,18,8': 'Kr', '2,8,18,18,8': 'Xe' }[c.filter(Boolean).join(',')];
+    point = (ion > 0 ? `外側の殻から電子を${ion}個失って ${ionSym} になる。` : `電子を${-ion}個受け取って ${ionSym} になる。`) + (nob ? `電子配置が貴ガスの ${nob} と同じになる。` : '遷移元素などのイオンは、貴ガスと同じ電子配置になるとはかぎらない。');
+  } else if (cat === 'trans' || la) point = `遷移元素。最外殻の電子は${outer}個（多くが1〜2個）で、内側の殻に電子が入っていく。となりどうしの元素の性質がにていて、色のついたイオンや化合物をつくるものが多い。すべて金属元素。`;
+  else if (cat === 'noble') point = '貴ガス。最外殻の電子配置が安定していて、ほとんど化合物をつくらない。価電子は 0 とする。';
+  else if (cat === 'alkali') point = '価電子1個。電子を1個失って1価の陽イオンになりやすい。単体は水と激しく反応する。';
+  else if (cat === 'alkearth') point = '価電子2個。電子を2個失って2価の陽イオンになりやすい。';
+  else if (cat === 'halogen') point = '価電子7個。電子を1個受け取って1価の陰イオンになりやすい。単体は二原子分子。';
+  else point = `典型元素。価電子は${valence}個。同じ族の元素と性質がにている。`;
+  if (EL_NOTE[el]) point += '<br>' + esc(EL_NOTE[el]);
+  html += `<div class="point"><h3>授業のポイント</h3><p>${point}</p></div>`;
+  if (state.atomView === 'cloud') html += `<p class="note"><b>電子雲：</b>実際の電子は、原子核のまわりに雲のように広がって存在している。それでも、内側から K・L・M…の「層」に分かれている。</p>`;
+  html += `<p class="note">電子殻は内側から K・L・M・N・O・P・Q殻。入ることのできる電子の数は 2n² 個（2・8・18・32…）。${Z >= 19 ? 'K（19番）からは、M殻に8個入ったところで先にN殻に電子が入り、そのあとM殻が18個までうまっていく（遷移元素）。' : ''}</p>`;
+  const used = LIB.filter(x => x.kind === 'mol' && x.cat !== 'bond' && x.counts && x.counts[el]).slice(0, 8);
+  if (used.length) html += `<h3 class="sec-h">${esc(d.n)}をふくむ物質</h3><div class="chips">${used.map(x => `<button type="button" data-go="${x.id}">${esc(x.name)}</button>`).join('')}</div>`;
+  return html + '</div>';
+}
 // ===== 物質の分離・元素の検出（粒子が動くようすを見る） =====
 const SEP_LIST = [
   { id: 'sep-mix', name: '混合物（ワイン）', en: '水 ＋ エタノール', scene: 'mix',
@@ -5485,14 +5702,14 @@ function updatePositions(t) {
 }
 
 // ===== 原子（ボーア模型：原子核と電子殻） =====
-const SHELL_R = [0.85, 1.45, 2.05, 2.65];
+const SHELL_R = [0.85, 1.45, 2.05, 2.65, 3.25, 3.85, 4.45];
 function makeBohr(el, opts) {
   const o = Object.assign({ scale: 1, slots: null }, opts || {});
-  const s = o.scale, Z = EL[el].z, nN = NEUTRONS[el] || 0;
+  const s = o.scale, Z = EL[el].z, nN = neutronsOf(el);
   const grp = new THREE.Group();
   // 原子核：陽子（赤）と中性子（灰）
   const nuc = new THREE.Group();
-  const total = Z + nN, rr = 0.085 * s * Math.max(1, Math.cbrt(Z) * 0.8);
+  const total = Z + nN, rr = Math.min(0.085 * s * Math.max(1, Math.cbrt(Z) * 0.8), 0.6 * s / (Math.cbrt(total) * 0.95)); // 大きな原子核でもK殻の内側におさめる
   const Rn = rr * Math.cbrt(total) * 0.95;
   const r2 = rng(Z * 97 + 3);
   const kinds = [];
@@ -5514,7 +5731,7 @@ function makeBohr(el, opts) {
     grp.add(ring);
     return { r, ring, pool: [], speed: 1.1 / (i + 1), ph: i * 0.7 };
   });
-  const bohr = { el, grp, shells, counts: shellCounts(Z), slots: o.slots, s, opacity: [1, 1, 1, 1], trans: null };
+  const bohr = { el, grp, shells, counts: elemShells(Z), slots: o.slots, s, opacity: [1, 1, 1, 1, 1, 1, 1], trans: null };
   bohr.electronPos = (i, k, n, t) => {
     const sh = shells[i], ang = sh.ph + t * sh.speed + 2 * Math.PI * k / Math.max(n, 1);
     return new THREE.Vector3(Math.cos(ang) * sh.r, Math.sin(ang) * sh.r, 0);
@@ -5579,10 +5796,12 @@ function buildAtomView() {
   const bohr = makeBohr(e.el);
   R.group.add(bohr.grp);
   view.bohr = bohr;
-  const ion = ION_OF[e.el];
-  if (state.atomIon && ion !== undefined) bohr.setCounts(shellCounts(Z - ion));
+  const ion = ionOf(e.el);
+  if (state.atomIon && ion !== undefined) bohr.setCounts(ionShells(e.el, ion));
   bohr.shells.forEach((sh, i) => {
-    const L = addLabel('lbl-shell', '', () => new THREE.Vector3(sh.r * 0.72, sh.r * 0.72, 0));
+    // 殻の名前は少しずつ角度をずらして、重ならないようにする
+    const th = Math.PI / 4 - (i - 1) * 0.3;
+    const L = addLabel('lbl-shell', '', () => new THREE.Vector3(sh.r * Math.cos(th), sh.r * Math.sin(th), 0));
     L.shell = i;
   });
   const qq = state.quizActive && state.quiz ? state.quiz.qs[state.quiz.i] : null;
@@ -6026,13 +6245,11 @@ function periodOf(Z) { return Z <= 2 ? 1 : Z <= 10 ? 2 : Z <= 18 ? 3 : 4; }
 function renderGrid() {
   const grid = $('grid');
   const cur = id => state.entry && state.entry.id === id;
+  document.body.classList.toggle('sec-atom', state.sec === 'atom');
   if (state.sec === 'atom') {
     grid.className = 'grid ptable';
-    grid.innerHTML = LIB.filter(e => e.kind === 'atom').map(e => {
-      const Z = EL[e.el].z;
-      return `<button type="button" class="pt" style="grid-column:${PT_COL[groupOf(Z)]};grid-row:${periodOf(Z)}" data-id="${e.id}" aria-current="${cur(e.id)}" title="${esc(EL[e.el].n)}">
-        <span class="z">${Z}</span><b>${esc(e.el)}</b></button>`;
-    }).join('') + '<p class="pt-note">元素をえらぶと、電子殻と電子のようすが見られます。</p>';
+    grid.innerHTML = ptableHTML(cur) + ptLegendHTML();
+    const c = grid.querySelector('[aria-current="true"]'); if (c && c.scrollIntoView) c.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     return;
   }
   grid.className = 'grid';
@@ -6266,7 +6483,7 @@ function selectedAtomHTML(i) {
   if (LIB.some(x => x.id === 'atom-' + a.el)) html += `<button type="button" class="pbtn ghost" data-go="atom-${a.el}">${esc(d.n)}の電子殻を見る</button>`;
   return html + '</div>';
 }
-function atomCardHTML(e) {
+function atomCardHTML20(e) {
   const el = e.el, d = EL[el], Z = d.z, nN = NEUTRONS[el];
   const ion = ION_OF[el];
   const ionOn = state.atomIon && ion !== undefined;
@@ -6668,7 +6885,7 @@ function bindUI() {
     } else if (a === 'ion') {
       state.atomIon = !state.atomIon;
       const el = state.entry.el, Z = EL[el].z;
-      const to = shellCounts(state.atomIon ? Z - ION_OF[el] : Z);
+      const to = state.atomIon ? ionShells(el, ionOf(el)) : elemShells(Z);
       const now = performance.now() / 1000;
       view.bohr.setCounts(to, { now, t: now });
       renderCard();
