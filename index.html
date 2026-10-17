@@ -442,7 +442,7 @@ details.more p { margin: 4px 0 0; line-height: 1.65; }
 .ls-gh:first-child { margin-top: 0; }
 .ls-part { font-family: var(--font-display); font-size: 15px; margin: 14px 0 2px; padding-top: 8px; border-top: 1px solid var(--line); }
 .ls-chap { font-size: 12.5px; color: var(--muted); margin: 8px 0 4px; font-weight: 700; }
-.ls-no { display: inline-block; min-width: 2.6em; font-family: var(--font-data); color: var(--accent); }
+.ls-no { display: inline-block; min-width: 2.6em; margin-right: 6px; font-family: var(--font-data); color: var(--accent); }
 .ls-ok { font-style: normal; color: var(--ok, #1f8a5b); }
 .ls-lab { display: inline-flex; text-decoration: none; }
 .ls-q { font-size: 21px; font-weight: 700; line-height: 1.6; margin: 6px 0 12px; text-wrap: pretty; }
@@ -458,6 +458,10 @@ details.more p { margin: 4px 0 0; line-height: 1.65; }
 .ls-score { display: flex; align-items: baseline; gap: 6px; font-size: 13px; color: var(--muted); }
 .ls-score b { font-size: 26px; font-family: var(--font-data); color: #b7791f; }
 .ls-row { display: flex; gap: 6px; }
+.ls-course { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: var(--chip, #e8edf2); border-radius: 10px; padding: 3px; margin-bottom: 8px; }
+.ls-course button { border: 0; background: transparent; border-radius: 8px; padding: 6px; font-weight: 700; font-size: 15px; color: var(--muted); }
+.ls-course button small { margin-left: 6px; font-size: 11px; font-family: var(--font-data); }
+.ls-course button[aria-selected="true"] { background: var(--panel); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .ls-row .qset { flex: 1; }
 .qtest { flex: none; border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 0 10px; font-size: 12.5px; font-weight: 700; color: var(--accent); }
 .qtest:hover { border-color: var(--accent); }
@@ -2013,6 +2017,18 @@ REACTIONS.push(
     point: 'H₂SO₄ の H⁺ 2個と、NaOH の OH⁻ 2個が反応して、H₂O が2個できる。' },
 );
 REACTIONS.sort((a, b) => a.level - b.level);
+// 化学（有機・高分子）の反応
+REACTIONS.push(
+  { id: 'rx-ester', name: 'エステル化（酢酸エチルの合成）', left: [['CH3COOH', 'acetic'], ['C2H5OH', 'ethanol']], right: [['CH3COOC2H5', 'ethylacetate'], ['H2O', 'water']], ans: [1, 1, 1, 1], level: 2,
+    desc: '酢酸とエタノールに濃硫酸を少し加えて温めると、果物のようなにおいの酢酸エチル（エステル）と水ができる。',
+    point: 'カルボン酸の –OH とアルコールの –H が水としてとれて結びつく（縮合）。濃硫酸は触媒。' },
+  { id: 'rx-addh2', name: 'エチレンへの水素の付加', left: [['C2H4', 'ethylene'], ['H2', 'hydrogen']], right: [['C2H6', 'ethane']], ans: [1, 1, 1], level: 1,
+    desc: 'エチレンに白金やニッケルを触媒にして水素を反応させると、二重結合が開いて H がつき、エタンになる。',
+    point: '二重結合（不飽和結合）の1本が開いて、ほかの原子がつく反応を付加反応という。' },
+  { id: 'rx-ferment', name: 'アルコール発酵', left: [['C6H12O6', 'glucose']], right: [['C2H5OH', 'ethanol'], ['CO2', 'co2']], ans: [1, 2, 2], level: 2,
+    desc: '酵母のはたらきで、グルコース（ブドウ糖）がエタノールと二酸化炭素に分かれる。酒やパンづくりに利用される。',
+    point: 'C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂。パンがふくらむのは、発生した CO₂ のため。' },
+);
 // 炭素の燃焼だけは O₂ を左に足す（表記を自然にするため）
 REACTIONS.forEach(r => {
   if (r.lead) { r.left = r.left.concat(r.lead); delete r.lead; }
@@ -2955,7 +2971,7 @@ let lessonDone = new Set();
 try { lessonDone = new Set(JSON.parse(localStorage.getItem(LESSON_DONE_KEY) || '[]')); } catch (e) { /* 保存できなくても動く */ }
 function lessonMarkDone(id) { lessonDone.add(id); try { localStorage.setItem(LESSON_DONE_KEY, JSON.stringify([...lessonDone])); } catch (e) { /* 無視 */ } }
 function labURL(id) { const a = document.querySelector('.labnav'); return (a ? a.href.split('#')[0] : 'lab.html') + '#' + id; }
-function lessonStart(l) { state.lesson = { l, i: 0 }; document.body.classList.add('present'); lessonGo(); }
+function lessonStart(l) { state.lessonCourse = l.course; state.lesson = { l, i: 0 }; document.body.classList.add('present'); lessonGo(); }
 function lessonExit() {
   if (!state.lesson) return;
   state.lesson = null;
@@ -3177,6 +3193,228 @@ function lsQuizHTML() {
       <div class="ls-nav"><button type="button" class="pbtn big" data-act="lsqnext">${quiz.i === n - 1 ? '結果を見る' : '次の問題 →'}</button></div>` : ''}
     <div class="ls-dots">${quiz.qs.map((_, k) => `<i class="${k === quiz.i ? 'on' : k < quiz.i ? 'done' : ''}"></i>`).join('')}<span>${quiz.i + 1} / ${n}　正解 ${quiz.score}</span></div></div>`;
 }
+// ===== 授業モード：化学（学習指導要領「化学」の順） =====
+LESSON_PARTS[0].name = '化学基礎　第1編　物質の構成';
+LESSON_PARTS[1].name = '化学基礎　第2編　物質の変化とその利用';
+LESSON_PARTS.push(
+  { name: '化学　第1編　物質の状態と平衡', chaps: ['第1章　物質の状態とその変化', '第2章　溶液と平衡'] },
+  { name: '化学　第2編　物質の変化と平衡', chaps: ['第1章　化学反応とエネルギー', '第2章　化学反応の速さと化学平衡'] },
+  { name: '化学　第3編　無機物質', chaps: ['第1章　非金属元素と金属元素'] },
+  { name: '化学　第4編　有機化合物と高分子化合物', chaps: ['第1章　有機化合物', '第2章　高分子化合物'] },
+);
+const LESSONS_CHEM = [
+  { id: 'ls-c-vapor', no: '化1-1', part: 2, chap: 0, name: '状態変化と蒸気圧', steps: [
+    { go: 'ch-vapor', title: '気液平衡と蒸気圧', text: '密閉した容器では、蒸発する分子と凝縮する分子の数がやがて等しくなる（気液平衡）。このときの気体の圧力が蒸気圧。温度が高いほど大きい。' },
+    { go: 'ph-water', title: '沸騰', text: '液体の蒸気圧が外の圧力（大気圧 1.013×10⁵ Pa）と等しくなると、液体の内部からも気体が発生する（沸騰）。山の上では気圧が低いので、水は 100 ℃より低い温度で沸騰する。', phaseT: 100 },
+    { go: 'ph-ethanol', title: '分子間力と沸点', text: '分子間力が弱い物質ほど蒸発しやすく、蒸気圧が大きい。そのため沸点が低い。エタノールの沸点は 78 ℃。', phaseT: 78 },
+    { go: 'ph-co2', title: '状態図', text: '温度と圧力によって、物質がどの状態になるかを表した図を状態図という。CO₂ は 1.013×10⁵ Pa では液体にならず、−78 ℃で昇華する。', phaseT: -100 },
+  ] },
+  { id: 'ls-c-gas', no: '化1-2', part: 2, chap: 0, name: '気体の法則', steps: [
+    { go: 'ch-boyle', title: 'ボイルの法則', text: '温度が一定のとき、気体の体積は圧力に反比例する（PV ＝ 一定）。体積を半分にすると、壁にぶつかる回数が2倍になり、圧力が2倍になる。' },
+    { go: 'ch-charles', title: 'シャルルの法則', text: '圧力が一定のとき、気体の体積は絶対温度に比例する（V/T ＝ 一定）。T〔K〕＝ t〔℃〕＋ 273。' },
+    { go: 'mole-co2', title: '気体の状態方程式', text: 'PV ＝ nRT（R ＝ 8.31×10³ Pa·L/(K·mol)）。0 ℃・1.013×10⁵ Pa で 1 mol の気体は 22.4 L。' },
+    { go: 'mole-n2', title: '分圧の法則', text: '混合気体の全圧は、各気体の分圧の和（ドルトンの分圧の法則）。空気は N₂：O₂ ≒ 4：1 なので、N₂ の分圧は全圧の約 4/5。' },
+  ] },
+  { id: 'ls-c-lattice', no: '化1-3', part: 2, chap: 0, name: '固体の構造（結晶格子）', steps: [
+    { go: 'copper', title: '面心立方格子', text: '銅・アルミニウム・銀など。立方体の頂点と面の中心に原子がある。単位格子の中の原子は 4 個、配位数（となりの原子の数）は 12。', cells: 1 },
+    { go: 'iron', title: '体心立方格子', text: '鉄・ナトリウム・カリウムなど。立方体の頂点と中心に原子がある。単位格子の中の原子は 2 個、配位数は 8。', cells: 1 },
+    { go: 'nacl', title: 'イオン結晶（NaCl 型）', text: '単位格子の中に Na⁺ が 4 個、Cl⁻ が 4 個。1つのイオンのまわりに、反対の電荷のイオンが 6 個ある。', cells: 1 },
+    { go: 'diamond', title: 'ダイヤモンド型', text: 'C 原子が正四面体の向きに4本の共有結合でつながる。単位格子の中の原子は 8 個。' },
+  ] },
+  { id: 'ls-c-solution', no: '化2-1', part: 2, chap: 1, name: '溶解と溶解度', steps: [
+    { go: 'ch-dissolve', title: '溶解と水和', text: '極性のある水分子がイオンを取り囲み（水和）、イオンが結晶からはなれて溶けていく。' },
+    { go: 'sep-recryst', title: '固体の溶解度', text: '固体の溶解度は、ふつう温度が高いほど大きい。溶解度の差を利用して、再結晶で純粋な結晶を取り出せる。', lab: 'p-recryst' },
+    { go: 'co2', title: '気体の溶解度とヘンリーの法則', text: '気体の溶解度は、温度が高いほど小さい。また、温度が一定なら、溶ける気体の物質量は圧力に比例する（ヘンリーの法則）。炭酸飲料のふたを開けると泡が出るのはこのため。' },
+    { go: 'cmp-water-methanol', title: '溶けやすさと極性', text: '極性の似たものどうしはよく溶け合う。メタノールは –OH をもつので水とよくまざる。ヘキサンのような無極性の物質は水に溶けにくい。' },
+  ] },
+  { id: 'ls-c-colligative', no: '化2-2', part: 2, chap: 1, name: '希薄溶液の性質とコロイド', steps: [
+    { go: 'ph-water', title: '沸点上昇', text: '不揮発性の物質を溶かした溶液は、純粋な溶媒より蒸気圧が低くなり、沸点が高くなる。上がる温度は質量モル濃度に比例する（Δt ＝ K_b·m）。', phaseT: 100 },
+    { go: 'ph-water', title: '凝固点降下', text: '溶液の凝固点は、純粋な溶媒より低くなる（Δt ＝ K_f·m）。冬に道路へ塩化カルシウムをまくのは、水がこおりにくくなるから。', phaseT: -5 },
+    { go: 'ch-osmosis', title: '浸透圧', text: '半透膜を通って、水が溶液の側へ移動する（浸透）。それを止めるのに必要な圧力が浸透圧。Π ＝ cRT（ファントホッフの法則）。' },
+    { go: 'ch-colloid', title: 'コロイド', text: '直径 10⁻⁹〜10⁻⁷ m くらいの粒子が分散したものがコロイド。光の通り道が見える（チンダル現象）、粒子が不規則に動く（ブラウン運動）などの性質がある。' },
+  ] },
+  { id: 'ls-c-enthalpy', no: '化3-1', part: 3, chap: 0, name: '化学反応と熱（エンタルピー）', steps: [
+    { go: 'rx-ch4', title: '発熱反応', text: 'メタンが燃焼すると熱が出る。燃焼エンタルピーは −891 kJ/mol。熱が出る反応では ΔH が負になる。', solve: true },
+    { go: 'rx-h2o', title: '生成エンタルピー', text: '単体から化合物 1 mol ができるときの反応エンタルピー。H₂O（液体）の生成エンタルピーは −286 kJ/mol。', solve: true },
+    { go: 'rx-co', title: 'へスの法則', text: '反応の最初と最後の状態が同じなら、途中の経路に関係なく、反応エンタルピーの総和は同じ。C → CO → CO₂ と、C → CO₂ で出る熱は等しい。', solve: true },
+    { go: 'covalent', title: '結合エネルギー', text: '気体の分子の結合 1 mol を切るのに必要なエネルギー。H–H は 436 kJ/mol。結合を切るときは吸熱、できるときは発熱。' },
+  ] },
+  { id: 'ls-c-cell', no: '化3-2', part: 3, chap: 0, name: '電池と電気分解', steps: [
+    { go: 'ch-daniell', title: 'ダニエル電池', text: 'イオン化傾向の大きい亜鉛が負極、銅が正極。電子は導線を通って亜鉛板から銅板へ流れる。化学エネルギーを電気エネルギーに変える。', lab: 'p-ionize' },
+    { go: 'rx-h2o', title: '燃料電池', text: '水素と酸素が反応して水ができるときの化学エネルギーを、直接電気エネルギーとして取り出す。出るのは水だけ。', solve: true },
+    { go: 'rx-elec', title: '電気分解', text: '電気エネルギーで、自然には起こらない酸化還元反応を起こす。陰極で還元（H₂）、陽極で酸化（O₂）。変化する物質の量は流れた電気量に比例する（ファラデーの法則）。', solve: true, lab: 'p-elec' },
+    { go: 'copper', title: '銅の電解精錬', text: '粗銅を陽極、純銅を陰極にして、硫酸銅(II)水溶液を電気分解すると、陰極に純粋な銅が出てくる。' },
+  ] },
+  { id: 'ls-c-rate', no: '化4-1', part: 3, chap: 1, name: '化学反応の速さ', steps: [
+    { go: 'ch-rate', title: '温度と反応の速さ', text: '分子は衝突して反応する。温度が高いと、活性化エネルギーをこえる勢いのある衝突が増えるので、反応が速くなる。' },
+    { go: 'rx-zn', title: '濃度と表面積', text: '濃い塩酸ほど亜鉛と速く反応する（濃度が大きいと衝突の回数が増える）。固体を粉にして表面積を大きくしても速くなる。', solve: true },
+    { go: 'rx-h2o2', title: '触媒', text: '過酸化水素の分解に酸化マンガン(IV) MnO₂ を加えると、反応が速くなる。触媒は活性化エネルギーを小さくし、反応の前後で変化しない。', solve: true },
+  ] },
+  { id: 'ls-c-equil', no: '化4-2', part: 3, chap: 1, name: '化学平衡と平衡の移動', steps: [
+    { go: 'ch-equil', title: '化学平衡', text: '正反応と逆反応の速さが等しくなると、見かけ上変化しなくなる（化学平衡）。加熱すると、吸熱反応の向きに平衡が移動する（ルシャトリエの原理）。' },
+    { go: 'rx-nh3', title: '圧力と平衡', text: 'N₂ + 3H₂ ⇄ 2NH₃（発熱反応）。圧力を高くすると、分子の数が減る向き（NH₃ ができる向き）に平衡が移動する。', solve: true },
+    { go: 'rx-nh3', title: 'ハーバー・ボッシュ法', text: '低温ほど NH₃ が多くなるが、反応がおそい。そこで実際は約 500 ℃・高圧で、鉄を主成分とする触媒を使ってアンモニアをつくる。', solve: true },
+    { go: 'ammonia', title: '平衡定数', text: 'K ＝ [NH₃]² ÷（[N₂][H₂]³）。温度が一定なら、K は一定の値になる（化学平衡の法則）。' },
+  ] },
+  { id: 'ls-c-ion', no: '化4-3', part: 3, chap: 1, name: '電離平衡と緩衝液', steps: [
+    { go: 'acetic', title: '弱酸の電離平衡', text: 'CH₃COOH ⇄ CH₃COO⁻ + H⁺。弱酸は一部しか電離しない。電離定数 Ka ＝ [CH₃COO⁻][H⁺] ÷ [CH₃COOH] は、温度が一定なら一定。' },
+    { go: 'cmp-nh3-nh4', title: '弱塩基の電離平衡', text: 'NH₃ + H₂O ⇄ NH₄⁺ + OH⁻。アンモニアは弱塩基。' },
+    { go: 'ph-scale', title: '緩衝液', text: '酢酸と酢酸ナトリウムの混合水溶液（pH 約 4.7）は、少量の酸や塩基を加えても pH がほとんど変わらない。血液も緩衝作用で pH 約 7.4 に保たれている。', ph: 4.7, ind: 'univ' },
+    { go: 'ph-scale', title: '塩の加水分解', text: '酢酸ナトリウム CH₃COONa の水溶液は弱い塩基性。CH₃COO⁻ が水から H⁺ を受け取り、OH⁻ ができるため。', ph: 8.9, ind: 'pp' },
+  ] },
+  { id: 'ls-c-nonmetal', no: '化5-1', part: 4, chap: 0, name: '非金属元素', steps: [
+    { go: 'chlorine', title: 'ハロゲン（17族）', text: '単体は二原子分子。酸化力は F₂ ＞ Cl₂ ＞ Br₂ ＞ I₂。塩素は水道水の殺菌に使われる。' },
+    { go: 'ammonia', title: 'アンモニア', text: 'ハーバー・ボッシュ法でつくる。水によく溶け、弱い塩基性を示す。刺激臭のある気体。' },
+    { go: 'hno3', title: '硝酸', text: 'オストワルト法（NH₃ → NO → NO₂ → HNO₃）でつくる。強い酸で、酸化力が強い。' },
+    { go: 'h2so4', title: '硫酸', text: '接触法（S → SO₂ → SO₃ → H₂SO₄）でつくる。濃硫酸には脱水作用・吸湿性がある。' },
+    { go: 'so2', title: '二酸化硫黄', text: '無色で刺激臭のある有毒な気体。ふつうは還元剤としてはたらき、漂白に使われる。酸性雨の原因の1つ。' },
+  ] },
+  { id: 'ls-c-metal', no: '化5-2', part: 4, chap: 0, name: '金属元素（典型・遷移）', steps: [
+    { go: 'naoh', title: 'アルカリ金属（1族）', text: 'Na・K など。単体は水と激しく反応して水素を出し、強塩基の水酸化物になる（2Na + 2H₂O → 2NaOH + H₂）。石油の中に保存する。' },
+    { go: 'rx-nahco3', title: 'アンモニアソーダ法', text: '炭酸ナトリウムを工業的につくる方法（ソルベー法）。最後に炭酸水素ナトリウムを加熱して Na₂CO₃ にする。', solve: true },
+    { go: 'rx-caco3', title: 'カルシウムの化合物（2族）', text: '石灰石 CaCO₃ は塩酸と反応して CO₂ を出す。鍾乳洞は、CaCO₃ が CO₂ をふくむ水に溶けたり、またもどったりしてできる。', solve: true },
+    { go: 'iron', title: '遷移元素', text: '周期表の3〜12族の元素。最外殻電子が1〜2個のものが多く、となりあう元素の性質がにている。色のついたイオンや化合物が多い。' },
+    { go: 'copper', title: '錯イオン', text: 'Cu²⁺ をふくむ水溶液にアンモニア水を十分に加えると、深青色の [Cu(NH₃)₄]²⁺（テトラアンミン銅(II)イオン）ができる。' },
+  ] },
+  { id: 'ls-c-hc', no: '化6-1', part: 5, chap: 0, name: '炭化水素', steps: [
+    { go: 'methane', title: 'アルカン', text: '単結合だけの鎖式炭化水素。一般式 CₙH₂ₙ₊₂。光を当てると、塩素と置換反応をする。', show: { labels: true } },
+    { go: 'cmp-ethane-ethylene', title: 'アルケン', text: 'C=C 二重結合を1つもつ。一般式 CₙH₂ₙ。二重結合のまわりは回転できず、平面の形になる。' },
+    { go: 'rx-addh2', title: '付加反応', text: '二重結合の1本が開いて、ほかの原子がつく。エチレン＋水素 → エタン。臭素水の赤褐色が消えることで、不飽和結合があるとわかる。', solve: true },
+    { go: 'acetylene', title: 'アルキン', text: 'C≡C 三重結合を1つもつ。一般式 CₙH₂ₙ₋₂。アセチレンは直線形。' },
+    { go: 'cmp-butane-iso', title: '構造異性体', text: '分子式が同じで、構造がちがう化合物。ブタンと 2-メチルプロパンはどちらも C₄H₁₀ で、沸点などがちがう。' },
+  ] },
+  { id: 'ls-c-oxy', no: '化6-2', part: 5, chap: 0, name: '酸素をふくむ有機化合物', steps: [
+    { go: 'ethanol', title: 'アルコール', text: 'ヒドロキシ基 –OH をもつ。エタノールは水によく溶け、ナトリウムと反応して水素を出す。' },
+    { go: 'cmp-etoh-dme', title: 'エーテル', text: 'エーテル結合 –O– をもつ。ジメチルエーテルはエタノールと分子式が同じ C₂H₆O（構造異性体）だが、–OH がないので沸点が低い。' },
+    { go: 'formaldehyde', title: 'アルデヒド', text: 'ホルミル基 –CHO をもつ。還元性があり、銀鏡反応を示し、フェーリング液を還元する。' },
+    { go: 'acetone', title: 'ケトン', text: 'カルボニル基 C=O の両側に炭素がつく。アセトンは溶媒としてよく使われる。還元性はない。' },
+    { go: 'acetic', title: 'カルボン酸', text: 'カルボキシ基 –COOH をもつ。酢酸は弱酸で、食酢の成分。' },
+    { go: 'rx-ester', title: 'エステル', text: 'カルボン酸とアルコールから、水がとれてできる。酢酸エチルなどは果物の香りの成分。', solve: true },
+  ] },
+  { id: 'ls-c-arom', no: '化6-3', part: 5, chap: 0, name: '芳香族化合物', steps: [
+    { go: 'benzene', title: 'ベンゼン', text: 'C₆H₆。正六角形の平面分子。単結合と二重結合の区別がない、とても安定な結合（ベンゼン環）。' },
+    { go: 'cmp-benz-cyhex', title: 'ベンゼンの反応', text: 'ベンゼンは付加反応より置換反応（ニトロ化・スルホン化など）をしやすい。シクロヘキサンは単結合だけで、立体的な形。' },
+    { go: 'naphthalene', title: 'ナフタレン', text: 'ベンゼン環が2つつながった形。防虫剤に使われ、昇華しやすい。' },
+    { go: 'aspirin', title: '医薬品', text: 'アセチルサリチル酸（アスピリン）は、サリチル酸からつくる解熱鎮痛剤。ベンゼン環に –COOH とエステルの部分がある。' },
+  ] },
+  { id: 'ls-c-poly', no: '化7-1', part: 5, chap: 1, name: '合成高分子', steps: [
+    { go: 'ethylene', title: '単量体', text: '重合のもとになる小さな分子を単量体（モノマー）という。エチレンには二重結合がある。' },
+    { go: 'ch-polymer', title: '付加重合', text: '二重結合が開いて、つぎつぎにつながる。エチレン → ポリエチレン。袋やボトルのふたなどに使われる。' },
+    { go: 'rx-ester', title: '縮合重合', text: '水などの小さな分子がとれながらつながる。ナイロン66（アミド結合）や PET（ペットボトル、エステル結合）。', solve: true },
+  ] },
+  { id: 'ls-c-natural', no: '化7-2', part: 5, chap: 1, name: '天然高分子（糖・タンパク質）', steps: [
+    { go: 'glucose', title: '単糖', text: 'グルコース（ブドウ糖）C₆H₁₂O₆。水溶液は還元性を示す。' },
+    { go: 'cmp-glucose-sucrose', title: '二糖と多糖', text: 'スクロース（ショ糖）はグルコースとフルクトースが結びついた二糖で、還元性を示さない。デンプンやセルロースは、グルコースがたくさんつながった多糖。' },
+    { go: 'rx-ferment', title: 'アルコール発酵', text: '酵母のはたらきで、グルコースがエタノールと二酸化炭素に分かれる。C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂。', solve: true },
+    { go: 'glycine', title: 'アミノ酸とタンパク質', text: 'アミノ酸は –NH₂ と –COOH をもつ。グリシンはいちばん簡単なアミノ酸。アミノ酸どうしがペプチド結合でたくさんつながるとタンパク質になる。' },
+  ] },
+];
+LESSONS_CHEM.forEach(l => { LESSONS.push(l); LIB.push({ id: l.id, cat: 'lesson', kind: 'lesson', name: l.no + '　' + l.name, f: `${l.steps.length}ステップ`, lesson: l }); });
+LESSONS.forEach(l => { l.course = l.part < 2 ? 'kiso' : 'kagaku'; });
+Object.assign(LESSON_QUIZ, {
+  'ls-c-vapor': [
+    ['気液平衡のときの気体の圧力を何という？', '蒸気圧（飽和蒸気圧）', ['分圧', '浸透圧', '大気圧'], '温度が高いほど大きくなる。'],
+    ['液体が沸騰するのはどんなとき？', '蒸気圧が外の圧力と等しくなったとき', ['温度が必ず 100 ℃になったとき', '液体がすべて蒸発したとき', '蒸気圧が 0 になったとき'], '外の圧力が低いと、低い温度で沸騰する。'],
+    ['高い山の上で、水が沸騰する温度は？', '100 ℃より低い', ['100 ℃より高い', 'ちょうど 100 ℃', '0 ℃'], '山の上は気圧が低いので、蒸気圧が低い温度で気圧に届く。'],
+    ['分子間力が弱い物質の性質として正しいものは？', '蒸気圧が大きく、沸点が低い', ['蒸気圧が小さく、沸点が高い', '融点が高い', '蒸発しにくい'], '分子どうしの引き合いが弱いので、気体になりやすい。'],
+  ],
+  'ls-c-gas': [
+    ['温度一定で、気体の圧力を2倍にすると体積は？', '1/2 倍', ['2 倍', '4 倍', '変わらない'], 'ボイルの法則 PV ＝ 一定。'],
+    ['圧力一定で、27 ℃の気体を 327 ℃にすると体積は？', '2 倍', ['約 12 倍', '1/2 倍', '変わらない'], '絶対温度で考える。300 K → 600 K で 2 倍。'],
+    ['気体の状態方程式は？', 'PV ＝ nRT', ['PV ＝ RT/n', 'P ＝ nRTV', 'PV ＝ nT'], 'n は物質量、R は気体定数。'],
+    ['全圧 1.0×10⁵ Pa の空気（N₂：O₂ ＝ 4：1）で、O₂ の分圧は？', '2.0×10⁴ Pa', ['8.0×10⁴ Pa', '5.0×10⁴ Pa', '1.0×10⁵ Pa'], '分圧 ＝ 全圧 × モル分率 ＝ 1.0×10⁵ × 1/5。'],
+  ],
+  'ls-c-lattice': [
+    ['面心立方格子の単位格子にふくまれる原子の数は？', '4 個', ['2 個', '8 個', '1 個'], '頂点 1/8×8 ＋ 面 1/2×6 ＝ 4。'],
+    ['体心立方格子の配位数は？', '8', ['12', '6', '4'], '中心の原子は、頂点の8個の原子と接している。'],
+    ['常温の鉄の結晶格子は？', '体心立方格子', ['面心立方格子', '六方最密構造', 'NaCl 型'], '銅・アルミニウム・銀は面心立方格子。'],
+    ['NaCl 型の結晶で、1つの Na⁺ のまわりにある Cl⁻ の数は？', '6', ['4', '8', '12'], '上下・左右・前後の6か所。'],
+  ],
+  'ls-c-solution': [
+    ['水の中でイオンが水分子に取り囲まれることを何という？', '水和', ['電離', '昇華', '中和'], '水分子は極性をもつので、イオンを引きつける。'],
+    ['気体の溶解度と温度の関係は？', '温度が高いほど小さい', ['温度が高いほど大きい', '温度に関係ない', '0 ℃では溶けない'], 'ぬるくなった炭酸飲料は、気がぬけやすい。'],
+    ['ヘンリーの法則の内容は？', '温度一定で、溶ける気体の物質量は圧力に比例する', ['圧力一定で、気体の体積は絶対温度に比例する', '温度一定で、気体の体積は圧力に反比例する', '固体の溶解度は温度に比例する'], 'ほかの2つはシャルルの法則・ボイルの法則。'],
+    ['水に溶けにくい物質はどれ？', 'ヘキサン', ['エタノール', '塩化ナトリウム', 'グルコース'], '無極性の物質は、極性のある水に溶けにくい。'],
+  ],
+  'ls-c-colligative': [
+    ['不揮発性の物質を溶かした水溶液の沸点は？', '純粋な水より高い', ['純粋な水より低い', '純粋な水と同じ', '0 ℃'], '沸点上昇。蒸気圧が下がるため。'],
+    ['凝固点降下を利用している例は？', '冬に道路へ塩化カルシウムをまく', ['炭酸飲料の泡', '圧力なべで調理する', 'ワインを蒸留する'], '水がこおる温度が下がる。'],
+    ['半透膜を通りぬけるものは？', '水分子', ['スクロース分子', 'デンプン', 'タンパク質'], '小さな溶媒の分子だけが通る。'],
+    ['チンダル現象とは？', 'コロイド溶液に光を当てると、光の通り道が見える', ['コロイド粒子が不規則に動く', '電圧をかけるとコロイド粒子が移動する', '少量の塩でコロイド粒子が沈殿する'], 'ほかはブラウン運動・電気泳動・凝析。'],
+  ],
+  'ls-c-enthalpy': [
+    ['発熱反応の反応エンタルピー ΔH の符号は？', '負（−）', ['正（＋）', '0', '決まらない'], '熱が外に出るので、物質のもつエンタルピーが減る。'],
+    ['へスの法則の内容は？', '反応エンタルピーの総和は、反応の経路によらない', ['反応の速さは温度で決まる', '平衡は変化をやわらげる向きに移動する', '反応の前後で質量は変わらない'], '総熱量保存の法則ともいう。'],
+    ['H₂O（液体）の生成エンタルピー −286 kJ/mol の意味は？', 'H₂ と O₂ から H₂O（液体）1 mol ができると 286 kJ の熱が出る', ['H₂O 1 mol ができると 286 kJ の熱を吸収する', 'H₂O 2 mol ができると 286 kJ の熱が出る', 'H₂O 1 mol を分解すると 286 kJ の熱が出る'], '分解するときは、逆に 286 kJ 吸収する。'],
+    ['結合エネルギーとは？', '気体の分子の結合 1 mol を切るのに必要なエネルギー', ['結合 1 mol ができるのに必要なエネルギー', '分子 1 個の質量', '結合の長さ'], '結合ができるときは、同じ量のエネルギーが出る。'],
+  ],
+  'ls-c-cell': [
+    ['ダニエル電池の負極は？', '亜鉛板', ['銅板', '素焼き板', '導線'], 'イオン化傾向の大きい亜鉛が電子を出す。'],
+    ['ダニエル電池で、導線を流れる電子の向きは？', '亜鉛板 → 銅板', ['銅板 → 亜鉛板', '水溶液の中だけを流れる', '流れない'], '電流の向きは、電子と逆（銅板 → 亜鉛板）。'],
+    ['水の電気分解で、陰極から発生する気体は？', '水素', ['酸素', '塩素', '窒素'], '陰極では還元が起こる。'],
+    ['銅の電解精錬で、純粋な銅が出てくるのは？', '陰極', ['陽極', '素焼き板', 'どちらにも出ない'], '陽極の粗銅が溶け、陰極に純銅が出る。'],
+  ],
+  'ls-c-rate': [
+    ['触媒のはたらきは？', '活性化エネルギーを小さくする', ['活性化エネルギーを大きくする', '反応で出る熱を増やす', '平衡を生成物の側に移動させる'], '触媒は反応の前後で変化しない。平衡そのものは移動させない。'],
+    ['温度を上げると反応が速くなるおもな理由は？', '活性化エネルギーをこえる分子の割合が増えるから', ['分子の数が増えるから', '触媒が増えるから', '反応で出る熱が減るから'], '衝突の回数も増えるが、勢いのある衝突が増えるのが大きい。'],
+    ['反応を速くする方法でないものは？', '温度を下げる', ['濃度を大きくする', '触媒を加える', '固体を粉にする'], '温度を下げると、反応はおそくなる。'],
+    ['過酸化水素の分解に使う触媒は？', '酸化マンガン(IV) MnO₂', ['塩化ナトリウム', '硫酸銅(II)', '石灰水'], '2H₂O₂ → 2H₂O + O₂。酸素の発生に使う。'],
+  ],
+  'ls-c-equil': [
+    ['化学平衡の状態として正しいものは？', '正反応と逆反応の速さが等しい', ['反応が完全に止まっている', '生成物だけになっている', '反応物と生成物の量が必ず等しい'], '反応は続いているが、見かけ上変化しない。'],
+    ['N₂ + 3H₂ ⇄ 2NH₃（発熱）で、NH₃ を増やす条件は？', '圧力を高くする', ['圧力を低くする', '温度を上げる', '触媒を増やす'], '分子の数が減る向きに移動する。触媒は平衡を移動させない。'],
+    ['ルシャトリエの原理の内容は？', '条件の変化をやわらげる向きに平衡が移動する', ['条件の変化を強める向きに平衡が移動する', '平衡はけっして移動しない', '平衡はいつも右に移動する'], '温度・圧力・濃度の変化について成り立つ。'],
+    ['N₂O₄ ⇄ 2NO₂（右向きが吸熱）を加熱すると？', '赤褐色が濃くなる', ['色がうすくなる', '変わらない', '無色になる'], '吸熱の向き（NO₂ が増える向き）に移動する。'],
+  ],
+  'ls-c-ion': [
+    ['弱酸の電離度は？', '小さい（一部だけ電離する）', ['1（すべて電離する）', '0（まったく電離しない）', '強酸より大きい'], '酢酸などの弱酸は、電離平衡の状態になる。'],
+    ['緩衝液の性質は？', '少量の酸や塩基を加えても pH がほとんど変わらない', ['必ず中性である', '強い酸性である', '電気を通さない'], '弱酸とその塩の混合水溶液など。'],
+    ['酢酸ナトリウム水溶液の性質は？', '弱い塩基性', ['酸性', '中性', '強い酸性'], '塩の加水分解で OH⁻ ができる。'],
+    ['電離定数 Ka の値が変わるのはどんなとき？', '温度を変えたとき', ['濃度を変えたとき', '水を加えたとき', 'ほかの酸を加えたとき'], '平衡定数は温度だけで決まる。'],
+  ],
+  'ls-c-nonmetal': [
+    ['酸化力がいちばん強いハロゲンの単体は？', 'F₂', ['Cl₂', 'Br₂', 'I₂'], 'F₂ ＞ Cl₂ ＞ Br₂ ＞ I₂。'],
+    ['硝酸の工業的な製法は？', 'オストワルト法', ['接触法', 'ハーバー・ボッシュ法', 'アンモニアソーダ法'], '接触法は硫酸、ハーバー・ボッシュ法はアンモニア。'],
+    ['硫酸の工業的な製法は？', '接触法', ['オストワルト法', 'ハーバー・ボッシュ法', 'アンモニアソーダ法'], 'SO₂ を V₂O₅ 触媒で SO₃ にする。'],
+    ['濃硫酸の性質として正しいものは？', '脱水作用がある', ['揮発性が高い', '塩基性を示す', '水をまったく吸わない'], '糖に加えると黒くなる（炭化）。吸湿性もある。'],
+  ],
+  'ls-c-metal': [
+    ['ナトリウムを水に入れると？', '水素が発生して NaOH ができる', ['酸素が発生する', '塩素が発生する', '何も起こらない'], '2Na + 2H₂O → 2NaOH + H₂。'],
+    ['アンモニアソーダ法でつくる物質は？', '炭酸ナトリウム', ['硫酸', 'アンモニア', '硝酸'], 'ガラスやセッケンの原料になる。'],
+    ['遷移元素の特徴として正しいものは？', '色のついたイオンや化合物が多い', ['単体はすべて気体', '最外殻電子がすべて8個', '1族と2族の元素'], '鉄・銅・クロムなど。'],
+    ['Cu²⁺ をふくむ水溶液にアンモニア水を十分に加えると？', '深青色の溶液になる', ['白色の沈殿ができる', '赤褐色になる', '無色になる'], '[Cu(NH₃)₄]²⁺ という錯イオンができる。'],
+  ],
+  'ls-c-hc': [
+    ['アルカンの一般式は？', 'CₙH₂ₙ₊₂', ['CₙH₂ₙ', 'CₙH₂ₙ₋₂', 'CₙHₙ'], 'CₙH₂ₙ はアルケン、CₙH₂ₙ₋₂ はアルキン。'],
+    ['エチレンの二重結合に水素がつく反応は？', '付加反応', ['置換反応', '縮合反応', '中和反応'], '不飽和結合が開いて原子がつく。'],
+    ['臭素水の赤褐色を消すのはどれ？', 'エチレン', ['メタン', 'エタン', 'プロパン'], '二重結合に臭素が付加する。アルカンは反応しない。'],
+    ['ブタンと 2-メチルプロパンの関係は？', '構造異性体', ['同素体', '同位体', '同じ物質'], 'どちらも C₄H₁₀ で、つながり方がちがう。'],
+  ],
+  'ls-c-oxy': [
+    ['アルコールの官能基は？', 'ヒドロキシ基 –OH', ['ホルミル基 –CHO', 'カルボキシ基 –COOH', 'エーテル結合 –O–'], 'エタノール C₂H₅OH など。'],
+    ['銀鏡反応を示すのはどれ？', 'ホルムアルデヒド', ['アセトン', 'エタノール', 'ジメチルエーテル'], 'アルデヒドは還元性をもつ。'],
+    ['酢酸とエタノールのエステル化でできるものは？', '酢酸エチルと水', ['エタノールと酸素', '酢酸と水素', 'エチレンと水'], 'CH₃COOH + C₂H₅OH → CH₃COOC₂H₅ + H₂O。'],
+    ['エタノールとジメチルエーテルの関係は？', '分子式が同じ構造異性体', ['同素体', '同位体', '同じ物質'], 'どちらも C₂H₆O。'],
+  ],
+  'ls-c-arom': [
+    ['ベンゼン分子の形は？', '正六角形の平面', ['正四面体形', '直線形', 'いす形の立体'], 'いす形はシクロヘキサン。'],
+    ['ベンゼンが起こしやすい反応は？', '置換反応', ['付加反応', '縮合重合', '中和反応'], 'ベンゼン環は安定なので、こわれにくい。'],
+    ['防虫剤に使われ、昇華しやすい芳香族化合物は？', 'ナフタレン', ['ベンゼン', 'アスピリン', 'グリシン'], 'ベンゼン環が2つつながった形。'],
+    ['アスピリン（アセチルサリチル酸）のもとになる物質は？', 'サリチル酸', ['グルコース', 'グリシン', 'ナフタレン'], 'サリチル酸を無水酢酸でアセチル化してつくる。'],
+  ],
+  'ls-c-poly': [
+    ['エチレンからポリエチレンができる反応は？', '付加重合', ['縮合重合', '開環重合', '加水分解'], '二重結合が開いてつながる。'],
+    ['重合のもとになる小さな分子を何という？', '単量体（モノマー）', ['重合体（ポリマー）', '同素体', '触媒'], 'つながってできた高分子は重合体。'],
+    ['ナイロン66 で単量体どうしをつなぐ結合は？', 'アミド結合', ['エステル結合', '水素結合', 'イオン結合'], '–CO–NH– の結合。'],
+    ['ペットボトルの PET で単量体どうしをつなぐ結合は？', 'エステル結合', ['アミド結合', 'ペプチド結合', '金属結合'], 'ポリエチレンテレフタラート（ポリエステル）。'],
+  ],
+  'ls-c-natural': [
+    ['グルコースの分子式は？', 'C₆H₁₂O₆', ['C₁₂H₂₂O₁₁', 'C₂H₆O', 'C₆H₆'], 'C₁₂H₂₂O₁₁ はスクロースなどの二糖。'],
+    ['還元性を示さない糖はどれ？', 'スクロース', ['グルコース', 'フルクトース', 'マルトース'], 'スクロースは還元性を示す部分どうしで結びついている。'],
+    ['アミノ酸どうしをつなぐ結合は？', 'ペプチド結合', ['エステル結合', 'イオン結合', '金属結合'], 'タンパク質はたくさんのアミノ酸がペプチド結合でつながったもの。'],
+    ['アルコール発酵でできるものは？', 'エタノールと二酸化炭素', ['グルコースと酸素', '酢酸と水', 'デンプン'], 'C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂。'],
+  ],
+});
 // ===== 物質の分離・元素の検出（粒子が動くようすを見る） =====
 const SEP_LIST = [
   { id: 'sep-mix', name: '混合物（ワイン）', en: '水 ＋ エタノール', scene: 'mix',
@@ -3213,7 +3451,7 @@ const SEP_LIST = [
     point: '覚え方「リアカー（Li 赤）なき（Na 黄）K村（K 赤紫）動力（Cu 青緑）借りるとう（Ca 橙赤）するもくれない（Sr 紅）馬力（Ba 黄緑）」' },
 ];
 SEP_LIST.forEach(s => LIB.push(Object.assign({ cat: 'sep', kind: 'sep', f: s.en }, s)));
-SECTIONS.push({ id: 'sep', name: '物質の分離', cats: ['sep'] });
+SECTIONS.push({ id: 'sep', name: '分離', cats: ['sep'] });
 GROUPS.find(g => g.id === 'move').secs.push('sep');
 FIRST_OF.sep = 'sep-distill';
 
@@ -3559,6 +3797,327 @@ function sepCardHTML(e) {
     <ol class="sep-stages">${e.stages.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
     <div class="point"><h3>授業のポイント</h3><p>${esc(e.point)}</p></div>
     <p class="note">動きはくり返し再生されます。ドラッグで回して見よう。</p></div>`;
+}
+// ===== 化学（発展）の現象：粒子が動くようす =====
+const CHEM_LIST = [
+  { id: 'ch-vapor', name: '気液平衡と蒸気圧', en: '蒸発 ⇄ 凝縮', scene: 'vapor',
+    desc: '密閉した容器に液体を入れておくと、液面から分子が飛び出し（蒸発）、気体の分子の一部は液にもどる（凝縮）。やがて出ていく数ともどる数が等しくなり、見かけ上変化しなくなる（気液平衡）。',
+    stages: ['① 液面から分子が飛び出す（蒸発）', '② 気体の分子の一部が液にもどる（凝縮）', '③ 蒸発と凝縮の数が等しい＝気液平衡'],
+    point: '気液平衡のときの気体の圧力を蒸気圧（飽和蒸気圧）という。温度が高いほど大きい。蒸気圧が大気圧と等しくなる温度が沸点。' },
+  { id: 'ch-boyle', name: 'ボイルの法則', en: 'PV ＝ 一定（温度一定）', scene: 'boyle',
+    desc: '温度を一定にして、ピストンを押して体積を半分にすると、同じ数の分子がせまい所で壁にぶつかる回数が2倍になり、圧力が2倍になる。',
+    stages: ['① ピストンを押して体積を小さくする', '② 壁にぶつかる回数が増える＝圧力が大きくなる', '③ ピストンをもどす'],
+    point: 'P₁V₁ ＝ P₂V₂。温度も変わるときは PV/T ＝ 一定（ボイル・シャルルの法則）。まとめると PV ＝ nRT（気体の状態方程式）。' },
+  { id: 'ch-charles', name: 'シャルルの法則', en: 'V/T ＝ 一定（圧力一定）', scene: 'charles',
+    desc: '圧力を一定にして気体を温めると、分子の熱運動が激しくなり、ピストンを押し上げて体積が大きくなる。体積は絶対温度に比例する。',
+    stages: ['① 加熱する：分子の動きが速くなる', '② 体積が絶対温度に比例して大きくなる', '③ 冷やすと体積がもどる'],
+    point: '絶対温度 T〔K〕＝ t〔℃〕＋ 273。300 K から 600 K にすると、体積は2倍。' },
+  { id: 'ch-dissolve', name: '溶解と水和', en: 'NaCl が水に溶けるしくみ', scene: 'dissolve',
+    desc: '塩化ナトリウムの結晶を水に入れると、極性のある水分子が Na⁺ と Cl⁻ を取り囲み（水和）、イオンが結晶からはなれて水の中に散らばっていく。',
+    stages: ['① 水分子が結晶の表面のイオンを引きつける', '② 水和したイオンが結晶からはなれる', '③ イオンが水全体に広がる（電離）'],
+    point: 'Na⁺ には水分子の O 原子（δ−）、Cl⁻ には H 原子（δ+）の側が向く。イオン結晶や極性分子は、極性分子の水に溶けやすい。' },
+  { id: 'ch-osmosis', name: '浸透圧', en: '半透膜と水の移動', scene: 'osmosis',
+    desc: 'U字管のまん中を半透膜で仕切り、左に純水、右にスクロース水溶液を入れる。水分子は膜を通るが、大きなスクロース分子は通れないので、水が溶液の側へ移動し、液面に差ができる。',
+    stages: ['① 半透膜：水分子は通り、スクロース分子は通らない', '② 水が溶液の側へ移動する（浸透）', '③ 液面の差ができる。これを止めるのに必要な圧力が浸透圧'],
+    point: 'ファントホッフの法則 Π ＝ cRT。沸点上昇・凝固点降下と同じく、溶質の粒子の数（物質量）で決まる性質。' },
+  { id: 'ch-colloid', name: 'コロイドとチンダル現象', en: 'コロイド粒子が光を散らす', scene: 'colloid',
+    desc: '左は食塩水、右はデンプンのコロイド溶液。横から光を当てると、コロイド溶液では大きなコロイド粒子が光を散らすので、光の通り道が光って見える（チンダル現象）。',
+    stages: ['① 2つの液に横から光を当てる', '② コロイド溶液だけ、光の通り道が見える（チンダル現象）', '③ コロイド粒子は不規則に動いている（ブラウン運動）'],
+    point: 'コロイド粒子の大きさは 10⁻⁹〜10⁻⁷ m くらい。ろ紙は通るが、セロハン（半透膜）は通らない（透析）。' },
+  { id: 'ch-daniell', name: 'ダニエル電池', en: '化学エネルギー → 電気エネルギー', scene: 'daniell',
+    desc: '亜鉛板を硫酸亜鉛水溶液に、銅板を硫酸銅(II)水溶液に入れ、素焼き板で仕切る。イオン化傾向の大きい亜鉛が電子を出して溶け、電子は導線を通って銅板へ流れ、Cu²⁺ が銅になる。',
+    stages: ['① 負極：Zn → Zn²⁺ ＋ 2e⁻（亜鉛が溶ける）', '② 電子が導線を通って銅板へ流れる', '③ 正極：Cu²⁺ ＋ 2e⁻ → Cu（銅が出てくる）'],
+    point: '電流は電子と逆向き（銅板→亜鉛板）に流れる。素焼き板は、2つの液がまざるのを防ぎながらイオンを通す。起電力は約 1.1 V。' },
+  { id: 'ch-rate', name: '反応の速さと温度', en: '衝突と活性化エネルギー', scene: 'rate',
+    desc: '分子 A（赤）と B（青）がぶつかって反応し、生成物（紫）ができる。温度が高いと分子が速く動き、活性化エネルギーをこえる勢いのある衝突が増えるので、反応が速くなる。',
+    stages: ['① 低い温度：ゆっくり動き、ぶつかっても反応しにくい', '② 高い温度：速く動き、反応する衝突が増える'],
+    point: '反応の速さは、濃度が大きいほど・温度が高いほど大きい。触媒は活性化エネルギーを小さくして、反応を速くする（自分は変化しない）。' },
+  { id: 'ch-equil', name: '化学平衡とルシャトリエの原理', en: 'N₂O₄ ⇄ 2NO₂', scene: 'equil',
+    desc: '無色の N₂O₄ は、一部が分かれて赤褐色の NO₂ になり、NO₂ どうしはまた結びつく。正反応と逆反応の速さが等しくなると、見かけ上変化しなくなる（化学平衡）。',
+    stages: ['① 正反応と逆反応の速さが等しい（平衡状態）', '② 加熱：吸熱反応の向き（NO₂ が増える向き）に平衡が移動し、色が濃くなる'],
+    point: 'ルシャトリエの原理：条件（温度・圧力・濃度）を変えると、その変化をやわらげる向きに平衡が移動する。N₂O₄ → 2NO₂ は吸熱反応。' },
+  { id: 'ch-polymer', name: '付加重合（ポリエチレン）', en: 'エチレン → ポリエチレン', scene: 'polymer',
+    desc: 'エチレン（単量体）の二重結合の1本が開き、となりのエチレンとつぎつぎにつながって、長い鎖のポリエチレン（高分子）になる。',
+    stages: ['① エチレンの二重結合が開く', '② つぎつぎにつながって鎖がのびる（付加重合）'],
+    point: '単量体（モノマー）がたくさんつながったものを重合体（ポリマー）という。水などがとれながらつながるのは縮合重合（ナイロン・PET）。' },
+];
+CHEM_LIST.forEach(s => LIB.push(Object.assign({ cat: 'chem', kind: 'sep', f: s.en }, s)));
+SECTIONS.push({ id: 'chem', name: '化学', cats: ['chem'] });
+GROUPS.find(g => g.id === 'move').secs.push('chem');
+FIRST_OF.chem = 'ch-vapor';
+
+// 箱の中ではね返る
+function bounceIn(p, v, lo, hi, dt) {
+  ['x', 'y', 'z'].forEach(a => { p[a] += v[a] * dt; if (p[a] < lo[a]) { p[a] = lo[a]; v[a] = Math.abs(v[a]); } if (p[a] > hi[a]) { p[a] = hi[a]; v[a] = -Math.abs(v[a]); } });
+}
+const rv = (r, s) => new THREE.Vector3((r() - 0.5) * 2, (r() - 0.5) * 2, (r() - 0.5) * 2).normalize().multiplyScalar(s);
+function ball(color, rad) { const m = new THREE.Mesh(R.SMALL, phong(color)); m.scale.setScalar(rad); return m; }
+function no2Mol() { const g = new THREE.Group(); g.add(ball('#3050f8', 0.16)); [-1, 1].forEach(k => { const o = ball('#e53935', 0.15); o.position.set(k * 0.2, 0.12, 0); g.add(o); }); return g; }
+function sepLast(t) { const d = t - (view._lt || t); view._lt = t; return Math.min(0.05, Math.max(0, d)); }
+
+Object.assign(SEP_SCENES, {
+  vapor(g, r) {
+    const prof = [[0, 0.05], [1.9, 0.05], [2.0, 0.15], [2.0, 4.4]];
+    g.add(sepGlass(prof));
+    const lid = new THREE.Mesh(new THREE.CylinderGeometry(2.08, 2.08, 0.1, 40), phong('#9aa6b8')); lid.position.y = 4.45; g.add(lid);
+    const LV = 1.3;
+    g.add(sepLiquid(prof, LV, '#9fd3f2', 0.3));
+    const mols = [];
+    for (let i = 0; i < 26; i++) { const m = sepMol('water', 0.28); g.add(m); mols.push({ m, st: 'liq', home: new THREE.Vector3((r() - 0.5) * 2.8, 0.3 + r() * (LV - 0.5), (r() - 0.5) * 2.8), v: new THREE.Vector3(), ph: r() * 6 }); }
+    const cnt = addLabel('lbl-sep warm', '', () => new THREE.Vector3(-2.4, 3.6, 0));
+    let next = 0, evap = 0, cond = 0;
+    view.sepR = 3.6; view.sepTarget.set(0, 2.2, 0); view.sepTop = 5.0;
+    return t => {
+      const dt = sepLast(t), k = sepLoop(t, 22);
+      if (k < 0.02) { mols.forEach(o => { o.st = 'liq'; }); evap = cond = 0; }
+      if (t > next) { next = t + 0.45; const c = mols.filter(o => o.st === 'liq'); if (c.length) { const o = c[Math.floor(r() * c.length)]; o.st = 'gas'; o.m.position.set(o.home.x, LV + 0.1, o.home.z); o.v.set((r() - 0.5) * 2.4, 1.6 + r(), (r() - 0.5) * 2.4); evap++; } }
+      mols.forEach(o => {
+        if (o.st === 'liq') o.m.position.set(o.home.x + 0.12 * Math.sin(t * 3 + o.ph), o.home.y + 0.1 * Math.sin(t * 4 + o.ph), o.home.z + 0.12 * Math.cos(t * 3 + o.ph));
+        else {
+          bounceIn(o.m.position, o.v, new THREE.Vector3(-1.7, LV + 0.05, -1.7), new THREE.Vector3(1.7, 4.15, 1.7), dt);
+          if (o.m.position.y <= LV + 0.06 && r() < 0.5) { o.st = 'liq'; o.home.set(o.m.position.x, LV - 0.25 - r() * 0.5, o.m.position.z); cond++; }
+        }
+        o.m.rotation.set(t + o.ph, t * 0.7, 0);
+      });
+      const ng = mols.filter(o => o.st === 'gas').length, txt = `気体の分子 ${ng} 個`;
+      if (cnt.el.textContent !== txt) cnt.el.textContent = txt;
+      return k < 0.2 ? 0 : k < 0.5 ? 1 : 2;
+    };
+  },
+  boyle(g, r) { return pistonScene(g, r, 'boyle'); },
+  charles(g, r) { return pistonScene(g, r, 'charles'); },
+  dissolve(g, r) {
+    const prof = [[0, 0.05], [2.2, 0.05], [2.3, 0.15], [2.3, 4.2]];
+    g.add(sepGlass(prof)); g.add(sepLiquid(prof, 3.6, '#bfe0f5', 0.22));
+    const ions = [];
+    for (let x = 0; x < 3; x++) for (let y = 0; y < 2; y++) for (let z = 0; z < 3; z++) {
+      const na = (x + y + z) % 2 === 0, m = ball(na ? '#ab5cf2' : '#1fc31f', na ? 0.2 : 0.32); g.add(m);
+      const home = new THREE.Vector3((x - 1) * 0.62, 0.35 + y * 0.62, (z - 1) * 0.62);
+      const shell = new THREE.Group(); g.add(shell);
+      for (let k = 0; k < 4; k++) { const w = sepMol('water', 0.22); const a = k * Math.PI / 2; w.position.set(Math.cos(a) * 0.62, 0, Math.sin(a) * 0.62); w.lookAt(0, 0, 0); if (!na) w.rotateY(Math.PI); shell.add(w); }
+      shell.visible = false;
+      ions.push({ m, na, home, shell, d: r(), dest: new THREE.Vector3((r() - 0.5) * 3.4, 0.8 + r() * 2.5, (r() - 0.5) * 3.4), ph: r() * 6 });
+    }
+    // 表面のイオンからはなれる
+    ions.sort((a, b) => (b.home.y + Math.abs(b.home.x) + Math.abs(b.home.z)) - (a.home.y + Math.abs(a.home.x) + Math.abs(a.home.z)));
+    sepPart('Na⁺（O の側が向く）', () => ions.find(o => o.na).m.position.clone().add(new THREE.Vector3(0, 0.5, 0)));
+    sepPart('Cl⁻（H の側が向く）', () => ions.find(o => !o.na).m.position.clone().add(new THREE.Vector3(0, 0.6, 0)));
+    view.sepR = 3.4; view.sepTarget.set(0, 1.9, 0); view.sepTop = 4.6;
+    return t => {
+      const k = sepLoop(t, 16);
+      ions.forEach((o, i) => {
+        const s = Math.min(1, Math.max(0, (k - 0.1 - i / ions.length * 0.6) / 0.25));
+        const p = o.home.clone().lerp(o.dest, s);
+        if (s > 0) p.add(new THREE.Vector3(0.15 * Math.sin(t + o.ph) * s, 0.12 * Math.sin(t * 1.3 + o.ph) * s, 0.15 * Math.cos(t + o.ph) * s));
+        o.m.position.copy(p);
+        o.shell.visible = s > 0.05; o.shell.position.copy(p); o.shell.rotation.y = t * 0.6 + o.ph;
+      });
+      return k < 0.15 ? 0 : k < 0.6 ? 1 : 2;
+    };
+  },
+  osmosis(g, r) {
+    // U字管：左右のたて管と、下の横管。まん中に半透膜
+    const XL = -1.3, XR = 1.3, RT = 0.55;
+    const tubeL = sepGlass([[RT, 0.6], [RT, 5.0]]); tubeL.position.x = XL; g.add(tubeL);
+    const tubeR = sepGlass([[RT, 0.6], [RT, 5.0]]); tubeR.position.x = XR; g.add(tubeR);
+    const bottom = sepTube([[XL, 0.3], [0, 0.3], [XR, 0.3]], RT, '#d9e8f5', 0.2); g.add(bottom.m);
+    const mem = new THREE.Mesh(new THREE.CylinderGeometry(RT, RT, 0.04, 24), phong('#e0a526', { transparent: true, opacity: 0.6 })); mem.rotation.z = Math.PI / 2; mem.position.set(0, 0.3, 0); g.add(mem);
+    const liqL = new THREE.Mesh(new THREE.CylinderGeometry(RT * 0.95, RT * 0.95, 1, 24), new THREE.MeshPhongMaterial({ color: '#bfe0f5', transparent: true, opacity: 0.35, depthWrite: false })); g.add(liqL);
+    const liqR = liqL.clone(); liqR.material = liqL.material.clone(); liqR.material.color.set('#f2e3b0'); g.add(liqR);
+    const lb = new THREE.Mesh(new THREE.CylinderGeometry(RT * 0.95, RT * 0.95, XR - XL, 24), liqL.material); lb.rotation.z = Math.PI / 2; lb.position.y = 0.3; g.add(lb);
+    const sug = [];
+    for (let i = 0; i < 4; i++) { const m = sepMol('sucrose', 0.09); g.add(m); sug.push({ m, y: 1.2 + i * 0.6, ph: r() * 6 }); }
+    const wat = [];
+    for (let i = 0; i < 10; i++) { const m = sepMol('water', 0.24); g.add(m); wat.push({ m, d: i / 10, back: i % 4 === 0 }); }
+    sepPart('半透膜', () => new THREE.Vector3(0, -0.15, 0.4));
+    sepPart('純水', () => new THREE.Vector3(XL - 0.6, 2.0, 0));
+    sepPart('スクロース水溶液', () => new THREE.Vector3(XR + 0.6, 2.0, 0));
+    const dh = addLabel('lbl-sep warm', '', () => new THREE.Vector3(XR, 5.4, 0));
+    view.sepR = 3.4; view.sepTarget.set(0, 2.4, 0); view.sepTop = 5.4;
+    return t => {
+      const k = sepLoop(t, 16), f = Math.min(1, Math.max(0, (k - 0.15) / 0.6));
+      const hL = 3.0 - 0.8 * f, hR = 3.0 + 0.8 * f;
+      liqL.scale.y = hL - 0.3; liqL.position.set(XL, 0.3 + (hL - 0.3) / 2, 0);
+      liqR.scale.y = hR - 0.3; liqR.position.set(XR, 0.3 + (hR - 0.3) / 2, 0);
+      const txt = f > 0.1 ? '液面が上がる ↑' : '同じ高さ';
+      if (dh.el.textContent !== txt) dh.el.textContent = txt;
+      sug.forEach((o, i) => o.m.position.set(XR + 0.2 * Math.sin(t * 0.8 + o.ph), Math.min(hR - 0.3, o.y + 0.15 * Math.sin(t + o.ph)), 0.2 * Math.cos(t * 0.8 + o.ph)));
+      wat.forEach(o => {
+        const s = (t * 0.25 + o.d) % 1, dir = o.back ? -1 : 1;
+        const x = dir > 0 ? XL + (XR - XL) * s : XR - (XR - XL) * s;
+        o.m.position.set(x, 0.3 + 0.15 * Math.sin(t * 3 + o.d * 6), 0.15 * Math.cos(t * 2 + o.d * 6));
+        o.m.rotation.set(t, t * 0.5, 0);
+      });
+      return k < 0.15 ? 0 : k < 0.75 ? 1 : 2;
+    };
+  },
+  colloid(g, r) {
+    const prof = [[0, 0.05], [1.2, 0.05], [1.25, 0.12], [1.25, 3.0]];
+    const A = new THREE.Group(); A.position.x = -1.6; g.add(A); A.add(sepGlass(prof)); A.add(sepLiquid(prof, 2.4, '#e6f2fa', 0.2));
+    const B = new THREE.Group(); B.position.x = 1.6; g.add(B); B.add(sepGlass(prof)); B.add(sepLiquid(prof, 2.4, '#f4efe2', 0.45));
+    const lamp = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.5), phong('#3a3f46')); lamp.position.set(-3.6, 1.3, 0); g.add(lamp);
+    const beamOut = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1, 12), basic('#fff59d', { transparent: true, opacity: 0.15 })); beamOut.rotation.z = Math.PI / 2; g.add(beamOut);
+    const beamB = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 2.4, 12), basic('#fff176', { transparent: true, opacity: 0, depthWrite: false })); beamB.rotation.z = Math.PI / 2; beamB.position.set(1.6, 1.3, 0); g.add(beamB);
+    const parts = [];
+    for (let i = 0; i < 30; i++) { const m = ball('#d9c9a0', 0.07); B.add(m); parts.push({ m, p: new THREE.Vector3((r() - 0.5) * 2, 0.3 + r() * 1.9, (r() - 0.5) * 2), ph: r() * 6 }); }
+    sepPart('食塩水（溶液）', () => new THREE.Vector3(-1.6, 3.4, 0));
+    sepPart('デンプン水溶液（コロイド）', () => new THREE.Vector3(1.6, 3.4, 0));
+    view.sepR = 3.8; view.sepTarget.set(-0.3, 1.6, 0); view.sepTop = 4.0;
+    return t => {
+      const k = sepLoop(t, 12), on = k > 0.12;
+      beamOut.visible = on; beamOut.scale.y = 6.6; beamOut.position.set(-0.3, 1.3, 0);
+      beamB.material.opacity = on ? 0.55 + 0.1 * Math.sin(t * 5) : 0;
+      parts.forEach(o => o.m.position.set(o.p.x + 0.06 * Math.sin(t * 7 + o.ph) + 0.04 * Math.sin(t * 13 + o.ph * 2), o.p.y + 0.06 * Math.sin(t * 9 + o.ph), o.p.z + 0.06 * Math.cos(t * 8 + o.ph)));
+      return k < 0.12 ? 0 : k < 0.6 ? 1 : 2;
+    };
+  },
+  daniell(g, r) {
+    const box = sepGlass([[0, 0.05], [1, 0.05]]); box.visible = false; g.add(box);
+    const tank = new THREE.Mesh(new THREE.BoxGeometry(4.6, 2.6, 1.8), new THREE.MeshPhongMaterial({ color: '#d9e8f5', transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide })); tank.position.y = 1.3; g.add(tank);
+    const solL = new THREE.Mesh(new THREE.BoxGeometry(2.25, 2.1, 1.75), new THREE.MeshPhongMaterial({ color: '#e8eef3', transparent: true, opacity: 0.3, depthWrite: false })); solL.position.set(-1.17, 1.08, 0); g.add(solL);
+    const solR = new THREE.Mesh(new THREE.BoxGeometry(2.25, 2.1, 1.75), new THREE.MeshPhongMaterial({ color: '#2f86e0', transparent: true, opacity: 0.35, depthWrite: false })); solR.position.set(1.17, 1.08, 0); g.add(solR);
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(0.08, 2.4, 1.78), phong('#c98b62', { transparent: true, opacity: 0.7 })); wall.position.y = 1.2; g.add(wall);
+    const zn = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.6, 1.0), phong('#a9b1ba', { shininess: 90 })); zn.position.set(-1.6, 1.9, 0); g.add(zn);
+    const cu = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.6, 1.0), phong('#c8743b', { shininess: 90 })); cu.position.set(1.6, 1.9, 0); g.add(cu);
+    const wire = sepTube([[-1.6, 3.2], [-1.6, 4.4], [-0.5, 4.6], [0.5, 4.6], [1.6, 4.4], [1.6, 3.2]], 0.04, '#d32f2f', 1); g.add(wire.m);
+    const bulb = ball('#fff59d', 0.28); bulb.position.set(0, 4.65, 0); g.add(bulb);
+    const els = []; for (let i = 0; i < 8; i++) { const m = ball(ELECTRON_COLOR, 0.08); g.add(m); els.push({ m, d: i / 8 }); }
+    const znI = []; for (let i = 0; i < 6; i++) { const m = ball('#7d80b0', 0.16); g.add(m); znI.push({ m, d: i / 6, dest: new THREE.Vector3(-0.9 - r() * 0.9, 0.4 + r() * 1.4, (r() - 0.5) * 1.2) }); }
+    const cuI = []; for (let i = 0; i < 6; i++) { const m = ball('#2f86e0', 0.16); g.add(m); cuI.push({ m, d: i / 6, from: new THREE.Vector3(0.6 + r() * 0.8, 0.4 + r() * 1.4, (r() - 0.5) * 1.2) }); }
+    sepPart('負極：亜鉛板', () => new THREE.Vector3(-2.3, 3.0, 0));
+    sepPart('正極：銅板', () => new THREE.Vector3(2.3, 3.0, 0));
+    sepPart('素焼き板', () => new THREE.Vector3(0, 2.6, 0.9));
+    sepPart('電子 e⁻ の流れ →', () => new THREE.Vector3(0, 5.1, 0));
+    view.sepR = 3.6; view.sepTarget.set(0, 2.3, 0); view.sepTop = 5.6;
+    return t => {
+      const k = sepLoop(t, 12);
+      els.forEach(o => o.m.position.copy(wire.curve.getPoint((t * 0.25 + o.d) % 1)));
+      bulb.material.emissive = new THREE.Color('#ffd54f').multiplyScalar(0.6 + 0.2 * Math.sin(t * 6));
+      znI.forEach(o => { const s = (t * 0.2 + o.d) % 1; o.m.position.copy(new THREE.Vector3(-1.5, 1.2 + o.d * 0.6, 0).lerp(o.dest, s)); });
+      cuI.forEach(o => { const s = (t * 0.2 + o.d) % 1; o.m.position.copy(o.from.clone().lerp(new THREE.Vector3(1.5, 1.0 + o.d * 0.8, 0), s)); o.m.material.color.set(s > 0.9 ? '#c8743b' : '#2f86e0'); });
+      return k < 0.33 ? 0 : k < 0.66 ? 1 : 2;
+    };
+  },
+  rate(g, r) {
+    const box = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(5, 3.6, 3)), new THREE.LineBasicMaterial({ color: '#8a96a8' })); box.position.y = 1.8; g.add(box);
+    const lo = new THREE.Vector3(-2.3, 0.2, -1.3), hi = new THREE.Vector3(2.3, 3.4, 1.3);
+    const ps = [];
+    for (let i = 0; i < 24; i++) { const a = i % 2 === 0; const m = ball(a ? '#e53935' : '#3050f8', 0.2); g.add(m); ps.push({ m, a, v: new THREE.Vector3(), done: false, p0: new THREE.Vector3(lo.x + r() * (hi.x - lo.x), lo.y + r() * (hi.y - lo.y), lo.z + r() * (hi.z - lo.z)) }); }
+    const lbl = addLabel('lbl-sep warm', '', () => new THREE.Vector3(-1.2, 3.95, 0));
+    let phaseHot = null, made = 0;
+    const reset = hot => { phaseHot = hot; made = 0; ps.forEach(o => { o.done = false; o.m.visible = true; o.m.material.color.set(o.a ? '#e53935' : '#3050f8'); o.m.scale.setScalar(0.2); o.m.position.copy(o.p0); o.v.copy(rv(r, hot ? 2.6 : 0.8)); }); };
+    view.sepR = 3.6; view.sepTarget.set(0, 1.8, 0); view.sepTop = 4.2;
+    return t => {
+      const dt = sepLast(t), k = sepLoop(t, 16), hot = k >= 0.5;
+      if (hot !== phaseHot) reset(hot);
+      ps.forEach(o => { if (o.m.visible) bounceIn(o.m.position, o.v, lo, hi, dt); });
+      for (let i = 0; i < ps.length; i++) { const A = ps[i]; if (!A.a || A.done || !A.m.visible) continue; for (let j = 0; j < ps.length; j++) { const B = ps[j]; if (B.a || !B.m.visible || B.done) continue; if (A.m.position.distanceTo(B.m.position) < 0.42 && r() < (hot ? 0.6 : 0.04)) { A.done = true; B.m.visible = false; A.m.material.color.set('#8e3fb8'); A.m.scale.setScalar(0.27); made++; break; } } }
+      const txt = `${hot ? '高い温度' : '低い温度'}　できた生成物 ${made} 個`;
+      if (lbl.el.textContent !== txt) lbl.el.textContent = txt;
+      return hot ? 1 : 0;
+    };
+  },
+  equil(g, r) {
+    const tank = new THREE.Mesh(new THREE.BoxGeometry(5, 3.6, 3), new THREE.MeshPhongMaterial({ color: '#b5651d', transparent: true, opacity: 0.05, depthWrite: false, side: THREE.DoubleSide })); tank.position.y = 1.8; g.add(tank);
+    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(5, 3.6, 3)), new THREE.LineBasicMaterial({ color: '#8a96a8' })); edge.position.y = 1.8; g.add(edge);
+    const lo = new THREE.Vector3(-2.2, 0.3, -1.2), hi = new THREE.Vector3(2.2, 3.3, 1.2);
+    const pairs = [];
+    for (let i = 0; i < 12; i++) {
+      const A = no2Mol(), B = no2Mol(); g.add(A, B);
+      const p = new THREE.Vector3(lo.x + r() * 4.4, lo.y + r() * 3, lo.z + r() * 2.4);
+      pairs.push({ A, B, joined: true, pA: p.clone(), pB: p.clone().add(new THREE.Vector3(0.45, 0, 0)), vA: rv(r, 1), vB: rv(r, 1), j: 1 });
+    }
+    const flame = sepFlame('#ff9b3d'); flame.position.set(0, -1.6, 0); flame.scale.setScalar(0.9); g.add(flame);
+    const lbl = addLabel('lbl-sep warm', '', () => new THREE.Vector3(-1.2, 3.95, 0));
+    view.sepR = 3.6; view.sepTarget.set(0, 1.6, 0); view.sepTop = 4.2;
+    return t => {
+      const dt = sepLast(t), k = sepLoop(t, 20), hot = k >= 0.5;
+      flame.visible = hot;
+      const kd = hot ? 0.55 : 0.12, ka = hot ? 0.18 : 0.4;
+      let nNO2 = 0;
+      pairs.forEach(o => {
+        if (o.joined && r() < kd * dt) { o.joined = false; o.vB = rv(r, hot ? 1.8 : 1.1); }
+        else if (!o.joined && r() < ka * dt) o.joined = true;
+        bounceIn(o.pA, o.vA, lo, hi, dt);
+        if (o.joined) { o.pB.lerp(o.pA.clone().add(new THREE.Vector3(0.45, 0, 0)), Math.min(1, dt * 4)); } else bounceIn(o.pB, o.vB, lo, hi, dt);
+        o.A.position.copy(o.pA); o.B.position.copy(o.pB);
+        o.A.rotation.y = t + o.pA.x; o.B.rotation.y = t + o.pB.z;
+        if (!o.joined) nNO2 += 2;
+      });
+      tank.material.opacity = 0.03 + nNO2 / 24 * 0.32;
+      const txt = `${hot ? '加熱中' : 'ふつうの温度'}　NO₂ ${nNO2} 個（赤褐色）`;
+      if (lbl.el.textContent !== txt) lbl.el.textContent = txt;
+      return hot ? 1 : 0;
+    };
+  },
+  polymer(g, r) {
+    const N = 8, units = [];
+    for (let i = 0; i < N; i++) {
+      const u = new THREE.Group(); g.add(u);
+      const c1 = ball('#555555', 0.22), c2 = ball('#555555', 0.22); c1.position.x = -0.32; c2.position.x = 0.32; u.add(c1, c2);
+      const hs = []; [[-0.55, 0.45], [-0.55, -0.45], [0.55, 0.45], [0.55, -0.45]].forEach(([x, y]) => { const h = ball('#eeeeee', 0.14); h.position.set(x, y, 0); u.add(h); hs.push(h); });
+      const b1 = new THREE.Mesh(R.CYL, phong('#9aa6b8')); placeCyl(b1, new THREE.Vector3(-0.32, 0.07, 0), new THREE.Vector3(0.32, 0.07, 0), 0.05); u.add(b1);
+      const b2 = new THREE.Mesh(R.CYL, phong('#9aa6b8')); placeCyl(b2, new THREE.Vector3(-0.32, -0.07, 0), new THREE.Vector3(0.32, -0.07, 0), 0.05); u.add(b2);
+      units.push({ u, b2, free: new THREE.Vector3((r() - 0.5) * 7, 2.6 + r() * 2, (r() - 0.5) * 2.5), ph: r() * 6 });
+    }
+    const links = []; for (let i = 0; i < N - 1; i++) { const l = new THREE.Mesh(R.CYL, phong('#9aa6b8')); g.add(l); links.push(l); }
+    sepPart('エチレン CH₂=CH₂（単量体）', () => units[N - 1].u.position.clone().add(new THREE.Vector3(0, 0.7, 0)));
+    sepPart('ポリエチレン（高分子）', () => units[0].u.position.clone().add(new THREE.Vector3(0, -0.8, 0)));
+    view.sepR = 4.6; view.sepTarget.set(0, 2.0, 0); view.sepTop = 5.2;
+    return t => {
+      const k = sepLoop(t, 16);
+      units.forEach((o, i) => {
+        const s = Math.min(1, Math.max(0, (k - 0.08 - i * 0.08) / 0.08));
+        const chain = new THREE.Vector3(-3.5 + i * 1.0, 1.0 + (i % 2 ? 0.25 : -0.25), 0);
+        const free = o.free.clone().add(new THREE.Vector3(0.3 * Math.sin(t + o.ph), 0.3 * Math.sin(t * 1.2 + o.ph), 0));
+        o.u.position.copy(free.lerp(chain, s));
+        o.u.rotation.set(s < 1 ? t * 0.5 + o.ph : 0, s < 1 ? t * 0.3 : 0, 0);
+        o.b2.visible = s < 0.5; // 二重結合の1本が開く
+      });
+      links.forEach((l, i) => {
+        const on = k > 0.08 + (i + 1) * 0.08 + 0.08;
+        l.visible = on;
+        if (on) placeCyl(l, units[i].u.position.clone().add(new THREE.Vector3(0.32, 0, 0)), units[i + 1].u.position.clone().add(new THREE.Vector3(-0.32, 0, 0)), 0.05);
+      });
+      return k < 0.2 ? 0 : 1;
+    };
+  },
+});
+function pistonScene(g, r, kind) {
+  const RAD = 1.4, cyl = sepGlass([[RAD, 0.1], [RAD, 5.2]]); g.add(cyl);
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(RAD + 0.08, RAD + 0.08, 0.1, 40), phong('#9aa6b8')); g.add(base);
+  const piston = new THREE.Mesh(new THREE.CylinderGeometry(RAD - 0.02, RAD - 0.02, 0.25, 40), phong('#7d8794', { shininess: 90 })); g.add(piston);
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2, 12), phong('#7d8794')); g.add(rod);
+  const mols = []; for (let i = 0; i < 18; i++) { const m = ball('#e57373', 0.16); g.add(m); mols.push({ m, v: rv(r, 2) }); m.position.set((r() - 0.5) * 1.6, 0.4 + r() * 2.5, (r() - 0.5) * 1.6); }
+  const flame = sepFlame('#5b8dff'); flame.position.y = -1.4; flame.scale.setScalar(0.7); g.add(flame); flame.visible = false;
+  const lbl = addLabel('lbl-sep warm', '', () => new THREE.Vector3(-2.6, 4.6, 0));
+  let hits = 0, hitT = 0, rateShown = 0;
+  view.sepR = 3.4; view.sepTarget.set(0, 2.6, 0); view.sepTop = 5.8;
+  return t => {
+    const dt = sepLast(t), k = sepLoop(t, 14);
+    // ボイル：4 → 2 → 4　シャルル：温度 300 → 600 → 300 K、体積は T に比例
+    const w = k < 0.15 ? 0 : k < 0.35 ? (k - 0.15) / 0.2 : k < 0.7 ? 1 : k < 0.9 ? 1 - (k - 0.7) / 0.2 : 0;
+    const e = w * w * (3 - 2 * w);
+    const H = kind === 'boyle' ? 4.0 - 2.0 * e : 2.2 + 2.2 * e;
+    const T = kind === 'boyle' ? 300 : 300 + 300 * e;
+    const sp = 2.0 * Math.sqrt(T / 300);
+    piston.position.y = H + 0.13; rod.position.y = H + 1.2;
+    flame.visible = kind === 'charles' && k > 0.12 && k < 0.7;
+    const lo = new THREE.Vector3(-RAD + 0.2, 0.25, -RAD + 0.2), hi = new THREE.Vector3(RAD - 0.2, H - 0.12, RAD - 0.2);
+    mols.forEach(o => {
+      o.v.setLength(sp);
+      const before = o.v.y;
+      bounceIn(o.m.position, o.v, lo, hi, dt);
+      if (o.m.position.y > hi.y) o.m.position.y = hi.y;
+      if (before > 0 && o.v.y < 0) hits++;
+    });
+    hitT += dt;
+    if (hitT > 1.5) { rateShown = hits / hitT; hits = 0; hitT = 0; }
+    const V = kind === 'boyle' ? H / 4 : H / 2.2, P = kind === 'boyle' ? 4 / H : 1;
+    const txt = kind === 'boyle' ? `体積 ${V.toFixed(2)} V₀　圧力 ${P.toFixed(2)} P₀` : `${Math.round(T)} K　体積 ${V.toFixed(2)} V₀`;
+    if (lbl.el.textContent !== txt) lbl.el.textContent = txt;
+    return k < 0.35 ? 0 : k < 0.7 ? 1 : 2;
+  };
 }
 
 // ===== 状態変化ラボ =====
@@ -4887,11 +5446,14 @@ function showLessonMenu() {
   $('stageWrap').dataset.kind = 'quizmenu';
   $('caption').hidden = true;
   if (R) { clearView(); buildMolView(); R.controls.autoRotate = true; fitCamera(); }
+  const course = state.lessonCourse || 'kiso', CN = { kiso: '化学基礎', kagaku: '化学' };
+  const list = LESSONS.filter(l => l.course === course), passN = list.filter(l => lessonPass.has(l.id)).length;
   $('card').innerHTML = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">授業モード</span></div><h2 class="mol-name">どの授業をする？</h2></div></div>
-    <div class="card-body"><p class="note">学習指導要領（化学基礎）の順に並んでいます。大きな文字の説明と3Dで、1画面ずつ進めます。プロジェクターに映すときは、右上のボタンで全画面に。</p>
-    <div class="ls-score"><span>合格した授業</span><b>${lessonPass.size}</b><span>/ ${LESSONS.length}</span></div><div class="ls-pass-bar"><i style="width:${lessonPass.size / LESSONS.length * 100}%"></i></div>
-    ${(() => { const nx = LESSONS.find(l => !lessonDone.has(l.id)); return nx ? `<button type="button" class="qset hot" data-go="${nx.id}"><b>${lessonDone.size ? '続きから' : '最初から'}：${esc(nx.no)}　${esc(nx.name)}</b><span>→</span></button>` : '<p class="note">全部の授業を見終わりました！</p>'; })()}
-    ${LESSON_PARTS.map((pt, pi) => `<h3 class="ls-part">${esc(pt.name)}</h3>` + pt.chaps.map((ch, ci) => `<h4 class="ls-chap">${esc(ch)}</h4><div class="qsets">${LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<div class="ls-row"><button type="button" class="qset" data-go="${l.id}"><b><span class="ls-no">${esc(l.no)}</span>${esc(l.name)}${lessonPass.has(l.id) ? ' <i class="ls-medal-s" title="合格">🏅</i>' : lessonDone.has(l.id) ? ' <i class="ls-ok">✓</i>' : ''}</b><span>${l.steps.length}画面</span></button><button type="button" class="qtest" data-lstest="${l.id}" title="確認テストだけをする">テスト</button></div>`).join('')}</div>`).join('')).join('')}</div>`;
+    <div class="card-body"><div class="ls-course" role="tablist">${Object.entries(CN).map(([k, n]) => `<button type="button" role="tab" data-lcourse="${k}" aria-selected="${course === k}">${n}<small>${LESSONS.filter(l => l.course === k && lessonPass.has(l.id)).length}/${LESSONS.filter(l => l.course === k).length}</small></button>`).join('')}</div>
+    <p class="note">学習指導要領（${CN[course]}）の順に並んでいます。大きな文字の説明と3Dで、1画面ずつ進めます。プロジェクターに映すときは、右上のボタンで全画面に。</p>
+    <div class="ls-score"><span>${CN[course]}の合格</span><b>${passN}</b><span>/ ${list.length}</span></div><div class="ls-pass-bar"><i style="width:${passN / list.length * 100}%"></i></div>
+    ${(() => { const nx = list.find(l => !lessonDone.has(l.id)); return nx ? `<button type="button" class="qset hot" data-go="${nx.id}"><b>${list.some(l => lessonDone.has(l.id)) ? '続きから' : '最初から'}：${esc(nx.no)}　${esc(nx.name)}</b><span>→</span></button>` : '<p class="note">全部の授業を見終わりました！</p>'; })()}
+    ${LESSON_PARTS.map((pt, pi) => [pt, pi]).filter(([, pi]) => (pi < 2 ? 'kiso' : 'kagaku') === course).map(([pt, pi]) => `<h3 class="ls-part">${esc(pt.name)}</h3>` + pt.chaps.map((ch, ci) => `<h4 class="ls-chap">${esc(ch)}</h4><div class="qsets">${LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<div class="ls-row"><button type="button" class="qset" data-go="${l.id}"><b><span class="ls-no">${esc(l.no)}</span>${esc(l.name)}${lessonPass.has(l.id) ? ' <i class="ls-medal-s" title="合格">🏅</i>' : lessonDone.has(l.id) ? ' <i class="ls-ok">✓</i>' : ''}</b><span>${l.steps.length}画面</span></button><button type="button" class="qtest" data-lstest="${l.id}" title="確認テストだけをする">テスト</button></div>`).join('')}</div>`).join('')).join('')}</div>`;
   $('card').classList.remove('collapsed'); state.cardOpen = true;
 }
 function renderTabs() {
@@ -4924,7 +5486,8 @@ function renderGrid() {
   grid.className = 'grid';
   if (state.sec === 'lesson') {
     const cur2 = id => !!(state.lesson && state.lesson.l.id === id);
-    grid.innerHTML = LESSON_PARTS.map((pt, pi) => pt.chaps.map((ch, ci) => `<p class="ls-gh">${pi === 0 ? '第1編' : '第2編'} ${esc(ch.replace('　', ' '))}</p>` + LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<button type="button" class="card-btn wide" data-id="${l.id}" aria-current="${cur2(l.id)}"><span class="f">${esc(l.no)}　${esc(l.name)}</span><span class="n">${lessonPass.has(l.id) ? '🏅 合格　' : lessonDone.has(l.id) ? '<b class="done">✓</b>' : ''}${l.steps.length}画面</span></button>`).join('')).join('')).join('');
+    const course = state.lesson ? state.lesson.l.course : state.lessonCourse || 'kiso';
+    grid.innerHTML = LESSON_PARTS.map((pt, pi) => (pi < 2 ? 'kiso' : 'kagaku') !== course ? '' : pt.chaps.map((ch, ci) => `<p class="ls-gh">${esc(pt.name.split('　').slice(0, 2).join(' '))} ${esc(ch.replace('　', ' '))}</p>` + LESSONS.filter(l => l.part === pi && l.chap === ci).map(l => `<button type="button" class="card-btn wide" data-id="${l.id}" aria-current="${cur2(l.id)}"><span class="f">${esc(l.no)}　${esc(l.name)}</span><span class="n">${lessonPass.has(l.id) ? '🏅 合格　' : lessonDone.has(l.id) ? '<b class="done">✓</b>' : ''}${l.steps.length}画面</span></button>`).join('')).join('')).join('');
     return;
   }
   if (state.sec === 'quiz') {
@@ -5465,6 +6028,8 @@ function bindUI() {
   $('card').addEventListener('click', ev => {
     const go = ev.target.closest('[data-go]');
     if (go) { selectEntry(LIB.find(e => e.id === go.dataset.go)); return; }
+    const lc = ev.target.closest('[data-lcourse]');
+    if (lc) { state.lessonCourse = lc.dataset.lcourse; showLessonMenu(); renderGrid(); return; }
     const lt = ev.target.closest('[data-lstest]');
     if (lt) { const l = LESSONS.find(x => x.id === lt.dataset.lstest); selectEntry(LIB.find(e => e.id === l.id)); lsQuizStart(); renderCard(); return; }
     const ind = ev.target.closest('[data-ind]');
