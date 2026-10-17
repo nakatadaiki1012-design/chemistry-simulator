@@ -792,6 +792,7 @@ function pointUnder(cx, cy) {
   return _ray.ray.intersectPlane(plane, new THREE.Vector3()) || R.controls.target.clone();
 }
 function zoomAt(point, f) {
+  R.userMoved = true;
   const c = R.controls, cam = R.camera;
   const d = cam.position.distanceTo(c.target);
   f = Math.min(Math.max(f, c.minDistance / d), c.maxDistance / d);
@@ -857,7 +858,10 @@ function initThree() {
       camera.updateProjectionMatrix();
     };
     R.resize = resize;
-    new ResizeObserver(resize).observe(stage);
+    // 画面の大きさが変わったら、まだ自分で動かしていなければ器具がちょうど入るように合わせ直す
+    controls.addEventListener('start', () => { R.userMoved = true; });
+    let lastWH = '';
+    new ResizeObserver(() => { resize(); const k = stage.clientWidth + 'x' + stage.clientHeight; if (k !== lastWH) { lastWH = k; if (R.lastFrame && !R.userMoved) frame(...R.lastFrame); } }).observe(stage);
     resize();
     requestAnimationFrame(loop);
     return true;
@@ -902,12 +906,12 @@ function fitDistance(d, _unused, tanV, tanH) {
   return { dist: need * 1.1, center };
 }
 function frame(focusY, radius, dir) {
-  R.lastFrame = [focusY, radius, dir];
+  R.lastFrame = [focusY, radius, dir]; R.userMoved = false;
   R.resize();
   const cam = R.camera, stage = $('stage');
   const w = stage.clientWidth || 1, h = stage.clientHeight || 1;
   // 左右に部分の名前を出す余白を残す
-  const wEff = w > 700 ? w - 280 : w * 0.74, hEff = h;
+  const wEff = w > 700 ? w - 280 : w * 0.92, hEff = h * (w > 700 ? 1 : 0.9);
   const tanV = Math.tan(cam.fov * Math.PI / 360);
   const half = Math.min(Math.atan(tanV * hEff / h), Math.atan(tanV * wEff / h));
   let dist = radius / Math.sin(half) * 1.05;

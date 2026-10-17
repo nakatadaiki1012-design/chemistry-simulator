@@ -502,8 +502,26 @@ body.present { --card-w: 460px; }
   .ov-bl { bottom: calc(44% + 14px); right: 10px; }
   .stage-wrap.card-closed .ov-bl { bottom: 76px; }
   .ov-tl { max-width: calc(100% - 100px); }
-  .top { flex-direction: column; align-items: flex-start; gap: 4px; }
-  .secnav { max-width: 100%; }
+  /* 上のバー：1行目にロゴと実験ラボ、2行目にメニュー（すき間をなくす） */
+  .top { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 8px; padding-top: 6px; padding-bottom: 6px; }
+  .brand { font-size: 18px; }
+  .labnav { grid-column: 2; grid-row: 1; margin: 0; font-size: 12px; padding: 3px 10px; }
+  .secnav { grid-column: 1 / -1; max-width: 100%; }
+  .secnav button { padding: 5px 12px; font-size: 14px; }
+  .app { gap: 8px; padding-top: 8px; padding-bottom: 8px; }
+  .lib { padding: 8px; gap: 6px; }
+  /* 横に並ぶ一覧は、カードの高さを中身に合わせる（縦にのびない） */
+  .grid { align-items: flex-start; gap: 6px; padding-bottom: 6px; }
+  .grid .ls-gh, .grid .pt-note:not(.filt) { display: none; }
+  .card-btn.wide { max-width: 78vw; }
+  /* 周期表は横スクロールで、つぶさない */
+  .subnav { display: flex; flex-wrap: nowrap; overflow-x: auto; }
+  .subnav button { flex: 0 0 auto; }
+  /* メニュー画面（授業・クイズ）は3Dより説明パネルを大きく */
+  .stage-wrap[data-kind="quizmenu"] .card { max-height: 86%; }
+  .search { margin-bottom: 0; }
+  .grid.ptable { display: grid; grid-template-columns: repeat(8, 40px); overflow-x: auto; }
+  .pt { width: 40px; }
   .legend-ov { font-size: 12px; }
   .caption { top: 54px; right: 12px; left: 12px; font-size: 14px; }
   .stage-wrap[data-kind="mol"] .caption { top: 96px; left: 12px; text-align: center; }
