@@ -87,6 +87,11 @@ sub, sup { font-size: .68em; line-height: 0; }
 .tgl[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .toast { position: absolute; z-index: 4; left: 50%; top: 56px; transform: translateX(-50%); max-width: min(560px, calc(100% - 40px)); padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 15px; box-shadow: 0 8px 24px rgba(0,0,0,.18); text-align: center; text-wrap: balance; transition: opacity .3s; }
 .toast.ok { background: var(--ok); color: #fff; } .toast.ng { background: var(--ng); color: #fff; } .toast.info { background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
+/* お知らせは器具に重ならないように、3Dの下のはしに細い帯で出す（タップで消える） */
+.toast { z-index: 60 !important; transform: none !important; max-width: none !important; margin: 0;
+  padding: 6px 12px 6px 10px !important; border-radius: 4px !important; font-size: 13.5px !important; line-height: 1.5; text-align: left !important; box-shadow: 0 2px 8px rgba(0,0,0,.15) !important;
+  border-left: 5px solid rgba(0,0,0,.25) !important; cursor: pointer; opacity: .96; }
+.toast.ok, .toast.ng { color: #fff; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); display: flex; flex-direction: column; overflow: hidden; min-width: 0; min-height: 0; }
 .card-head { padding: 10px 14px 2px; display: flex; align-items: flex-start; gap: 8px; }
 .card-head > div:first-child { flex: 1; min-width: 0; }
@@ -1057,9 +1062,18 @@ function loop(now) {
 let toastTimer = 0;
 function toast(msg, kind) {
   const el = $('toast');
+  el.onclick = () => { clearTimeout(toastTimer); el.hidden = true; };
   el.textContent = msg; el.className = 'toast ' + (kind || 'info'); el.hidden = false; el.style.opacity = 1;
+  // 3Dの器具に重ならないように、説明パネルの上のはし（題名のところ）に重ねて出す
+  const full = document.fullscreenElement || $('stageWrap').classList.contains('is-max');
+  if (full) Object.assign(el.style, { position: 'absolute', left: '8px', right: '8px', width: 'auto', top: 'auto', bottom: '8px' });
+  else {
+    const cr = $('card').getBoundingClientRect();
+    Object.assign(el.style, { position: 'fixed', left: (cr.left + 6) + 'px', width: (cr.width - 12) + 'px', top: (cr.top + 6) + 'px', bottom: 'auto', right: 'auto' });
+  }
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.style.opacity = 0; setTimeout(() => { el.hidden = true; }, 300); }, kind === 'ng' ? 3200 : 2400);
+  clearTimeout(toast.hideTimer);
+  toastTimer = setTimeout(() => { el.style.opacity = 0; toast.hideTimer = setTimeout(() => { el.hidden = true; }, 300); }, Math.min(6000, 1800 + msg.length * 70));
 }
 
 // ===== 器具を見る =====
