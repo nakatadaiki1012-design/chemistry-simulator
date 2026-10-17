@@ -65,9 +65,13 @@ sub, sup { font-size: 0.68em; line-height: 0; }
   padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   border-bottom: 1px solid var(--line); background: var(--panel);
 }
-.brand { font-family: var(--font-display); font-weight: 800; font-size: 21px; letter-spacing: 0.02em; margin: 0; }
+.top { align-items: center; }
+.brand { font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: 0.02em; margin: 0; white-space: nowrap; }
 .brand b { color: var(--accent); }
-.tagline { color: var(--muted); font-size: 13px; margin: 0; }
+.secnav { display: flex; gap: 2px; overflow-x: auto; min-width: 0; }
+.secnav button { border: 0; background: transparent; padding: 6px 12px; border-radius: 999px; font-size: 14px; color: var(--muted); white-space: nowrap; font-weight: 500; }
+.secnav button:hover { color: var(--ink); }
+.secnav button[aria-current="true"] { background: var(--ink); color: var(--panel); }
 
 .app {
   flex: 1; min-height: 0; display: grid; gap: 12px;
@@ -133,6 +137,8 @@ sub, sup { font-size: 0.68em; line-height: 0; }
 .lbl-force.pair { background: #c98a00; }
 .lbl-core { font-size: 13px; color: #fff; text-shadow: 0 0 3px #000; }
 .lbl-step { font-size: 16px; color: var(--warm); text-shadow: 0 0 3px var(--panel); }
+.lbl-mol { font-size: 13px; font-family: var(--font-body); font-weight: 700; color: var(--ink); background: var(--glass); border: 1px solid var(--line); padding: 1px 9px; border-radius: 999px; }
+.lbl-mol.big { font-size: 16px; color: var(--accent-ink); background: var(--accent); border-color: var(--accent); font-family: var(--font-data); }
 
 .ov { position: absolute; display: flex; gap: 6px; z-index: 2; }
 .ov-tl { top: 10px; left: 10px; }
@@ -150,7 +156,23 @@ sub, sup { font-size: 0.68em; line-height: 0; }
 .tg::before { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--muted); }
 .tg[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 .tg[aria-pressed="true"]::before { background: var(--accent); border-color: var(--accent); }
-.stage-wrap:not([data-kind="mol"]) .ov-tl, .stage-wrap:not([data-kind="mol"]) .toggles { display: none; }
+.stage-wrap:not([data-kind="mol"]) .only-mol { display: none; }
+.stage-wrap:not([data-crystal="1"]) .only-crystal { display: none; }
+.stage-wrap:not([data-kind="atom"]) .only-atom { display: none; }
+.ov-tl { flex-wrap: wrap; align-items: flex-start; max-width: calc(100% - var(--card-w) - 110px); }
+.showwrap { position: relative; }
+.showbtn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); font-size: 13px; }
+.showbtn .cnt { font-family: var(--font-data); font-size: 11px; background: var(--chip); border-radius: 999px; padding: 0 6px; color: var(--muted); }
+.showbtn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+.showbtn[aria-expanded="true"] { border-color: var(--accent); }
+.showpanel { position: absolute; top: 40px; left: 0; z-index: 6; width: 230px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px; box-shadow: 0 10px 30px rgba(10, 20, 40, .16); }
+.showpanel .toggles { display: flex; flex-direction: column; gap: 0; }
+.tg-h { margin: 6px 8px 2px; font-size: 11px; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.showpanel .tg { border: 0; border-radius: 8px; background: transparent; justify-content: space-between; flex-direction: row-reverse; padding: 6px 8px; text-align: left; font-size: 13.5px; }
+.showpanel .tg:hover { background: var(--chip); }
+.showpanel .tg::before { width: 30px; height: 18px; border-radius: 999px; border: 0; background: var(--line); box-shadow: inset -12px 0 0 2px var(--line), inset -12px 0 0 6px #fff; flex: none; transition: box-shadow .15s; }
+.showpanel .tg[aria-pressed="true"] { color: var(--ink); }
+.showpanel .tg[aria-pressed="true"]::before { background: var(--accent); box-shadow: inset 12px 0 0 2px var(--accent), inset 12px 0 0 6px #fff; }
 
 /* 凡例 */
 .legend-ov { display: flex; flex-wrap: wrap; gap: 4px 12px; background: var(--glass); border: 1px solid var(--line); border-radius: 10px; padding: 5px 10px; font-size: 13px; max-width: 100%; }
@@ -167,6 +189,8 @@ sub, sup { font-size: 0.68em; line-height: 0; }
 .sw.dot { width: 11px; height: 11px; border-radius: 50%; background: var(--c); }
 .sw.dot::before, .sw.dot::after, .sw.blob::before, .sw.blob::after { display: none; }
 .sw.blob { width: 11px; height: 15px; border-radius: 50%; background: var(--lp); opacity: .6; }
+.sw.box { width: 12px; height: 12px; border: 2px solid var(--c); border-radius: 2px; }
+.sw.box::before, .sw.box::after { display: none; }
 
 /* ステージ上部の説明文（アニメーション） */
 .caption { position: absolute; z-index: 2; top: 12px; left: 16px; right: calc(var(--card-w) + 70px); text-align: center; pointer-events: none;
@@ -238,6 +262,34 @@ sub, sup { font-size: 0.68em; line-height: 0; }
 .shell .bar i { display: block; height: 100%; background: #ffc22e; border-radius: 999px; transition: width .5s; }
 .shell .sc { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .shell .sc b { color: var(--ink); font-family: var(--font-data); font-size: 14px; }
+.ptable { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; align-content: start; }
+.pt { aspect-ratio: 1; min-width: 0; border: 1px solid var(--line); background: var(--bg); border-radius: 7px; padding: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+.pt b { font-family: var(--font-data); font-size: 14px; font-weight: 600; }
+.pt .z { font-size: 9px; color: var(--muted); }
+.pt:hover { border-color: var(--accent); }
+.pt[aria-current="true"] { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.pt[aria-current="true"] .z { color: inherit; }
+.pt-note { grid-column: 1 / -1; grid-row: 5; font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+.mole-in { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 10px; }
+.seg.sm button { font-size: 12.5px; padding: 3px 8px; }
+.mole-in .seg { align-self: flex-start; flex-wrap: wrap; }
+.mole-row { display: flex; align-items: baseline; gap: 8px; }
+.mole-row input { width: 9em; font-family: var(--font-data); font-size: 20px; font-weight: 600; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
+.mole-row input:focus { outline: none; border-color: var(--accent); }
+.mole-row span { font-weight: 700; }
+.mole-in input[type=range] { accent-color: var(--accent); width: 100%; }
+.hub { display: grid; grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr) 18px minmax(0, 1fr); align-items: center; gap: 4px 2px; margin-bottom: 8px; }
+.hb { background: var(--chip); border-radius: 8px; padding: 5px 6px; text-align: center; min-width: 0; border: 1.5px solid transparent; }
+.hb span { display: block; font-size: 10.5px; color: var(--muted); line-height: 1.25; }
+.hb b { font-family: var(--font-data); font-size: 14px; overflow-wrap: anywhere; }
+.hb.n { background: var(--accent); }
+.hb.n span, .hb.n b { color: var(--accent-ink); }
+.hb.in { border-color: var(--warm); }
+.ha { text-align: center; color: var(--muted); font-size: 14px; }
+.hv { grid-column: 3; text-align: center; color: var(--muted); font-size: 14px; line-height: 1; }
+.hub > .hb:last-child { grid-column: 3; }
+.calc-steps { margin: 0 0 6px; padding-left: 20px; font-size: 13px; line-height: 1.7; font-variant-numeric: tabular-nums; }
+.calc-steps b { color: var(--accent); }
 .fallback { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted); }
 
 @media (max-width: 1180px) {
@@ -253,13 +305,15 @@ sub, sup { font-size: 0.68em; line-height: 0; }
   .card-btn { flex: 0 0 auto; min-width: 104px; }
   .stage-wrap { height: 86vh; height: 86svh; min-height: 520px; }
   .card { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-width: none; max-height: 44%; }
-  .ov-bl { top: 54px; bottom: auto; right: 10px; }
-  .toggles { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; padding-bottom: 2px; }
-  .tg { flex: 0 0 auto; }
+  .ov-bl { bottom: calc(44% + 14px); right: 10px; }
+  .stage-wrap.card-closed .ov-bl { bottom: 76px; }
+  .ov-tl { max-width: calc(100% - 100px); }
+  .top { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .secnav { max-width: 100%; }
   .legend-ov { font-size: 12px; }
-  .caption { top: auto; bottom: calc(44% + 14px); right: 12px; left: 12px; font-size: 14px; }
-  .stage-wrap[data-kind="mol"] .caption { left: 12px; text-align: center; }
-  .stage-wrap.card-closed .caption { bottom: 76px; }
+  .caption { top: 54px; right: 12px; left: 12px; font-size: 14px; }
+  .stage-wrap[data-kind="mol"] .caption { top: 96px; left: 12px; text-align: center; }
+  .stage-wrap.card-closed .caption { right: 12px; }
   .stage-wrap.card-closed .caption { right: 12px; }
   .facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -271,7 +325,7 @@ sub, sup { font-size: 0.68em; line-height: 0; }
 
 <header class="top">
   <h1 class="brand">分子ラボ<b>3D</b></h1>
-  <p class="tagline">化学基礎の分子・結合・電子殻を、立体で動かして見る</p>
+  <nav class="secnav" id="secnav" aria-label="分野"></nav>
 </header>
 
 <main class="app">
@@ -290,10 +344,39 @@ sub, sup { font-size: 0.68em; line-height: 0; }
     <div class="labels" id="labels"></div>
     <div class="caption" id="caption" aria-live="polite" hidden></div>
     <div class="ov ov-tl">
-      <div class="seg" id="modes" role="group" aria-label="表示のしかた">
+      <div class="seg only-mol" id="modes" role="group" aria-label="表示のしかた">
         <button type="button" data-mode="ball" aria-pressed="true">球棒</button>
         <button type="button" data-mode="space" aria-pressed="false">空間充填</button>
         <button type="button" data-mode="stick" aria-pressed="false">棒</button>
+      </div>
+      <div class="seg only-crystal" id="cellsSeg" role="group" aria-label="ならべる単位格子の数">
+        <button type="button" data-cells="1" aria-pressed="true">単位格子</button>
+        <button type="button" data-cells="2" aria-pressed="false">2×2×2</button>
+        <button type="button" data-cells="3" aria-pressed="false">3×3×3</button>
+      </div>
+      <div class="seg only-atom" id="atomSeg" role="group" aria-label="電子の表し方">
+        <button type="button" data-av="shell" aria-pressed="true">電子殻モデル</button>
+        <button type="button" data-av="cloud" aria-pressed="false">電子雲</button>
+      </div>
+      <div class="showwrap only-mol">
+        <button type="button" class="showbtn" id="btnShow" aria-expanded="false" aria-controls="showPanel">表示<span class="cnt">0</span>
+          <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="showpanel" id="showPanel" hidden>
+          <div class="toggles" id="toggles">
+            <p class="tg-h">結合と電子</p>
+            <button type="button" class="tg" data-k="btype">結合の種類を色分け</button>
+            <button type="button" class="tg" data-k="pairs">共有電子対（電子2個）</button>
+            <button type="button" class="tg" data-k="lp">非共有電子対</button>
+            <button type="button" class="tg" data-k="cloud">電子雲</button>
+            <p class="tg-h">形と性質</p>
+            <button type="button" class="tg" data-k="labels">原子記号</button>
+            <button type="button" class="tg" data-k="angle">結合角</button>
+            <button type="button" class="tg" data-k="polar">極性（δ+ / δ−）</button>
+            <p class="tg-h">動き</p>
+            <button type="button" class="tg" data-k="rotate">自動回転</button>
+            <button type="button" class="tg" data-k="vib">熱運動</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="ov ov-tr">
@@ -306,16 +389,6 @@ sub, sup { font-size: 0.68em; line-height: 0; }
     </div>
     <div class="ov ov-bl">
       <div class="legend-ov" id="legendOv" hidden></div>
-      <div class="toggles" id="toggles">
-        <button type="button" class="tg" data-k="btype">結合の種類</button>
-        <button type="button" class="tg" data-k="pairs">共有電子対</button>
-        <button type="button" class="tg" data-k="lp">非共有電子対</button>
-        <button type="button" class="tg" data-k="labels">原子記号</button>
-        <button type="button" class="tg" data-k="angle">結合角</button>
-        <button type="button" class="tg" data-k="polar">極性</button>
-        <button type="button" class="tg" data-k="rotate">自動回転</button>
-        <button type="button" class="tg" data-k="vib">熱運動</button>
-      </div>
     </div>
     <aside class="card" id="card" aria-label="説明"></aside>
   </section>
@@ -1176,63 +1249,119 @@ const LIB = [
     props: [['O–H（分子の中）', '約0.096 nm（共有結合）'], ['H…O（分子の間）', '約0.18 nm（水素結合）']],
     point: '青い点線が水素結合。中央の水分子は、2本のO–HでとなりのO原子と、2組の非共有電子対でとなりのH原子と水素結合している。水の沸点が高い理由や、氷のすき間の多い構造のもとになる。' },
 ];
+// 画面上部の切りかえ（大きな分類）
+const SECTIONS = [
+  { id: 'mol', name: '分子', cats: ['elem', 'basic', 'organic', 'ion'] },
+  { id: 'crystal', name: '結晶', cats: ['crystal'] },
+  { id: 'atom', name: '原子と電子', cats: ['atom'] },
+  { id: 'bond', name: '結合のしくみ', cats: ['bond'] },
+  { id: 'mole', name: '物質量（mol）', cats: ['mole'] },
+];
+const secOf = cat => (SECTIONS.find(s => s.cats.includes(cat)) || SECTIONS[0]).id;
+
+// 物質量（mol）の計算で使う物質。phase: 気体 gas / 液体 liquid / 固体 solid、density: g/cm³
+const MOLE_LIST = [
+  { id: 'mole-water', name: '水', f: 'H2O', model: 'water', phase: 'liquid', density: 1.0 },
+  { id: 'mole-co2', name: '二酸化炭素', f: 'CO2', model: 'co2', phase: 'gas' },
+  { id: 'mole-o2', name: '酸素', f: 'O2', model: 'oxygen', phase: 'gas' },
+  { id: 'mole-h2', name: '水素', f: 'H2', model: 'hydrogen', phase: 'gas' },
+  { id: 'mole-n2', name: '窒素', f: 'N2', model: 'nitrogen', phase: 'gas' },
+  { id: 'mole-ch4', name: 'メタン', f: 'CH4', model: 'methane', phase: 'gas' },
+  { id: 'mole-nh3', name: 'アンモニア', f: 'NH3', model: 'ammonia', phase: 'gas' },
+  { id: 'mole-ethanol', name: 'エタノール', f: 'C2H5OH', model: 'ethanol', phase: 'liquid', density: 0.79 },
+  { id: 'mole-nacl', name: '塩化ナトリウム', f: 'NaCl', model: 'pair', phase: 'solid', density: 2.16, unit: '組', unitNote: 'Na⁺ と Cl⁻ の組' },
+  { id: 'mole-c', name: '炭素（黒鉛）', f: 'C', model: 'atom', phase: 'solid', density: 2.26, unit: '個', unitNote: '原子' },
+  { id: 'mole-al', name: 'アルミニウム', f: 'Al', model: 'atom', phase: 'solid', density: 2.70, unit: '個', unitNote: '原子' },
+  { id: 'mole-fe', name: '鉄', f: 'Fe', model: 'atom', phase: 'solid', density: 7.87, unit: '個', unitNote: '原子' },
+];
+MOLE_LIST.forEach(m => LIB.push(Object.assign({ cat: 'mole', kind: 'mole', counts: parseBody(m.f), en: { gas: '気体', liquid: '液体', solid: '固体' }[m.phase] }, m)));
+
 const ALT_NAMES = { ethylene: ['エテン'], acetylene: ['エチン'], graphite: ['グラファイト'], dryice: ['二酸化炭素の固体'], hcl: ['塩酸'] };
 
 // ===== 結晶の組み立て =====
-function buildCrystal(kind) {
+// n: 1辺に並べる単位格子の数（1〜3）
+function buildCrystal(kind, n = 1) {
   const atoms = [], pos = [], bonds = [];
   const add = (el, charge, p, rb, rs) => { atoms.push({ el, charge, lp: 0, rb, rs }); pos.push(p); return atoms.length - 1; };
+  // 近い原子どうしだけを調べて結ぶ（原子が多くても速いように、格子のマス目で探す）
   const linkByDistance = (d, o = 1, style) => {
-    for (let i = 0; i < pos.length; i++) for (let j = i + 1; j < pos.length; j++) {
-      if (Math.abs(vlen(vsub(pos[i], pos[j])) - d) < 0.06) bonds.push({ a: i, b: j, o, style });
-    }
+    const cs = d * 1.1, grid = new Map();
+    const key = (x, y, z) => x + ',' + y + ',' + z;
+    pos.forEach((p, i) => {
+      const k = key(Math.floor(p[0] / cs), Math.floor(p[1] / cs), Math.floor(p[2] / cs));
+      if (!grid.has(k)) grid.set(k, []);
+      grid.get(k).push(i);
+    });
+    pos.forEach((p, i) => {
+      const gx = Math.floor(p[0] / cs), gy = Math.floor(p[1] / cs), gz = Math.floor(p[2] / cs);
+      for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (let dz = -1; dz <= 1; dz++) {
+        (grid.get(key(gx + dx, gy + dy, gz + dz)) || []).forEach(j => {
+          if (j > i && Math.abs(vlen(vsub(p, pos[j])) - d) < 0.06) bonds.push({ a: i, b: j, o, style });
+        });
+      }
+    });
   };
-  const FCC = [];
-  for (const x of [0, 1]) for (const y of [0, 1]) for (const z of [0, 1]) FCC.push([x, y, z]);
-  FCC.push([0.5, 0.5, 0], [0.5, 0.5, 1], [0.5, 0, 0.5], [0.5, 1, 0.5], [0, 0.5, 0.5], [1, 0.5, 0.5]);
-  const toPos = (f, a) => f.map(v => (v - 0.5) * a);
+  // 単位格子をn×n×n個ならべたときの格子点（重なりはまとめる）
+  const lattice = basis => {
+    const seen = new Set(), out = [];
+    for (let cx = 0; cx < n; cx++) for (let cy = 0; cy < n; cy++) for (let cz = 0; cz < n; cz++) {
+      basis.forEach(b => {
+        const f = [b[0] + cx, b[1] + cy, b[2] + cz];
+        const k = f.map(v => Math.round(v * 4)).join(',');
+        if (!seen.has(k)) { seen.add(k); out.push(f); }
+      });
+    }
+    return out;
+  };
+  const CORNERS = [];
+  for (const x of [0, 1]) for (const y of [0, 1]) for (const z of [0, 1]) CORNERS.push([x, y, z]);
+  const FCC = CORNERS.concat([[0.5, 0.5, 0], [0.5, 0.5, 1], [0.5, 0, 0.5], [0.5, 1, 0.5], [0, 0.5, 0.5], [1, 0.5, 0.5]]);
+  const toPos = (f, a) => f.map(v => (v - n / 2) * a);
+  // まん中あたりの単位格子1個を強調する箱
+  const c0 = Math.floor((n - 1) / 2);
+  const cellBox = a => ({ a, min: [0, 1, 2].map(() => (c0 - n / 2) * a) });
   let cell = null;
   if (kind === 'nacl') {
-    const a = 5.64; cell = a;
-    for (let i = 0; i <= 2; i++) for (let j = 0; j <= 2; j++) for (let k = 0; k <= 2; k++) {
-      const p = [(i - 1) * a / 2, (j - 1) * a / 2, (k - 1) * a / 2];
-      if ((i + j + k) % 2) add('Na', 1, p, 0.42, 1.02); else add('Cl', -1, p, 0.72, 1.81);
+    const a = 5.64; cell = cellBox(a);
+    for (let i = 0; i <= 2 * n; i++) for (let j = 0; j <= 2 * n; j++) for (let k = 0; k <= 2 * n; k++) {
+      const p = [(i - n) * a / 2, (j - n) * a / 2, (k - n) * a / 2];
+      if ((i + j + k + n + 1) % 2) add('Na', 1, p, 0.42, 1.02); else add('Cl', -1, p, 0.72, 1.81);
     }
     linkByDistance(a / 2, 1, 'contact');
   } else if (kind === 'diamond') {
-    const a = 3.567; cell = a;
-    FCC.forEach(f => add('C', 0, toPos(f, a), 0.38, 0.77));
-    [[0.25, 0.25, 0.25], [0.75, 0.75, 0.25], [0.75, 0.25, 0.75], [0.25, 0.75, 0.75]].forEach(f => add('C', 0, toPos(f, a), 0.38, 0.77));
+    const a = 3.567; cell = cellBox(a);
+    lattice(FCC.concat([[0.25, 0.25, 0.25], [0.75, 0.75, 0.25], [0.75, 0.25, 0.75], [0.25, 0.75, 0.75]]))
+      .forEach(f => add('C', 0, toPos(f, a), 0.38, 0.77));
     linkByDistance(a * Math.sqrt(3) / 4);
   } else if (kind === 'fcc') {
-    const a = 3.61; cell = a;
-    FCC.forEach(f => add('Cu', 0, toPos(f, a), 0.5, 1.28));
+    const a = 3.61; cell = cellBox(a);
+    lattice(FCC).forEach(f => add('Cu', 0, toPos(f, a), 0.5, 1.28));
   } else if (kind === 'bcc') {
-    const a = 2.87; cell = a;
-    for (const x of [0, 1]) for (const y of [0, 1]) for (const z of [0, 1]) add('Fe', 0, toPos([x, y, z], a), 0.5, 1.24);
-    add('Fe', 0, [0, 0, 0], 0.5, 1.24);
+    const a = 2.87; cell = cellBox(a);
+    lattice(CORNERS.concat([[0.5, 0.5, 0.5]])).forEach(f => add('Fe', 0, toPos(f, a), 0.5, 1.24));
   } else if (kind === 'graphite') {
     const a = 2.46, gap = 3.35, s3 = Math.sqrt(3);
-    const cx = a, cz = a / s3;
+    const cx = a, cz = a / s3, R = [3.9, 6.6, 9.3][n - 1], layers = n === 1 ? [-1, 0, 1] : n === 2 ? [-1.5, -0.5, 0.5, 1.5] : [-2, -1, 0, 1, 2];
     const shift = [a / 2, a * s3 / 6];
-    [-1, 0, 1].forEach(layer => {
-      const off = layer === 0 ? shift : [0, 0];
-      for (let i = -4; i <= 5; i++) for (let j = -4; j <= 5; j++) {
+    const span = Math.ceil(R / a) + 3;
+    layers.forEach((layer, li) => {
+      const off = li % 2 ? shift : [0, 0];
+      for (let i = -span; i <= span; i++) for (let j = -span; j <= span; j++) {
         for (const b of [[0, 0], shift]) {
           const x = i * a + j * a / 2 + b[0] + off[0], z = j * a * s3 / 2 + b[1] + off[1];
-          if (Math.hypot(x - cx, z - cz) <= 3.9) add('C', 0, [x - cx, layer * gap, z - cz], 0.34, 1.7);
+          if (Math.hypot(x - cx, z - cz) <= R) add('C', 0, [x - cx, layer * gap, z - cz], 0.34, 1.7);
         }
       }
     });
     linkByDistance(a / s3);
   } else if (kind === 'dryice') {
-    const a = 5.62; cell = a;
+    const a = 5.62; cell = cellBox(a);
     const dirOf = f => {
-      const m = f.map(v => (v % 1 + 1) % 1);
+      const m = f.map(v => ((v % 1) + 1) % 1);
       const key = m.map(v => (v ? 'h' : '0')).join('');
       return vnorm({ '000': [1, 1, 1], '0hh': [1, -1, -1], 'h0h': [-1, 1, -1], 'hh0': [-1, -1, 1] }[key]);
     };
-    FCC.forEach(f => {
+    lattice(FCC).forEach(f => {
       const c = toPos(f, a), u = dirOf(f);
       const ci = add('C', 0, c, 0.3, 1.7);
       const o1 = add('O', 0, vadd(c, vmul(u, 1.16)), 0.3, 1.52);
@@ -1242,7 +1371,7 @@ function buildCrystal(kind) {
   }
   const nb = atoms.map(() => []);
   bonds.forEach((b, k) => { nb[b.a].push({ j: b.b, o: b.o, k }); nb[b.b].push({ j: b.a, o: b.o, k }); });
-  return { atoms, bonds, nb, pos, lps: [], cell, crystal: true };
+  return { atoms, bonds, nb, pos, lps: [], cell, crystal: true, cells: n };
 }
 
 // ===== 原子（電子殻）の一覧：原子番号1〜20 =====
@@ -1319,6 +1448,15 @@ LIB.forEach(e => {
   e.key = formulaKey(e.counts, e.charge);
 });
 function getModel(e) {
+  if (e.crystal) {
+    // 結晶は「並べる単位格子の数」ごとに作っておく
+    e.models = e.models || {};
+    const nCells = state.cells || 1;
+    if (!e.models[nCells]) e.models[nCells] = buildCrystal(e.crystal, nCells);
+    e.model = e.models[nCells];
+    if (!e.an) e.an = { counts: e.counts, charge: 0, mass: massOf(e.counts), mu: [0, 0, 0], muLen: 0 };
+    e.an.delta = e.model.atoms.map(() => 0);
+  }
   if (e.kind === 'mol' && !e.model) {
     if (e.crystal) e.model = buildCrystal(e.crystal);
     else if (e.custom) e.model = buildWaterCluster();
@@ -1370,8 +1508,9 @@ function bondKind(e, b, k) {
 const PREF_KEY = 'molecule-lab:prefs';
 const state = {
   entry: null, mode: 'ball', selected: -1, cat: 'basic',
-  show: { labels: true, lp: true, pairs: false, btype: true, angle: false, polar: false, rotate: true, vib: false },
-  cardOpen: true,
+  show: { labels: true, lp: true, pairs: false, btype: true, angle: false, polar: false, rotate: true, vib: false, cloud: false },
+  cardOpen: true, sec: 'mol', cells: 1, atomView: 'shell',
+  mole: { n: 1, unit: 'mol' },
   demo: { tau: 0, playing: false },
   atomIon: false,
 };
@@ -1395,6 +1534,7 @@ function resetView() {
   Object.assign(view, {
     kind: null, atoms: [], bonds: [], lps: [], labels: [], arcs: [], extras: [], free: [], halo: null,
     base: [], cur: [], vib: [], grow: 1, growStart: 0, dipole: null, tick: null, fakeLp: null,
+    dashLines: null, cloud: null, cellBox: null, bohr: null, dat: null, moleExtent: 0,
   });
 }
 resetView();
@@ -1444,7 +1584,7 @@ function cardSpace() {
   const sw = $('stage').clientWidth, sh = $('stage').clientHeight;
   if (isNarrow()) {
     // 下に説明シート、上にボタン類があるので、そのあいだに表示する
-    const ctl = document.querySelector('.ov-bl');
+    const ctl = document.querySelector('.ov-tl');
     const top = ctl && ctl.offsetHeight ? ctl.offsetTop + ctl.offsetHeight + 4 : 56;
     return { x: 0, y: Math.min(card.offsetHeight + 16, sh * 0.55), top };
   }
@@ -1534,17 +1674,26 @@ function buildMolView() {
     amp: (a.el === 'H' ? 0.09 : 0.05) * (m.crystal ? 1.5 : 1),
     w: [0, 1, 2].map(() => 5 + rnd() * 6), ph: [0, 1, 2].map(() => rnd() * 6.28),
   }));
+  const many = m.atoms.length > 120;
   m.atoms.forEach((a, i) => {
-    const mesh = new THREE.Mesh(R.SPHERE, phong(EL[a.el].c));
+    const mesh = new THREE.Mesh(many ? R.SMALL : R.SPHERE, phong(EL[a.el].c));
     mesh.userData.atom = i;
     g.add(mesh);
     view.atoms.push(mesh);
   });
   // 結合：実線（共有結合）は本数ぶん、点線（イオン結合・水素結合）は短い棒を並べる
+  // 点線がとても多い（大きな結晶）ときは、まとめて1本の点線の線として描く
+  const dashedCount = m.bonds.filter((b, k) => BOND_STYLE[bondKind(e, b, k)].dashed).length;
+  const lineMode = dashedCount > 60;
+  const dashedItems = [];
   m.bonds.forEach((b, k) => {
     const kind = bondKind(e, b, k), st = BOND_STYLE[kind];
     const item = { b, k, kind, lines: [], dashes: [], dots: [] };
-    if (st.dashed) {
+    if (st.dashed && lineMode) {
+      item.inLine = true;
+      dashedItems.push(item);
+      return;
+    } else if (st.dashed) {
       for (let d = 0; d < 7; d++) {
         const mesh = new THREE.Mesh(R.CYL, phong(st.color, { emissive: st.color, emissiveIntensity: 0.25 }));
         g.add(mesh); item.dashes.push(mesh);
@@ -1553,9 +1702,13 @@ function buildMolView() {
       const n = kind === 'dative' ? 1 : b.o;
       for (let l = 0; l < n; l++) {
         const m1 = new THREE.Mesh(R.CYL, phong('#ffffff')), m2 = new THREE.Mesh(R.CYL, phong('#ffffff'));
-        const d1 = new THREE.Mesh(R.SMALL, basic(ELECTRON_COLOR)), d2 = new THREE.Mesh(R.SMALL, basic(ELECTRON_COLOR));
-        g.add(m1, m2, d1, d2);
-        item.lines.push([m1, m2]); item.dots.push([d1, d2]);
+        g.add(m1, m2);
+        item.lines.push([m1, m2]);
+        if (!m.crystal) {
+          const d1 = new THREE.Mesh(R.SMALL, basic(ELECTRON_COLOR)), d2 = new THREE.Mesh(R.SMALL, basic(ELECTRON_COLOR));
+          g.add(d1, d2);
+          item.dots.push([d1, d2]);
+        }
       }
     }
     view.bonds.push(item);
@@ -1565,15 +1718,29 @@ function buildMolView() {
     g.add(grp);
     view.lps.push({ l, grp, dir: new THREE.Vector3() });
   });
-  if (m.cell) {
-    const box = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(m.cell, m.cell, m.cell)),
-      new THREE.LineBasicMaterial({ color: cssVar('--muted') || '#5a6577', transparent: true, opacity: 0.7 }));
-    g.add(box); view.extras.push(box);
+  if (dashedItems.length) {
+    const st = BOND_STYLE[dashedItems[0].kind];
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(dashedItems.length * 6), 3));
+    const obj = new THREE.LineSegments(geo, new THREE.LineDashedMaterial({ color: st.color, dashSize: 0.32, gapSize: 0.22 }));
+    g.add(obj);
+    view.dashLines = { obj, items: dashedItems };
+    dashedItems.forEach(it => view.bonds.push(it));
   }
+  if (m.cell) {
+    // 単位格子（まん中の1個）を強調する箱
+    const a = m.cell.a;
+    const box = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(a, a, a)),
+      new THREE.LineBasicMaterial({ color: m.cells > 1 ? (cssVar('--accent') || '#2753d6') : (cssVar('--muted') || '#5a6577'), transparent: true, opacity: 0.85 }));
+    box.position.set(m.cell.min[0] + a / 2, m.cell.min[1] + a / 2, m.cell.min[2] + a / 2);
+    g.add(box); view.extras.push(box);
+    view.cellBox = box;
+  }
+  buildCloud();
   // 金属結晶：自由電子
   if (e.kind === 'mol' && e.crystal && /金属/.test(e.kind2 || e.bond)) {
-    const h = m.cell * 0.62, r2 = rng(99);
-    for (let i = 0; i < m.atoms.length + 4; i++) {
+    const h = Math.max(...m.pos.map(p => Math.max(Math.abs(p[0]), Math.abs(p[1]), Math.abs(p[2])))) + 0.3, r2 = rng(99);
+    for (let i = 0; i < Math.min(m.atoms.length + 4, 120); i++) {
       const mesh = new THREE.Mesh(R.SMALL, basic(ELECTRON_COLOR));
       mesh.scale.setScalar(0.12);
       g.add(mesh);
@@ -1584,12 +1751,68 @@ function buildMolView() {
   view.halo.visible = false;
   g.add(view.halo);
   buildDipole();
-  m.atoms.forEach((a, i) => {
-    const L = addLabel('lbl-atom' + (m.atoms.length > 40 ? ' sm' : ''), '', () => view.cur[i], { atom: i });
-    L.kind = 'atom'; L.i = i;
-  });
+  // 原子がとても多いときは、ラベルで画面がうまらないように出さない
+  if (m.atoms.length <= 64) {
+    m.atoms.forEach((a, i) => {
+      const L = addLabel('lbl-atom' + (m.atoms.length > 40 ? ' sm' : ''), '', () => view.cur[i], { atom: i });
+      L.kind = 'atom'; L.i = i;
+    });
+  }
   if (e.anim === 'dative') setupDative();
   applyLook();
+}
+
+// 電子雲：電子を「点の雲」として表す。電気陰性度の大きい原子のまわりほど濃くなる
+let DOT_TEX = null;
+function dotTexture() {
+  if (DOT_TEX) return DOT_TEX;
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(0.4, 'rgba(255,255,255,0.6)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 64, 64);
+  DOT_TEX = new THREE.CanvasTexture(c);
+  return DOT_TEX;
+}
+function gauss(r) { return Math.sqrt(-2 * Math.log(1 - r() * 0.999)) * Math.cos(2 * Math.PI * r()); }
+function randDir(r) {
+  const z = r() * 2 - 1, a = r() * Math.PI * 2, s = Math.sqrt(1 - z * z);
+  return [Math.cos(a) * s, z, Math.sin(a) * s];
+}
+function buildCloud() {
+  const e = state.entry, m = e.model;
+  view.cloud = null;
+  if (m.crystal || m.atoms.length > 64) return;
+  const r = rng(31), offs = [], owner = [], cols = [];
+  m.atoms.forEach((a, i) => {
+    const d = e.an.delta ? e.an.delta[i] : 0;
+    const count = Math.round((a.el === 'H' ? 320 : 600) * Math.max(0.5, Math.min(2, 1 - d * 0.4)));
+    const R0 = EL[a.el].rv * 0.5;
+    for (let k = 0; k < count; k++) {
+      const dir = randDir(r), rad = Math.abs(gauss(r)) * R0;
+      offs.push(dir[0] * rad, dir[1] * rad, dir[2] * rad);
+      owner.push(i);
+    }
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(offs.length), 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(offs.length), 3));
+  const obj = new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.11, map: dotTexture(), transparent: true, opacity: 0.6, depthWrite: false, vertexColors: true }));
+  obj.renderOrder = 5;
+  R.group.add(obj);
+  view.cloud = { obj, offs, owner };
+}
+function colorCloud() {
+  const c = view.cloud;
+  if (!c) return;
+  const e = state.entry, polar = state.show.polar;
+  const arr = c.obj.geometry.attributes.color.array;
+  const base = new THREE.Color('#6f7dff');
+  c.owner.forEach((i, k) => {
+    const col = polar ? deltaColor(e.an.delta[i] * 1.6) : base;
+    arr[k * 3] = col.r; arr[k * 3 + 1] = col.g; arr[k * 3 + 2] = col.b;
+  });
+  c.obj.geometry.attributes.color.needsUpdate = true;
 }
 
 function buildDipole() {
@@ -1658,6 +1881,7 @@ function applyLook() {
   });
   const lpOn = state.show.lp && state.mode !== 'space';
   view.lps.forEach(v => { v.grp.visible = lpOn; });
+  if (view.cloud) { view.cloud.obj.visible = !!state.show.cloud; colorCloud(); }
   if (view.dipole) { view.dipole.grp.visible = state.show.polar; view.dipole.L.el.hidden = !state.show.polar; }
   view.labels.forEach(L => {
     if (L.kind !== 'atom') return;
@@ -1725,7 +1949,27 @@ function updatePositions(t) {
     view.atoms[i].position.copy(c);
   });
   const stick = state.mode === 'stick', space = state.mode === 'space';
+  if (view.dashLines && (vibOn || !view.dashLines.done)) {
+    const arr = view.dashLines.obj.geometry.attributes.position.array;
+    view.dashLines.items.forEach((it, k) => {
+      const A = view.cur[it.b.a], B = view.cur[it.b.b];
+      arr.set([A.x, A.y, A.z, B.x, B.y, B.z], k * 6);
+    });
+    view.dashLines.obj.geometry.attributes.position.needsUpdate = true;
+    view.dashLines.obj.computeLineDistances();
+    view.dashLines.done = true;
+  }
+  if (view.cloud && view.cloud.obj.visible) {
+    const c = view.cloud, arr = c.obj.geometry.attributes.position.array;
+    const ang = t * 0.6, ca = Math.cos(ang), sa = Math.sin(ang);
+    for (let k = 0; k < c.owner.length; k++) {
+      const o = view.cur[c.owner[k]], x = c.offs[k * 3], y = c.offs[k * 3 + 1], z = c.offs[k * 3 + 2];
+      arr[k * 3] = o.x + x * ca - z * sa; arr[k * 3 + 1] = o.y + y; arr[k * 3 + 2] = o.z + x * sa + z * ca;
+    }
+    c.obj.geometry.attributes.position.needsUpdate = true;
+  }
   view.bonds.forEach(item => {
+    if (item.inLine) return;
     const b = item.b, A = view.cur[b.a], B = view.cur[b.b];
     if (item.dashes.length) {
       const D = item.dashes.length, L = A.distanceTo(B);
@@ -1756,6 +2000,7 @@ function updatePositions(t) {
       const a1 = A.clone().add(off), m1 = mid.clone().add(off), b1 = B.clone().add(off);
       placeCyl(p[0], a1, m1, r);
       placeCyl(p[1], m1, b1, r);
+      if (!item.dots[k]) return;
       const [d1, d2] = item.dots[k];
       d1.visible = d2.visible = pairsOn && p[0].visible;
       if (pairsOn) {
@@ -1905,8 +2150,36 @@ function buildAtomView() {
     L.shell = i;
   });
   view.nucLabel = addLabel('lbl-nuc', `原子核<br><b>+${Z}</b>`, () => new THREE.Vector3(0, -0.72, 0));
+  // 電子雲モード：殻のあたりに電子が雲のように広がっている様子
+  const cloudGeo = new THREE.BufferGeometry();
+  const cloud = new THREE.Points(cloudGeo, new THREE.PointsMaterial({ size: 0.1, map: dotTexture(), transparent: true, opacity: 0.7, depthWrite: false, vertexColors: true }));
+  R.group.add(cloud);
+  let cloudKey = '';
+  const makeCloud = counts => {
+    const r = rng(5), pos = [], col = [];
+    let outer = -1; counts.forEach((c, i) => { if (c) outer = i; });
+    const cOut = new THREE.Color('#ffb400'), cIn = new THREE.Color('#7f9cff');
+    counts.forEach((c, i) => {
+      for (let k = 0; k < c * 420; k++) {
+        const dir = randDir(r), rad = SHELL_R[i] * (1 + gauss(r) * 0.13);
+        pos.push(dir[0] * rad, dir[1] * rad, dir[2] * rad);
+        const cc = i === outer ? cOut : cIn;
+        col.push(cc.r, cc.g, cc.b);
+      }
+    });
+    cloudGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    cloudGeo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  };
   view.tick = (t, now) => {
     bohr.update(t, now);
+    const isCloud = state.atomView === 'cloud';
+    cloud.visible = isCloud;
+    if (isCloud) {
+      const key = bohr.counts.join(',');
+      if (key !== cloudKey) { makeCloud(bohr.counts); cloudKey = key; }
+      cloud.rotation.y = t * 0.25; cloud.rotation.x = t * 0.11;
+      bohr.shells.forEach(sh => { sh.ring.visible = false; sh.pool.forEach(m => { m.visible = false; }); });
+    }
     view.labels.forEach(L => {
       if (L.shell === undefined) return;
       const n = bohr.counts[L.shell];
@@ -2033,15 +2306,119 @@ function buildDemoView() {
   renderLegend();
 }
 
+// ===== 物質量（mol）：粒子の数・質量・体積を目で見る =====
+const NA = 6.0e23, VM = 22.4;
+function moleNumbers(e, n) {
+  const M = massOf(e.counts).total;
+  const mass = n * M;
+  return { M, n, mass, count: n * NA, gasL: n * VM, mL: e.density ? mass / e.density : null };
+}
+function moleTemplate(e) {
+  if (e.model === 'atom') return [{ el: e.f, p: [0, 0, 0], r: EL[e.f].rv * 0.62 }];
+  if (e.model === 'pair') return [{ el: 'Na', p: [-0.6, 0, 0], r: 1.02 }, { el: 'Cl', p: [0.75, 0, 0], r: 1.81 }];
+  const src = getModel(LIB.find(x => x.id === e.model)).model;
+  return src.atoms.map((a, i) => ({ el: a.el, p: src.pos[i], r: EL[a.el].rv }));
+}
+function buildMoleView(keepCamera) {
+  const e = state.entry, g = R.group;
+  view.kind = 'mole';
+  const num = moleNumbers(e, state.mole.n);
+  const k = Math.max(1, Math.min(50, Math.round(state.mole.n * 10)));
+  const tpl = moleTemplate(e);
+  const s = e.model === 'atom' ? 0.42 : e.model === 'pair' ? 0.3 : 0.3;
+  const mats = {};
+  const mat = el => mats[el] || (mats[el] = phong(EL[el].c));
+  const icons = [];
+  for (let i = 0; i < k; i++) {
+    const grp = new THREE.Group();
+    tpl.forEach(a => {
+      const m = new THREE.Mesh(R.SMALL, mat(a.el));
+      m.scale.setScalar(a.r * s);
+      m.position.set(a.p[0] * s, a.p[1] * s, a.p[2] * s);
+      grp.add(m);
+    });
+    g.add(grp);
+    icons.push(grp);
+  }
+  const r = rng(11);
+  const lineMat = c => new THREE.LineBasicMaterial({ color: c, transparent: true, opacity: 0.9 });
+  const boxAt = (side, center, color, fill) => {
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(side, side, side)), lineMat(color));
+    edges.position.copy(center); g.add(edges);
+    if (fill) {
+      const f = new THREE.Mesh(new THREE.BoxGeometry(side, side, side), basic(color, { transparent: true, opacity: 0.07, depthWrite: false }));
+      f.position.copy(center); g.add(f);
+    }
+  };
+  const accent = cssVar('--accent') || '#2753d6', muted = cssVar('--muted') || '#5a6577';
+  const UNIT = 4;  // 3D空間の1目盛り = 4 cm
+  const ref = 10 / UNIT;  // 1 L（一辺10 cm）の箱
+  view.moleLabels = [];
+  if (e.phase === 'gas') {
+    const side = Math.cbrt(num.gasL * 1000) / UNIT;
+    const c = new THREE.Vector3(0, side / 2, 0);
+    boxAt(side, c, accent, true);
+    boxAt(ref, new THREE.Vector3(side / 2 + 1.2 + ref / 2, ref / 2, 0), muted, false);
+    addLabel('lbl-mol big', `${fmtNum(num.gasL)} L`, () => new THREE.Vector3(0, side + 0.6, 0));
+    addLabel('lbl-mol', '1 L', () => new THREE.Vector3(side / 2 + 1.2 + ref / 2, ref + 0.4, 0));
+    addLabel('lbl-mol', `質量 ${fmtNum(num.mass)} g`, () => new THREE.Vector3(0, -0.6, 0));
+    const h = Math.max(side / 2 - 0.45, 0.05);
+    const paths = icons.map(() => ({ p: [r() * 2 - 1, r() * 2 - 1, r() * 2 - 1].map(v => v * h), v: randDir(r).map(v => v * (0.5 + r() * 0.6)), spin: r() * 2 }));
+    const tri = (x, hh) => { const p = 4 * hh; const m = ((x + hh) % p + p) % p; return m < 2 * hh ? m - hh : 3 * hh - m; };
+    view.tick = t => {
+      icons.forEach((ic, i) => {
+        const q = paths[i];
+        ic.position.set(tri(q.p[0] + q.v[0] * t, h), side / 2 + tri(q.p[1] + q.v[1] * t, h), tri(q.p[2] + q.v[2] * t, h));
+        ic.rotation.set(t * q.spin, t * 0.7 * q.spin, 0);
+      });
+    };
+    view.moleExtent = Math.cbrt(5 * VM * 1000) / UNIT;
+  } else {
+    // 液体・固体：はかりの皿の上に積み上げる
+    const cols = 5, rows = 2, gap = 1.05;
+    icons.forEach((ic, i) => {
+      const col = i % cols, row = Math.floor(i / cols) % rows, layer = Math.floor(i / (cols * rows));
+      ic.position.set((col - (cols - 1) / 2) * gap - 2.2, 0.55 + layer * 0.95, (row - 0.5) * gap);
+      ic.rotation.set(r() * 3, r() * 3, 0);
+    });
+    const pan = new THREE.Mesh(new THREE.CylinderGeometry(3.3, 3.0, 0.18, 48), phong('#c9d1de'));
+    pan.position.set(-2.2, -0.05, 0); g.add(pan);
+    const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 1.2, 16), phong('#aab4c4'));
+    stand.position.set(-2.2, -0.75, 0); g.add(stand);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.35, 2.2), phong('#8f9ab0'));
+    base.position.set(-2.2, -1.45, 0); g.add(base);
+    addLabel('lbl-mol big', `${fmtNum(num.mass)} g`, () => new THREE.Vector3(-2.2, -1.45, 1.2));
+    const side = Math.cbrt(num.mL) / UNIT;
+    boxAt(Math.max(side, 0.02), new THREE.Vector3(3.2, side / 2, 0), accent, true);
+    boxAt(ref, new THREE.Vector3(3.2 + 2.2, ref / 2, 0), muted, false);
+    addLabel('lbl-mol', `体積 ${fmtNum(num.mL)} mL`, () => new THREE.Vector3(3.2, Math.max(side, 0.3) + 0.5, 0));
+    addLabel('lbl-mol', '1 L', () => new THREE.Vector3(3.2 + 2.2, ref + 0.4, 0));
+    view.tick = t => { icons.forEach((ic, i) => { ic.rotation.y = 0.3 * Math.sin(t * 0.8 + i); }); };
+    view.moleExtent = 6.5;
+  }
+  renderLegend();
+}
+function fmtNum(x) {
+  if (x === null || x === undefined || !isFinite(x)) return '—';
+  if (x >= 1000) return Math.round(x).toLocaleString('ja-JP');
+  return String(parseFloat(x.toPrecision(3)));
+}
+function fmtSci(x) {
+  if (!x) return '0';
+  const ex = Math.floor(Math.log10(x)), m = x / Math.pow(10, ex);
+  return `${m.toFixed(1)}×10<sup>${ex}</sup>`;
+}
+
 // ===== カメラ =====
 function sceneRadius() {
   const e = state.entry;
   if (view.kind === 'atom') return SHELL_R[Math.max(1, view.bohr.outer())] + 0.6;
   if (view.kind === 'demo') return e.demo === 'metal' ? 5.4 : e.demo === 'ionic' ? 5.2 : 2.7;
+  if (view.kind === 'mole') return e.phase === 'gas' ? view.moleExtent * 0.9 + 1.5 : view.moleExtent;
   const m = e.model;
   let r = 0;
   m.pos.forEach(p => { r = Math.max(r, vlen(p) + (m.crystal ? 1.2 : 1.0)); });
-  if (m.cell) r = Math.max(r, m.cell * 0.87);
+  if (m.cell && m.cells === 1) r = Math.max(r, m.cell.a * 0.87);
   if (e.anim === 'dative') r = Math.max(r, 4.3);
   return Math.max(r, 1.6);
 }
@@ -2058,11 +2435,14 @@ function fitCamera() {
   const dist = r / Math.sin(Math.min(halfV, halfH)) * 1.05;
   const e = state.entry;
   let dir;
-  if (view.kind !== 'mol') dir = new THREE.Vector3(0, 0, 1);
+  if (view.kind === 'mole') dir = new THREE.Vector3(0.35, 0.45, 1);
+  else if (view.kind !== 'mol') dir = new THREE.Vector3(0, 0, 1);
   else if (e.model.crystal) dir = new THREE.Vector3(0.75, 0.5, 1);
   else dir = new THREE.Vector3(0.28, 0.22, 1);
-  cam.position.copy(dir.normalize().multiplyScalar(dist));
-  R.controls.target.set(0, 0, 0);
+  const target = new THREE.Vector3(0, 0, 0);
+  if (view.kind === 'mole') target.set(e.phase === 'gas' ? view.moleExtent * 0.2 : 0.6, e.phase === 'gas' ? view.moleExtent * 0.4 : 0.6, 0);
+  cam.position.copy(dir.normalize().multiplyScalar(dist)).add(target);
+  R.controls.target.copy(target);
   R.controls.update();
 }
 
@@ -2143,16 +2523,40 @@ function selectAtom(i) {
 }
 
 // ===== 画面の左：分子の棚 =====
-function renderTabs() {
-  $('tabs').innerHTML = CATS.map(c => `<button type="button" class="tab" role="tab" data-cat="${c.id}" aria-selected="${c.id === state.cat}">${c.name}</button>`).join('');
+function renderNav() {
+  $('secnav').innerHTML = SECTIONS.map(s => `<button type="button" data-sec="${s.id}" aria-current="${s.id === state.sec}">${s.name}</button>`).join('');
 }
+function renderTabs() {
+  const sec = SECTIONS.find(s => s.id === state.sec);
+  const show = sec.cats.length > 1;
+  $('tabs').hidden = !show;
+  if (show) $('tabs').innerHTML = sec.cats.map(id => CATS.find(c => c.id === id)).map(c => `<button type="button" class="tab" role="tab" data-cat="${c.id}" aria-selected="${c.id === state.cat}">${c.name}</button>`).join('');
+}
+// 原子番号1〜20を、周期表の形（1・2族と13〜18族）に並べる
+const PT_COL = { 1: 1, 2: 2, 13: 3, 14: 4, 15: 5, 16: 6, 17: 7, 18: 8 };
+function groupOf(Z) {
+  if (Z === 1) return 1; if (Z === 2) return 18;
+  const p = Z <= 10 ? Z - 2 : Z <= 18 ? Z - 10 : Z - 18;
+  return p <= 2 ? p : p + 10;
+}
+function periodOf(Z) { return Z <= 2 ? 1 : Z <= 10 ? 2 : Z <= 18 ? 3 : 4; }
 function renderGrid() {
-  const items = LIB.filter(e => e.cat === state.cat);
-  $('grid').innerHTML = items.map(e => {
-    let f = formulaHTML(e.rational || displayFormula(e)), sub = esc(e.name);
-    if (e.kind === 'atom') { f = `<span class="z">${EL[e.el].z}</span>${esc(e.el)}`; sub = esc(EL[e.el].n) + '　' + configText(shellCounts(EL[e.el].z)); }
-    return `<button type="button" class="card-btn${e.kind === 'atom' ? ' atom' : ''}" data-id="${e.id}" aria-current="${state.entry && state.entry.id === e.id}">
-      <span class="f">${f}</span><span class="n">${sub}</span></button>`;
+  const grid = $('grid');
+  const cur = id => state.entry && state.entry.id === id;
+  if (state.sec === 'atom') {
+    grid.className = 'grid ptable';
+    grid.innerHTML = LIB.filter(e => e.kind === 'atom').map(e => {
+      const Z = EL[e.el].z;
+      return `<button type="button" class="pt" style="grid-column:${PT_COL[groupOf(Z)]};grid-row:${periodOf(Z)}" data-id="${e.id}" aria-current="${cur(e.id)}" title="${esc(EL[e.el].n)}">
+        <span class="z">${Z}</span><b>${esc(e.el)}</b></button>`;
+    }).join('') + '<p class="pt-note">元素をえらぶと、電子殻と電子のようすが見られます。</p>';
+    return;
+  }
+  grid.className = 'grid';
+  const cats = state.sec === 'mol' ? [state.cat] : SECTIONS.find(s => s.id === state.sec).cats;
+  grid.innerHTML = LIB.filter(e => cats.includes(e.cat)).map(e => {
+    const f = formulaHTML(e.rational || displayFormula(e));
+    return `<button type="button" class="card-btn" data-id="${e.id}" aria-current="${cur(e.id)}"><span class="f">${f}</span><span class="n">${esc(e.name)}</span></button>`;
   }).join('');
 }
 const configText = c => c.map((n, i) => (n ? SHELL_NAMES[i] + n : '')).filter(Boolean).join(' ');
@@ -2171,9 +2575,17 @@ function renderLegend() {
         items.push(`<span class="lg"><i class="sw${st.dashed ? ' dash' : ''} n${k}" style="--c:${st.color}"></i>${st.name}<b>${counts[k]}</b></span>`);
       });
     }
+    if (view.cloud && state.show.cloud) items.push(`<span class="lg"><i class="sw dot" style="--c:#6f7dff"></i>電子雲</span>`);
     if (view.free.length) items.push(`<span class="lg"><i class="sw dot" style="--c:${ELECTRON_COLOR}"></i>自由電子（金属結合）</span>`);
     if ((state.show.pairs || state.show.lp) && state.mode !== 'space' && !e.crystal) items.push(`<span class="lg"><i class="sw dot" style="--c:${ELECTRON_COLOR}"></i>電子</span>`);
     if (state.show.lp && state.mode !== 'space' && e.model.lps.length) items.push(`<span class="lg"><i class="sw blob"></i>非共有電子対</span>`);
+  } else if (view.kind === 'mole') {
+    items.push(`<span class="lg">模型1個 = 0.1 mol</span>`);
+    items.push(`<span class="lg"><i class="sw box" style="--c:var(--accent)"></i>${e.phase === 'gas' ? '気体の体積' : '実際の体積'}</span>`);
+    items.push(`<span class="lg"><i class="sw box" style="--c:var(--muted)"></i>1 L</span>`);
+  } else if (view.kind === 'atom' && state.atomView === 'cloud') {
+    items.push(`<span class="lg"><i class="sw dot" style="--c:${ELECTRON_COLOR}"></i>最外殻の電子の雲</span>`);
+    items.push(`<span class="lg"><i class="sw dot" style="--c:#9fb4ff"></i>内側の電子の雲</span>`);
   } else if (view.kind === 'atom' || view.kind === 'demo') {
     items.push(`<span class="lg"><i class="sw dot" style="--c:#e8503a"></i>陽子</span>`);
     items.push(`<span class="lg"><i class="sw dot" style="--c:#b4bccb"></i>中性子</span>`);
@@ -2193,7 +2605,7 @@ function fact(label, value, cls) {
   return `<div class="fact ${cls || ''}"><dt>${label}</dt><dd>${value}</dd></div>`;
 }
 function headHTML(e, sub) {
-  const cat = e.auto ? '分子式から組み立て' : (CATS.find(c => c.id === e.cat) || {}).name;
+  const cat = e.auto ? '分子式から組み立て' : (CATS.find(c => c.id === e.cat) || SECTIONS.find(s => s.cats.includes(e.cat)) || {}).name || '';
   return `<div class="card-head">
     <div class="ch-main">
       <div class="eyebrow"><span class="pill">${esc(cat)}</span>${e.bond ? `<span class="pill strong">${esc(e.bond)}</span>` : ''}</div>
@@ -2219,6 +2631,7 @@ function renderCard() {
   if (!e) return;
   let html = '';
   if (e.kind === 'atom') html = atomCardHTML(e);
+  else if (e.kind === 'mole') html = moleCardHTML(e);
   else if (e.kind === 'demo') {
     html = headHTML(e, formulaHTML(e.f)) + '<div class="card-body">' + stepsHTML(e)
       + `<p class="desc">${esc(e.desc)}</p><div class="point"><h3>授業のポイント</h3><p>${esc(e.point)}</p></div></div>`;
@@ -2279,7 +2692,7 @@ function molCardHTML(e) {
     const atomEntry = LIB.find(x => x.id === 'atom-' + el);
     return `<button type="button" ${atomEntry ? `data-go="atom-${el}"` : 'disabled'}><i class="dot" style="background:${EL[el].c}"></i>${el} ${EL[el].n}</button>`;
   }).join('')}</div>`;
-  html += '<p class="hint">ドラッグで回転・ホイール／ピンチで拡大・原子をタップで詳しく</p></div>';
+  html += '</div>';
   return html;
 }
 function selectedAtomHTML(i) {
@@ -2345,12 +2758,71 @@ function atomCardHTML(e) {
   else if (ion !== undefined && ion < 0) point = `価電子は${v}個。あと${-ion}個の電子を受け取ると最外殻が8個になるので、陰イオン ${ionSym} になりやすい。また、ほかの非金属原子とは共有結合をつくる（価標${HANDS[el]}本）。`;
   else point = `価電子は${v}個。` + (HANDS[el] ? `ほかの原子と電子を出し合って共有結合をつくる（価標${HANDS[el]}本）。` : '') + (el === 'H' ? '電子を失うと水素イオン H⁺ になる。' : '');
   html += `<div class="point"><h3>授業のポイント</h3><p>${point}</p></div>`;
+  if (state.atomView === 'cloud') html += `<p class="note"><b>電子雲：</b>実際の電子は、決まった円の上を回っているのではなく、原子核のまわりに雲のように広がって存在している（点が濃いところほど電子が見つかりやすい）。それでも、内側から K・L・M…の「層」に分かれていることがわかる。</p>`;
   html += `<p class="note">電子殻は内側から K殻・L殻・M殻・N殻…。入ることのできる電子の数は内側から 2・8・18・32 個（2n² 個）。電子は内側の殻から順に入る。${Z >= 19 ? 'K・Caでは、M殻に8個入ったところで、次の電子はN殻に入る。' : ''}</p>`;
   const used = LIB.filter(x => x.kind === 'mol' && x.cat !== 'bond' && x.counts && x.counts[el]).slice(0, 8);
   if (used.length) html += `<h3 class="sec-h">${esc(d.n)}をふくむ物質</h3><div class="chips">${used.map(x => `<button type="button" data-go="${x.id}">${esc(x.name)}</button>`).join('')}</div>`;
   html += '</div>';
   return html;
 }
+// ===== 物質量のカード =====
+const MOLE_UNITS = { mol: 'mol', g: 'g', count: '×10²³ 個', L: 'L' };
+function moleInputValue(e, unit) {
+  const x = moleNumbers(e, state.mole.n);
+  const v = unit === 'g' ? x.mass : unit === 'count' ? x.count / 1e23 : unit === 'L' ? x.gasL : x.n;
+  return parseFloat(v.toPrecision(3));
+}
+function moleCardHTML(e) {
+  const x = moleNumbers(e, state.mole.n);
+  if (state.mole.unit === 'L' && e.phase !== 'gas') state.mole.unit = 'mol';
+  const units = ['mol', 'g', 'count'].concat(e.phase === 'gas' ? ['L'] : []);
+  const labels = { mol: '物質量', g: '質量', count: '粒子の数', L: '気体の体積' };
+  let html = headHTML(e, `${formulaHTML(e.f)}<small>モル質量 ${fmtNum(x.M)} g/mol</small>`) + '<div class="card-body">';
+  html += `<div class="mole-in">
+    <div class="seg sm" id="moleUnit" role="group" aria-label="何を入力するか">${units.map(k => `<button type="button" data-unit="${k}" aria-pressed="${k === state.mole.unit}">${labels[k]}</button>`).join('')}</div>
+    <div class="mole-row"><input id="moleVal" type="number" inputmode="decimal" min="0" step="any" value="${moleInputValue(e, state.mole.unit)}" aria-label="入力する量"><span>${MOLE_UNITS[state.mole.unit]}</span></div>
+    <input id="moleRange" type="range" min="0.1" max="5" step="0.1" value="${Math.min(5, state.mole.n)}" aria-label="物質量（mol）">
+  </div>
+  <div id="moleOut">${moleOutHTML(e)}</div>`;
+  const point = e.phase === 'gas'
+    ? '気体 1 mol の体積は、気体の種類に関係なく 22.4 L（0 ℃・1.013×10⁵ Pa）。重い CO₂ でも軽い H₂ でも同じ大きさの箱になることを確かめよう。'
+    : `1 mol の質量は、${e.model === 'atom' ? '原子量' : e.model === 'pair' ? '式量' : '分子量'}に g をつけた値（${e.name}なら ${fmtNum(x.M)} g）。同じ 1 mol でも、気体の 22.4 L とくらべると体積がとても小さい（右の「1 L」の箱とくらべよう）。`;
+  html += `<div class="point"><h3>授業のポイント</h3><p>${point}</p></div></div>`;
+  return html;
+}
+function moleOutHTML(e) {
+  const x = moleNumbers(e, state.mole.n), u = state.mole.unit;
+  const pw = e.unitNote || '分子';
+  const box = (key, label, val) => `<div class="hb${u === key ? ' in' : ''}${key === 'mol' ? ' n' : ''}"><span>${label}</span><b>${val}</b></div>`;
+  let html = '<div class="hub">'
+    + box('g', '質量', `${fmtNum(x.mass)} g`) + '<div class="ha" aria-hidden="true">⇄</div>'
+    + box('mol', '物質量', `${fmtNum(x.n)} mol`) + '<div class="ha" aria-hidden="true">⇄</div>'
+    + box('count', `粒子の数（${esc(pw)}）`, `${fmtSci(x.count)} ${esc(e.unit || '個')}`);
+  if (e.phase === 'gas') html += '<div class="hv" aria-hidden="true">⇅</div>' + box('L', '気体の体積', `${fmtNum(x.gasL)} L`);
+  else html += '<div class="hv" aria-hidden="true">⇅</div>' + `<div class="hb vol"><span>体積（密度 ${e.density} g/cm³）</span><b>${fmtNum(x.mL)} mL</b></div>`;
+  html += '</div><ol class="calc-steps">';
+  const N = fmtNum(x.n), Mx = fmtNum(x.M);
+  if (u === 'g') html += `<li>物質量 = ${fmtNum(x.mass)} g ÷ ${Mx} g/mol = <b>${N} mol</b></li>`;
+  if (u === 'count') html += `<li>物質量 = ${fmtSci(x.count)} 個 ÷ 6.0×10<sup>23</sup> /mol = <b>${N} mol</b></li>`;
+  if (u === 'L') html += `<li>物質量 = ${fmtNum(x.gasL)} L ÷ 22.4 L/mol = <b>${N} mol</b></li>`;
+  if (u !== 'g') html += `<li>質量 = ${N} mol × ${Mx} g/mol = <b>${fmtNum(x.mass)} g</b></li>`;
+  if (u !== 'count') html += `<li>粒子の数 = ${N} mol × 6.0×10<sup>23</sup> /mol = <b>${fmtSci(x.count)} ${esc(e.unit || '個')}</b></li>`;
+  if (e.phase === 'gas' && u !== 'L') html += `<li>体積 = ${N} mol × 22.4 L/mol = <b>${fmtNum(x.gasL)} L</b>（0 ℃・1.013×10<sup>5</sup> Pa）</li>`;
+  if (e.phase !== 'gas') html += `<li>体積 ≒ ${fmtNum(x.mass)} g ÷ ${e.density} g/cm³ = <b>${fmtNum(x.mL)} mL</b></li>`;
+  html += '</ol>';
+  const k = Math.round(state.mole.n * 10);
+  html += `<p class="note">3Dの模型1個 = 0.1 mol（6.0×10<sup>22</sup> ${esc(e.unit || '個')}）を表します。${k > 50 ? '模型は50個（5 mol）まで表示します。' : ''}${e.phase === 'gas' ? '青い箱が気体の体積、灰色の箱が 1 L です。' : '青い箱が実際の体積、灰色の箱が 1 L です。'}</p>`;
+  return html;
+}
+function setMole(n, from) {
+  const e = state.entry;
+  state.mole.n = Math.max(0.01, Math.min(10, n || 0.01));
+  $('moleOut').innerHTML = moleOutHTML(e);
+  if (from !== 'range') $('moleRange').value = Math.min(5, state.mole.n);
+  if (from !== 'input') $('moleVal').value = moleInputValue(e, state.mole.unit);
+  if (R) { clearView(); buildMoleView(); }
+}
+
 function syncDemoUI() {
   const e = state.entry;
   if (!e || !e.steps) return;
@@ -2380,16 +2852,22 @@ function selectEntry(e, opts) {
   state.atomIon = false;
   state.demo = { tau: 0, playing: !!e.steps && !reduceMotion };
   if (reduceMotion && e.steps) state.demo.tau = e.T;
-  if (!e.auto && e.cat !== state.cat) { state.cat = e.cat; renderTabs(); }
-  renderGrid();
+  if (!e.auto) {
+    state.sec = secOf(e.cat);
+    if (state.sec === 'mol') state.cat = e.cat;
+  }
+  renderNav(); renderTabs(); renderGrid();
   const stageWrap = $('stageWrap');
   stageWrap.dataset.kind = e.kind;
+  stageWrap.dataset.crystal = e.crystal ? '1' : '';
+  closeShowPanel();
   $('caption').hidden = !e.steps;
   renderCard();
   if (R) {
     clearView();
     if (e.kind === 'atom') buildAtomView();
     else if (e.kind === 'demo') buildDemoView();
+    else if (e.kind === 'mole') buildMoleView();
     else buildMolView();
     R.controls.autoRotate = e.kind === 'mol' && !e.steps && state.show.rotate;
     view.growStart = performance.now();
@@ -2467,6 +2945,32 @@ function openResult(r) {
 
 // ===== イベント =====
 function bindUI() {
+  $('secnav').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-sec]');
+    if (!b || b.dataset.sec === state.sec) return;
+    const sec = SECTIONS.find(s => s.id === b.dataset.sec);
+    const firstOf = { mol: 'water', crystal: 'nacl', atom: 'atom-Na', bond: 'covalent', mole: 'mole-water' };
+    if (sec.id === 'mol') state.cat = 'basic';
+    selectEntry(LIB.find(e => e.id === firstOf[sec.id]));
+  });
+  $('btnShow').addEventListener('click', ev => {
+    ev.stopPropagation();
+    const p = $('showPanel');
+    p.hidden = !p.hidden;
+    $('btnShow').setAttribute('aria-expanded', String(!p.hidden));
+  });
+  document.addEventListener('click', ev => { if (!ev.target.closest('#showPanel, #btnShow')) closeShowPanel(); });
+  $('cellsSeg').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-cells]');
+    if (!b) return;
+    state.cells = +b.dataset.cells; syncControls();
+    selectEntry(state.entry);
+  });
+  $('atomSeg').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-av]');
+    if (!b) return;
+    state.atomView = b.dataset.av; syncControls(); renderCard(); renderLegend();
+  });
   $('tabs').addEventListener('click', ev => {
     const b = ev.target.closest('[data-cat]');
     if (!b) return;
@@ -2479,6 +2983,8 @@ function bindUI() {
   $('card').addEventListener('click', ev => {
     const go = ev.target.closest('[data-go]');
     if (go) { selectEntry(LIB.find(e => e.id === go.dataset.go)); return; }
+    const un = ev.target.closest('[data-unit]');
+    if (un) { state.mole.unit = un.dataset.unit; renderCard(); return; }
     const act = ev.target.closest('[data-act]');
     const li = ev.target.closest('.steps li');
     if (li && state.entry.steps) { state.demo.tau = +li.dataset.tau + 0.01; state.demo.playing = true; syncDemoUI(); return; }
@@ -2501,6 +3007,14 @@ function bindUI() {
     }
   });
   $('card').addEventListener('input', ev => {
+    if (ev.target.id === 'moleRange') { setMole(+ev.target.value, 'range'); return; }
+    if (ev.target.id === 'moleVal') {
+      const v = parseFloat(ev.target.value);
+      if (!(v > 0)) return;
+      const M = moleNumbers(state.entry, 1).M, unit = state.mole.unit;
+      setMole(unit === 'g' ? v / M : unit === 'count' ? v / 6.0 : unit === 'L' ? v / VM : v, 'input');
+      return;
+    }
     if (ev.target.id !== 'scrub') return;
     state.demo.tau = +ev.target.value;
     state.demo.playing = false;
@@ -2550,12 +3064,17 @@ function bindUI() {
 }
 function syncControls() {
   document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === state.mode)));
+  document.querySelectorAll('#cellsSeg [data-cells]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.cells === state.cells)));
+  document.querySelectorAll('#atomSeg [data-av]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.av === state.atomView)));
   document.querySelectorAll('#toggles [data-k]').forEach(b => b.setAttribute('aria-pressed', String(!!state.show[b.dataset.k])));
+  const on = Object.keys(state.show).filter(k => state.show[k] && document.querySelector(`#toggles [data-k="${k}"]`)).length;
+  $('btnShow').querySelector('.cnt').textContent = on;
 }
+function closeShowPanel() { $('showPanel').hidden = true; $('btnShow').setAttribute('aria-expanded', 'false'); }
 
 // ===== はじめる =====
 function start() {
-  renderTabs();
+  renderNav();
   bindUI();
   syncControls();
   const ok = initThree();
@@ -2568,8 +3087,6 @@ function start() {
     const hit = LIB.find(e => e.id === h);
     if (hit) first = hit;
   } catch (err) { /* 無視 */ }
-  state.cat = first.cat;
-  renderTabs();
   selectEntry(first);
 }
 start();
