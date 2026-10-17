@@ -1009,14 +1009,17 @@ function showItem(id) {
   R.group.add(m.g);
   m.parts.forEach(([name, p]) => { const L = addLabel(name, () => new THREE.Vector3(...p).add(m.g.position)); L.el.hidden = !state.parts; L.part = true; });
   if (m.flame) R.tick = t => m.flame.update(t);
+  state.play = null;
+  if (PLAY[id]) { state.play = {}; PLAY[id].init(m, state.play); }
   renderCard();
   frame(m.focus[0], m.focus[1]);
 }
 function seeCardHTML(it) {
   const tab = state.tab;
   let h = `<div class="card-head"><div><div class="eyebrow">${esc(it.grp)}</div><h2 class="name">${esc(it.name)}</h2><div class="yomi">${esc(it.yomi)}</div></div>${it.practice ? `<button type="button" class="headbtn" data-goto="${it.practice}">練習する →</button>` : ''}</div>
-    <div class="tabs" role="tablist">${[['use', '何に使う？'], ['how', '使い方'], ['caution', '注意']].map(([k, n]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div><div class="body">`;
-  if (tab === 'use') {
+    <div class="tabs" role="tablist">${(PLAY[it.id] ? [['play', 'さわってみる']] : []).concat([['use', '何に使う？'], ['how', '使い方'], ['caution', '注意']]).map(([k, n]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div><div class="body">`;
+  if (tab === 'play' && PLAY[it.id] && state.play) h += PLAY[it.id].html();
+  else if (tab === 'use') {
     h += `<p class="use">${esc(it.use)}</p>`;
     if (WHY[it.id]) h += `<div class="purpose"><b>この形のわけ</b>${esc(WHY[it.id])}</div>`;
     h += `<p class="note" style="margin-bottom:4px">部分の名前</p><div class="parts">${MODELS[it.model]().parts.map(p => `<span>${esc(p[0])}</span>`).join('')}</div>`;
@@ -2970,6 +2973,330 @@ const CATS = [
 ].map(([c, ids]) => [c, ids.filter(id => PRACTICES.some(p => p.id === id))]);
 const catOf = id => (CATS.find(c => c[1].includes(id)) || CATS[0])[0];
 
+// ===== 器具を見る：さわってみる（器具ひとつで遊べる） =====
+const PLAY = {};
+const REAGENTS = [
+  { id: 'water', name: '純水', c: 'water' },
+  { id: 'hcl', name: 'うすい塩酸', c: 'acid' },
+  { id: 'naoh', name: '水酸化ナトリウム水溶液', c: 'base' },
+  { id: 'nacl', name: '食塩水', c: 'salt' },
+  { id: 'cuso4', name: '硫酸銅(II)水溶液', c: 'cu' },
+  { id: 'btb', name: 'BTB溶液（数滴）', c: 'btb', drop: true },
+  { id: 'pp', name: 'フェノールフタレイン（数滴）', c: 'pp', drop: true },
+];
+const C_MOLL = 0.1; // 酸・塩基・硫酸銅・食塩水はどれも 0.1 mol/L とする
+// 器の内側の形（下から上）にそった体積（3Dの単位）を数える
+function profVol(prof, h) {
+  let v = 0;
+  const rAt = y => { for (let i = 1; i < prof.length; i++) { const [r0, y0] = prof[i - 1], [r1, y1] = prof[i]; if (y <= y1) return y1 === y0 ? r1 : r0 + (r1 - r0) * (y - y0) / (y1 - y0); } return prof[prof.length - 1][0]; };
+  const y0 = prof[0][1], n = 80;
+  for (let k = 0; k < n; k++) { const y = y0 + (h - y0) * (k + 0.5) / n, r = rAt(y); v += Math.PI * r * r * (h - y0) / n; }
+  return v;
+}
+function containerPlay(cfg) {
+  return {
+    init(m, P) {
+      Object.assign(P, { mL: 0, acid: 0, base: 0, salt: 0, cu: 0, cuoh: 0, btb: false, pp: false, heat: false, T: 20, boilMsg: false, residue: null, lastCard: 0 });
+      m.g.traverse(o => { if (o.renderOrder === 1) o.visible = false; });
+      if (cfg.hideCrystals) m.g.children.forEach(c => { if (c.geometry && c.geometry.type === 'BoxGeometry') c.visible = false; });
+      const k = cfg.calV / profVol(cfg.prof, cfg.calH);
+      P.hOf = mL => { if (cfg.linear) return cfg.prof[0][1] + 0.16 + mL * cfg.linear; let lo = cfg.prof[0][1], hi = cfg.hMax; for (let i = 0; i < 30; i++) { const mid = (lo + hi) / 2; if (profVol(cfg.prof, mid) * k < mL) lo = mid; else hi = mid; } return lo; };
+      P.cap = cfg.linear ? (cfg.hMax - cfg.prof[0][1] - 0.16) / cfg.linear : profVol(cfg.prof, cfg.hMax) * k;
+      P.mat = liquidMat(0xd6ecf8, 0.35);
+      P.liq = null; P.builtH = -1;
+      const rAt = y => { const p = cfg.prof; for (let i = 1; i < p.length; i++) if (y <= p[i][1]) return p[i - 1][0] + (p[i][0] - p[i - 1][0]) * (y - p[i - 1][1]) / Math.max(1e-6, p[i][1] - p[i - 1][1]); return p[p.length - 1][0]; };
+      P.bub = bubbleSet(16, 0xffffff, cfg.bubR || 0.05); P.bub.forEach(b => m.g.add(b));
+      P.pre = new THREE.Group(); m.g.add(P.pre);
+      for (let i = 0; i < 40; i++) { const s = new THREE.Mesh(new THREE.SphereGeometry((cfg.bubR || 0.05) * 0.9, 6, 5), solid(0x7cc0ee, { shininess: 10 })); s.userData.ph = Math.random(); P.pre.add(s); }
+      P.res = new THREE.Group(); m.g.add(P.res);
+      const y0 = cfg.prof[0][1];
+      for (let i = 0; i < 40; i++) { const s = new THREE.Mesh(new THREE.BoxGeometry(cfg.crys || 0.06, cfg.crys || 0.06, cfg.crys || 0.06), solid(0xffffff, { shininess: 120 })); const a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * rAt(y0 + 0.05) * 0.8; s.position.set(Math.cos(a) * r, y0 + 0.04, Math.sin(a) * r); s.rotation.set(a, a * 2, 0); P.res.add(s); }
+      P.res.visible = false;
+      P.rig = null;
+      R.tick = t => {
+        const dt = 1 / 60;
+        // 加熱
+        if (P.heat) {
+          if (P.mL > 0) {
+            P.T = Math.min(100, P.T + dt * 14);
+            if (P.T >= 100) {
+              const dv = Math.min(P.mL, P.cap * dt * 0.05);
+              P.mL -= dv;
+              if (!P.boilMsg) { P.boilMsg = true; toast(cfg.boilNote || '沸騰した！ 水が水蒸気になって出ていく。', 'info'); }
+              if (P.mL <= 0.001) {
+                P.mL = 0; P.T = 100;
+                const solids = [];
+                if (P.salt > 0 || (P.acid > 0 && P.base > 0) || P.base > P.acid) solids.push(P.base > P.acid + 1e-9 && P.salt === 0 ? '水酸化ナトリウム（白）' : '塩化ナトリウム（白）');
+                if (P.cu > 0) solids.push('硫酸銅(II)の結晶（青）');
+                if (P.cuoh > 0) solids.push('酸化銅(II)（黒：水酸化銅(II)が加熱で変化）');
+                P.residue = solids.length ? solids : null;
+                P.acid = P.acid > P.base ? 0 : P.acid; // 塩酸の HCl は水といっしょに出ていく
+                toast(P.residue ? '水がなくなり、とけていた物質が残った：' + P.residue.join('・') : '水がすべて蒸発した。何も残らなかった。', 'ok');
+                renderCard();
+              }
+            }
+          } else P.T = Math.min(300, P.T + dt * 25);
+        } else P.T = Math.max(20, P.T - dt * 4);
+        // 液面
+        const h = P.mL > 0 ? P.hOf(P.mL) : -1;
+        if (Math.abs(h - P.builtH) > 0.004) {
+          if (P.liq) { m.g.remove(P.liq); P.liq.geometry.dispose(); P.liq = null; }
+          if (h > cfg.prof[0][1] + 0.01) { P.liq = liquid(cfg.prof, h, 0xffffff, cfg.men); P.liq.material.dispose(); P.liq.material = P.mat; m.g.add(P.liq); }
+          P.builtH = h;
+        }
+        const col = playColor(P);
+        P.mat.color.set(col.c); P.mat.opacity = col.op;
+        // あわ（沸騰）
+        P.bub.forEach((b, i) => {
+          b.visible = P.heat && P.T >= 99 && P.mL > 0;
+          if (!b.visible) return;
+          const kk = (t * 0.9 + b.userData.ph) % 1, yy = cfg.prof[0][1] + 0.05 + kk * Math.max(0.05, h - cfg.prof[0][1] - 0.08), r = rAt(yy) * 0.7 * ((i * 37 % 10) / 10);
+          b.position.set(Math.cos(i * 2.4) * r, yy, Math.sin(i * 2.4) * r);
+        });
+        // 水酸化銅(II)の沈殿（青白い粒）
+        const nPre = Math.min(40, Math.round(P.cuoh * 4e4));
+        P.pre.children.forEach((s, i) => {
+          s.visible = i < nPre && P.mL > 0;
+          if (!s.visible) return;
+          const yy = cfg.prof[0][1] + 0.05 + ((s.userData.ph * 7 + t * 0.03) % 1) * Math.max(0.05, (h - cfg.prof[0][1]) * 0.8), r = rAt(yy) * 0.75 * s.userData.ph;
+          s.position.set(Math.cos(i * 2.1) * r, yy, Math.sin(i * 2.1) * r);
+          s.material.color.set(P.heat && P.T > 80 ? 0x2a2a2a : 0x7cc0ee);
+        });
+        P.res.visible = !!P.residue && P.mL === 0;
+        if (P.res.visible) P.res.children.forEach((s, i) => s.material.color.set(P.cu > 0 && i % 2 ? 0x2f6fd0 : P.cuoh > 0 && i % 3 === 0 ? 0x222222 : 0xffffff));
+        if (P.rig) P.rig.flame.update(t);
+        if (P.heat && performance.now() - P.lastCard > 1000) { P.lastCard = performance.now(); renderCard(); }
+      };
+    },
+    html() {
+      const P = state.play;
+      const pH = playPH(P), col = playColor(P);
+      let h = `<div class="ctl"><p class="note">薬品をえらんで入れてみよう（1回で約 ${fmtmL(cfg.step)}）。</p>
+        <div class="row">${REAGENTS.map(r => `<button type="button" class="btn" data-p="add" data-pv="${r.id}">${esc(r.name)}</button>`).join('')}</div>
+        <div class="elecv"><span>量 <b>${fmtmL(P.mL)}</b></span>${P.mL > 0 ? `<span>pH 約 <b>${pH.toFixed(1)}</b>（${pH < 6.5 ? '酸性' : pH > 7.5 ? '塩基性' : '中性'}）</span>` : ''}${cfg.heat !== 'none' ? `<span>温度 <b>${Math.round(P.T)}</b> ℃</span>` : ''}</div>`;
+      if (col.why) h += `<div class="verdict">${esc(col.why)}</div>`;
+      if (P.cuoh > 0 && P.mL > 0) h += `<div class="verdict">青白い沈殿：水酸化銅(II) Cu(OH)₂ ができた（Cu²⁺ + 2OH⁻ → Cu(OH)₂）。${P.heat && P.T > 80 ? '加熱すると黒い酸化銅(II) CuO に変わる。' : ''}</div>`;
+      if (P.residue && P.mL === 0) h += `<div class="verdict ok">残った物質：${esc(P.residue.join('・'))}</div>`;
+      h += `<div class="row">`;
+      if (cfg.heat !== 'none') h += `<button type="button" class="btn ${P.heat ? '' : 'main'}" data-p="heat">${P.heat ? '火を止める' : cfg.heatLabel || '加熱する'}</button>`;
+      h += `<button type="button" class="btn" data-p="empty">中身を捨てる</button></div>`;
+      if (cfg.tip) h += `<p class="note">${esc(cfg.tip)}</p>`;
+      return h + '</div>';
+    },
+    act(a, v) {
+      const P = state.play;
+      if (a === 'add') {
+        const r = REAGENTS.find(x => x.id === v);
+        const add = r.drop ? 0.1 : cfg.step;
+        if (P.heat && P.T > 60 && !r.drop) toast('熱い液に薬品を加えると、急に沸騰して飛び散ることがある。火を止めて冷ましてから。', 'ng');
+        if (P.mL + add > P.cap) { toast('あふれる！ 入れすぎ。容器の8分目くらいまでにしよう。', 'ng'); P.mL = P.cap; renderCard(); return; }
+        if (P.residue) { P.residue = null; }
+        P.mL += add;
+        const mol = add / 1000 * C_MOLL;
+        if (r.c === 'acid') P.acid += mol;
+        if (r.c === 'base') P.base += mol;
+        if (r.c === 'salt') P.salt += mol;
+        if (r.c === 'cu') P.cu += mol;
+        if (r.c === 'btb') P.btb = true;
+        if (r.c === 'pp') P.pp = true;
+        // 中和してから、余った OH⁻ が Cu²⁺ と沈殿をつくる
+        const extraOH = P.base - P.acid - 2 * P.cuoh;
+        if (P.cu > 0 && extraOH > 0) { const n = Math.min(P.cu, extraOH / 2); P.cu -= n; P.cuoh += n; }
+        if (cfg.warnFill && P.mL > cfg.warnFill && cfg.heat !== 'none') toast(cfg.warnFillMsg, 'info');
+      }
+      if (a === 'empty') { Object.assign(P, { mL: 0, acid: 0, base: 0, salt: 0, cu: 0, cuoh: 0, btb: false, pp: false, residue: null, boilMsg: false }); }
+      if (a === 'heat') {
+        if (cfg.heat === 'none') return;
+        if (!P.heat && P.mL === 0 && cfg.heat !== 'dish') toast('空のまま加熱しない。ガラスが割れることがある。', 'ng');
+        if (!P.heat && cfg.heatWarn) toast(cfg.heatWarn, 'info');
+        P.heat = !P.heat;
+        if (P.heat && !P.rig) { P.rig = buildHeatRig(cfg.heat); const m = R.group.children[0]; placeOnRig(m, cfg.heat); frame(...R.lastFrame); }
+        if (P.rig) P.rig.flame.lit = P.heat;
+        P.boilMsg = false;
+      }
+      renderCard();
+    },
+  };
+}
+const fmtmL = v => (v < 10 ? v.toFixed(1) : Math.round(v)) + ' mL';
+function playPH(P) {
+  const L = Math.max(P.mL, 0.001) / 1000;
+  const ex = (P.acid - P.base + 2 * P.cuoh) / L; // 沈殿に使われた OH⁻ はもどす
+  if (Math.abs(ex) < 1e-7) return 7;
+  return ex > 0 ? Math.max(0, -Math.log10(ex)) : Math.min(14, 14 + Math.log10(-ex));
+}
+function playColor(P) {
+  const pH = playPH(P);
+  const lerpC = (a, b, k) => new THREE.Color(a).lerp(new THREE.Color(b), Math.max(0, Math.min(1, k)));
+  if (P.mL <= 0) return { c: 0xd6ecf8, op: 0.35 };
+  if (P.btb) {
+    const c = pH < 6 ? new THREE.Color(0xf2d22e) : pH < 7.6 ? lerpC(0xf2d22e, 0x3fae5a, (pH - 6) / 0.8).lerp(new THREE.Color(0x3fae5a), pH > 6.8 ? 1 : 0) : lerpC(0x3fae5a, 0x2a62d6, (pH - 7.6) / 0.6);
+    return { c, op: 0.72, why: `BTB：${pH < 6 ? '黄色＝酸性' : pH <= 7.6 ? '緑色＝中性' : '青色＝塩基性'}（pH 約 ${pH.toFixed(1)}）` };
+  }
+  if (P.pp && pH > 8.3) return { c: lerpC(0xf5b8d0, 0xd81b60, (pH - 8.3) / 1.7), op: 0.7, why: 'フェノールフタレイン：赤色＝塩基性（pH 8.3 以上）' };
+  if (P.cu > 0) return { c: 0x2f86e0, op: 0.55, why: P.pp ? 'フェノールフタレインは無色（塩基性ではない）。青色は Cu²⁺ の色。' : '青色は銅(II)イオン Cu²⁺ の色。' };
+  if (P.pp) return { c: 0xe8f2f8, op: 0.35, why: 'フェノールフタレイン：無色＝酸性か中性（pH 8.3 より小さい）' };
+  return { c: 0xd6ecf8, op: 0.35 };
+}
+// 加熱の道具：三脚＋金網＋ガスバーナー（試験管はバーナーだけ）
+function buildHeatRig(kind) {
+  const g = new THREE.Group();
+  const bm = MODELS.burner(); bm.g.scale.setScalar(0.62); g.add(bm.g);
+  bm.flame.size = 0.5; bm.flame.air = 0.9;
+  if (kind === 'rig' || kind === 'dish') {
+    g.add(tripod(2.4, 0.8));
+    const gz = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.025, 1.9), solid(0x8d939a, { shininess: 20 })); gz.position.y = 2.42; g.add(gz);
+    const cer = cyl(0.55, 0.55, 0.03, solid(0xe8e6df), 32); cer.position.y = 2.43; g.add(cer);
+  }
+  if (kind === 'tube') bm.g.position.set(0.12, 0, 0);
+  R.group.add(g);
+  return { g, flame: bm.flame };
+}
+function placeOnRig(m, kind) {
+  if (kind === 'tube') { m.position.set(0, 2.3, 0); m.rotation.z = 0.5; }
+  else m.position.y = 2.44;
+}
+const PLAY_CFG = {
+  beaker: { prof: [[0, 0.1], [1.0, 0.1], [1.08, 0.17], [1.1, 0.3], [1.1, 2.86]], hMax: 2.86, calH: 2.42, calV: 200, step: 20, men: 0.05, heat: 'rig', heatLabel: '金網の上で加熱する', bubR: 0.07, tip: 'ビーカーは金網をしいて加熱する。目盛りはおよその量。' },
+  erlen: { prof: [[0, 0.1], [1.15, 0.1], [1.24, 0.2], [1.24, 0.28], [0.42, 2.5], [0.36, 2.66], [0.36, 3.24]], hMax: 3.2, calH: 2.5, calV: 200, step: 20, men: 0.04, heat: 'rig', heatLabel: '金網の上で加熱する', bubR: 0.06, tip: 'ふり混ぜてもこぼれにくい形。中和滴定などで使う。' },
+  roundflask: { prof: (() => { const p = []; for (let k = 0; k <= 18; k++) { const a = -Math.PI / 2 + (Math.PI * 0.8) * k / 18; p.push([Math.cos(a) * 1.22, 1.32 + Math.sin(a) * 1.22]); } return p; })(), hMax: 2.3, calH: 2.3, calV: 200, step: 20, men: 0.03, heat: 'rig', heatLabel: '金網の上で加熱する', bubR: 0.07, heatWarn: '沸騰石が入っているので、突沸しにくい。液は半分以下にしよう。', warnFill: 100, warnFillMsg: '加熱するときは、液はフラスコの半分以下に。', tip: '球の形は熱が均一に伝わり、加熱しても割れにくい。' },
+  tube: { prof: (() => { const p = []; for (let k = 0; k <= 9; k++) { const a = -Math.PI / 2 + Math.PI / 2 * k / 9; p.push([Math.cos(a) * 0.27, 0.32 + Math.sin(a) * 0.27]); } p.push([0.27, 3.38]); return p; })(), hMax: 3.38, calH: 3.38, calV: 18, step: 2, men: 0.02, heat: 'tube', heatLabel: 'ガスバーナーで加熱する', bubR: 0.035, crys: 0.04, heatWarn: '口を人のいない方に向け、ふりながら加熱する。', warnFill: 6, warnFillMsg: '加熱するなら、液は試験管の 1/4〜1/3 までに。', tip: '少しの量ですぐ反応を試せる。色の変化を見るのにぴったり。' },
+  cylinder: { prof: [[0, 0.24], [0.4, 0.24], [0.4, 5.4]], hMax: 5.3, linear: 0.046, step: 10, men: 0.07, heat: 'none', tip: 'メスシリンダーは加熱しない（目盛りがくるう）。液面のへこんだ下の面を、真横から読む。' },
+  dish: { prof: [[0, 0.1], [0.5, 0.12], [1.0, 0.3], [1.33, 0.62]], hMax: 0.6, calH: 0.6, calV: 50, step: 10, men: 0.01, heat: 'dish', heatLabel: '加熱して水を蒸発させる', bubR: 0.05, hideCrystals: true, boilNote: '沸騰した！ 水が蒸発していく。結晶が出はじめたら火を弱め、ガラス棒でかき混ぜる。', tip: '食塩水や硫酸銅(II)水溶液を入れて加熱すると、とけていた物質が出てくる。' },
+};
+Object.entries(PLAY_CFG).forEach(([id, cfg]) => { PLAY[id] = containerPlay(cfg); });
+
+// --- アルコールランプ ---
+PLAY.lamp = {
+  init(m, P) {
+    Object.assign(P, { m, capOn: true, lit: false });
+    m.flame.size = 0.38; m.flame.air = 0.45;
+    R.tick = t => {
+      m.cap.position.set(P.capOn ? 0 : 1.6, P.capOn ? 0 : -1.94, 0);
+      m.flame.lit = P.lit; m.flame.update(t);
+    };
+  },
+  html() {
+    const P = state.play;
+    return `<div class="ctl"><p class="note">火をつけたり消したりしてみよう。</p>
+      <div class="row"><button type="button" class="btn" data-p="cap">${P.capOn ? 'ふたをとる' : 'ふたをする'}</button>
+      <button type="button" class="btn ${P.capOn || P.lit ? '' : 'main'}" data-p="light">マッチで横から火をつける</button>
+      <button type="button" class="btn bad" data-p="blow">息で吹き消す</button></div>
+      <div class="elecv"><span>ふた <b>${P.capOn ? 'している' : 'とった'}</b></span><span>火 <b>${P.lit ? 'ついている' : '消えている'}</b></span></div>
+      <p class="note">消すときは、ふたを斜め横からかぶせる。</p></div>`;
+  },
+  act(a) {
+    const P = state.play;
+    if (a === 'cap') {
+      if (P.capOn) P.capOn = false;
+      else { P.capOn = true; if (P.lit) { P.lit = false; toast('ふたで空気（酸素）をさえぎって、火が消えた。一度ふたをとって冷ましてから、もう一度ふたをしておこう。', 'ok'); } }
+    }
+    if (a === 'light') {
+      if (P.capOn) toast('ふたをしたままでは火がつかない。先にふたをとろう。', 'info');
+      else if (P.lit) toast('もう火がついている。', 'info');
+      else { P.lit = true; toast('点火！ マッチは真上からでなく、横から近づける。', 'ok'); }
+    }
+    if (a === 'blow') toast(P.lit ? '息で吹き消すのは危険！ 炎が中のアルコールに引火することがある。ふたで消そう。' : '火はついていない。でも、吹き消すのはいつでもだめ。', 'ng');
+    renderCard();
+  },
+};
+
+// --- ガスバーナー ---
+PLAY.burner = {
+  init(m, P) {
+    Object.assign(P, { m, gas: 0, air: 0, lit: false, unlitT: 0, warned: false });
+    R.tick = t => {
+      m.gasScrew.rotation.y = P.gas * 6; m.airScrew.rotation.y = P.air * 6;
+      m.handle.rotation.y = Math.PI / 2;
+      if (P.lit && P.gas < 0.04) { P.lit = false; renderCard(); }
+      if (P.lit && P.air > P.gas * 1.35 + 0.05) { P.lit = false; toast('空気が多すぎて、炎が浮き上がって消えた！ ガスを止めてやり直そう。', 'ng'); renderCard(); }
+      if (!P.lit && P.gas > 0.05) { P.unlitT += 1 / 60; if (P.unlitT > 3 && !P.warned) { P.warned = true; toast('火がついていないのにガスが出ている！ すぐにガス調節ねじを閉じよう。', 'ng'); } } else P.unlitT = 0;
+      m.flame.lit = P.lit; m.flame.size = P.gas; m.flame.air = Math.min(1, P.air / Math.max(P.gas, 0.15));
+      m.flame.update(t);
+    };
+  },
+  html() {
+    const P = state.play;
+    const k = P.air / Math.max(P.gas, 0.15);
+    const look = !P.lit ? '火はついていない' : k < 0.35 ? '赤い（オレンジの）炎：空気が足りない。すすが出る' : k < 0.7 ? '少し黄色が残る：もう少し空気を入れる' : '青い炎：ちょうどよい（完全燃焼）';
+    return `<div class="ctl"><p class="note">ねじを回して、火をつけてみよう（元栓とコックは開いている）。</p>
+      <div class="sl"><label for="playGas">ガス調節ねじ（下）</label><input id="playGas" type="range" min="0" max="1" step="0.05" value="${P.gas}"><output>${Math.round(P.gas * 100)}%</output></div>
+      <div class="sl"><label for="playAir">空気調節ねじ（上）</label><input id="playAir" type="range" min="0" max="1" step="0.05" value="${P.air}"><output>${Math.round(P.air * 100)}%</output></div>
+      <div class="row"><button type="button" class="btn ${P.lit ? '' : 'main'}" data-p="match">マッチで火をつける</button><button type="button" class="btn" data-p="off">ねじを全部閉める</button></div>
+      <div class="verdict ${P.lit && k >= 0.7 ? 'ok' : ''}">${esc(look)}</div>
+      <p class="note">正しい順番は「操作の練習」でくわしく練習できる。</p></div>`;
+  },
+  act(a, v) {
+    const P = state.play;
+    if (a === 'playGas') { P.gas = v; if (P.gas <= 0.05) P.warned = false; }
+    if (a === 'playAir') P.air = v;
+    if (a === 'match') {
+      if (P.lit) toast('もう火がついている。', 'info');
+      else if (P.gas < 0.05) toast('ガスが出ていないので火がつかない。マッチを近づけながら、ガス調節ねじを少し開こう。', 'info');
+      else if (P.air > P.gas * 1.35 + 0.05) toast('空気が多すぎて火がつかない。空気調節ねじを閉じてから点火しよう。', 'ng');
+      else { P.lit = true; P.warned = false; toast(P.unlitT > 1 ? 'ボッと大きな炎が出た！ ガスを出してから火を近づけると危ない。先にマッチの火を近づけよう。' : '点火！ 次は空気調節ねじを開いて青い炎にしよう。', P.unlitT > 1 ? 'ng' : 'ok'); }
+    }
+    if (a === 'off') { P.gas = 0; P.air = 0; P.lit = false; P.warned = false; toast('空気調節ねじ → ガス調節ねじ の順に閉めて、火を消した。', 'ok'); }
+    renderCard();
+  },
+};
+
+// --- ビュレット ---
+PLAY.burette = {
+  init(m, P) {
+    const t = m.g.children.find(c => c.type === 'Group' && c.children.some(x => x.renderOrder === 1));
+    const old = t.children.find(x => x.renderOrder === 1); old.visible = false;
+    const fl = m.g.children[m.g.children.length - 1];
+    let flLiq = null; fl.traverse(o => { if (o.renderOrder === 1) flLiq = o; });
+    Object.assign(P, { read: 0, open: false, pp: true, base: 0, acid: 10, t, fl, flLiq, liq: null, built: -1 });
+    const prof = [[0.03, -0.45], [0.03, 0.3], [0.1, 0.42], [0.1, 6.3]];
+    const cock = t.children.find(x => x.geometry && x.geometry.type === 'BoxGeometry');
+    const drops = bubbleSet(4, 0xd6ecf8, 0.03); drops.forEach(d => m.g.add(d));
+    R.tick = tt => {
+      if (P.open) { P.read = Math.min(50, P.read + 1 / 60 * 0.8); if (P.read >= 50) { P.open = false; toast('ビュレットが空になった。', 'info'); renderCard(); } }
+      const h = 6.0 - P.read / 50 * 5.2;
+      if (Math.abs(h - P.built) > 0.003) { if (P.liq) { t.remove(P.liq); P.liq.geometry.dispose(); } P.liq = liquid(prof, h, 0x7fc0ea, 0.02); t.add(P.liq); P.built = h; }
+      cock.rotation.y = P.open ? Math.PI / 2 : 0;
+      drops.forEach((d, i) => { d.visible = P.open; const k = (tt * 1.6 + i / 4) % 1; d.position.set(0, 0.38 - k * 0.3, 0); });
+      // 下の三角フラスコ：塩酸 10 mL＋フェノールフタレイン、NaOH（同じ濃さ）を加えていく
+      if (flLiq) { flLiq.scale.y = 1 + P.read / 30; flLiq.material.color.set(P.read > 10.02 ? 0xe0307a : 0xf4f8fb); flLiq.material.opacity = P.read > 10.02 ? 0.65 : 0.4; }
+    };
+  },
+  html() {
+    const P = state.play;
+    return `<div class="ctl"><p class="note">ビュレットの NaOH 水溶液を、下の三角フラスコ（塩酸 10.00 mL ＋ フェノールフタレイン）に落としてみよう。同じ濃さなので、約 10 mL で赤くなるはず。</p>
+      <div class="row"><button type="button" class="btn main" data-p="cock">${P.open ? 'コックを閉じる' : 'コックを開く'}</button><button type="button" class="btn" data-p="refill">はじめにもどす</button></div>
+      <div class="elecv"><span>目盛りの読み <b>${P.read.toFixed(2)}</b> mL</span><span>フラスコ <b>${P.read > 10.02 ? '赤色（中和点をこえた）' : '無色'}</b></span></div>
+      <p class="note">目盛りは上が 0。読みが増えるほど、たくさん落としたことになる。</p></div>`;
+  },
+  act(a) {
+    const P = state.play;
+    if (a === 'cock') P.open = !P.open;
+    if (a === 'refill') { P.read = 0; P.open = false; }
+    renderCard();
+  },
+};
+// ビュレットは開いている間、読みを更新する
+setInterval(() => { if (state.mode === 'see' && state.id === 'burette' && state.play && state.play.open && state.tab === 'play') renderCard(); }, 500);
+
+// --- ろうと ---
+PLAY.funnel = {
+  init(m, P) {
+    Object.assign(P, { t0: 0 });
+    const drops = bubbleSet(6, 0x9fd3f2, 0.04); drops.forEach(d => m.g.add(d));
+    R.tick = t => {
+      const e = (performance.now() - P.t0) / 1000, on = P.t0 && e < 4;
+      drops.forEach((d, i) => { d.visible = on; const k = (t * 1.2 + i / 6) % 1; d.position.set(0.06, -1.8 - k * 1.2, 0); });
+    };
+  },
+  html() {
+    return `<div class="ctl"><p class="note">ろ紙をのせたろうとに、水を注いでみよう。</p>
+      <div class="row"><button type="button" class="btn main" data-p="pour">水を注ぐ</button></div>
+      <p class="note">足の先は斜めに切ってある。長い方をビーカーのかべにつけると、液がかべを伝わって静かに落ちる。</p></div>`;
+  },
+  act(a) { if (a === 'pour') { state.play.t0 = performance.now(); toast('ろ紙を通った液（ろ液）が、足の先から落ちていく。', 'ok'); } renderCard(); },
+};
+
 function quizStart(kind) {
   const qs = [];
   for (let i = 0; i < 10; i++) {
@@ -3062,7 +3389,7 @@ function setMode(mode) {
   else { state.quiz = null; state.id = null; renderLib(); if (R) { clearScene(); const m = MODELS.burner(); R.group.add(m.g); frame(m.focus[0], m.focus[1]); } renderCard(); }
 }
 function go(mode, id) {
-  state.mode = mode; state.id = id; state.tab = 'use'; state.ptab = 'op'; state.quiz = null; state.order = null; state.stepOpen = 0; state.libCat = null;
+  state.mode = mode; state.id = id; state.tab = mode === 'see' && PLAY[id] ? 'play' : 'use'; state.ptab = 'op'; state.quiz = null; state.order = null; state.stepOpen = 0; state.libCat = null;
   document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === mode)));
   renderLib();
   if (!R) { renderCard(); return; }
@@ -3081,6 +3408,8 @@ document.addEventListener('click', ev => {
   if (gt) { go('practice', gt.dataset.goto); return; }
   const qz = t.closest('[data-quiz]');
   if (qz) { state.mode = 'quiz'; document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === 'quiz'))); quizStart(qz.dataset.quiz); renderLib(); return; }
+  const pl = t.closest('[data-p]');
+  if (pl && state.play && PLAY[state.id]) { PLAY[state.id].act(pl.dataset.p, pl.dataset.pv); return; }
   const cat = t.closest('[data-cat]');
   if (cat) { state.libCat = cat.dataset.cat; renderLib(); return; }
   const stp = t.closest('[data-step]');
@@ -3114,6 +3443,7 @@ document.addEventListener('click', ev => {
 document.addEventListener('input', ev => {
   const id = ev.target.id, v = +ev.target.value;
   const map = { gasS: 'gas', airS: 'air', amtS: 'amt', wickS: 'wick', fillS: 'fill', tubeS: 'amt', voltS: 'volt', cuS: 'cu', rcS: 'rc' };
+  if ((id === 'playGas' || id === 'playAir') && state.play && PLAY[state.id]) { PLAY[state.id].act(id, v); const el = $(id); if (el) el.focus(); return; }
   if (map[id] && state.pr) {
     PR[state.id].act(map[id], v);
     const el = $(id); if (el) el.focus();
