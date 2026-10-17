@@ -80,6 +80,9 @@ sub, sup { font-size: .68em; line-height: 0; }
 .ov-tr { top: 10px; right: 10px; }
 .ibtn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); }
 .ibtn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ibtn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.stage-wrap.pan #stage { cursor: grab; }
+.stage-wrap.pan #stage:active { cursor: grabbing; }
 .tgl { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 0 12px; height: 36px; font-size: 13px; }
 .tgl[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .toast { position: absolute; z-index: 4; left: 50%; top: 56px; transform: translateX(-50%); max-width: min(560px, calc(100% - 40px)); padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 15px; box-shadow: 0 8px 24px rgba(0,0,0,.18); text-align: center; text-wrap: balance; transition: opacity .3s; }
@@ -222,7 +225,8 @@ ul.caution.danger li b.x { background: #b7791f; }
     <div class="labels" id="labels"></div>
     <div class="ov ov-tl"><button type="button" class="tgl" id="btnParts" aria-pressed="true">部分の名前</button></div>
     <div class="ov ov-tr">
-      <button type="button" class="ibtn" id="btnReset" title="向きをもどす" aria-label="向きをもどす"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+      <button type="button" class="ibtn" id="btnPan" aria-pressed="false" title="移動モード：ドラッグで画面を平行に動かす（右ドラッグ・Shift＋ドラッグ・2本指でもできる）" aria-label="移動モード"><svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg></button>
+      <button type="button" class="ibtn" id="btnReset" title="向きと位置をもどす" aria-label="向きと位置をもどす"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
       <button type="button" class="ibtn" id="btnFull" title="全画面" aria-label="全画面"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
     <div class="toast" id="toast" hidden></div>
@@ -773,6 +777,46 @@ const ICON = { beaker: 'B', erlen: '三', roundflask: '丸', tube: '試', funnel
 const state = { mode: 'see', id: 'beaker', tab: 'use', parts: true, pr: null, quiz: null };
 
 // ===== three.js の準備 =====
+// ===== カーソル（指）のある所に向かってズームする =====
+const _ray = new THREE.Raycaster();
+function pointUnder(cx, cy) {
+  const el = R.renderer.domElement, r = el.getBoundingClientRect();
+  const ndc = new THREE.Vector2((cx - r.left) / r.width * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  _ray.setFromCamera(ndc, R.camera);
+  const shown = o => { for (let p = o; p; p = p.parent) if (!p.visible) return false; return true; };
+  const hit = _ray.intersectObject(R.group, true).find(h => h.object.isMesh && !(h.object.material && h.object.material.map === SHADOW_TEX) && shown(h.object));
+  if (hit) return hit.point;
+  // 何もない所なら、いまの注視点を通る（画面に平行な）面との交点
+  const n = R.camera.getWorldDirection(new THREE.Vector3());
+  const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(n, R.controls.target);
+  return _ray.ray.intersectPlane(plane, new THREE.Vector3()) || R.controls.target.clone();
+}
+function zoomAt(point, f) {
+  const c = R.controls, cam = R.camera;
+  const d = cam.position.distanceTo(c.target);
+  f = Math.min(Math.max(f, c.minDistance / d), c.maxDistance / d);
+  cam.position.sub(point).multiplyScalar(f).add(point);
+  c.target.sub(point).multiplyScalar(f).add(point);
+  c.update();
+}
+function setupZoomToPoint(el) {
+  el.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    const k = ev.ctrlKey ? 0.01 : 0.0015; // トラックパッドのピンチは ctrlKey つきで小さな値が来る
+    const dy = ev.deltaMode === 1 ? ev.deltaY * 16 : ev.deltaY;
+    zoomAt(pointUnder(ev.clientX, ev.clientY), Math.exp(dy * k));
+  }, { passive: false });
+  let pinch = null;
+  const mid = t => [(t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2];
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  el.addEventListener('touchstart', ev => { if (ev.touches.length === 2) { const m = mid(ev.touches); pinch = { d: dist(ev.touches), p: pointUnder(m[0], m[1]) }; } }, { passive: true });
+  el.addEventListener('touchmove', ev => {
+    if (!pinch || ev.touches.length !== 2) return;
+    const d = dist(ev.touches);
+    if (d > 0) { zoomAt(pinch.p, pinch.d / d); pinch.d = d; }
+  }, { passive: true });
+  el.addEventListener('touchend', ev => { if (ev.touches.length < 2) pinch = null; });
+}
 function initThree() {
   if (!window.THREE || !THREE.OrbitControls) return false;
   try {
@@ -800,6 +844,9 @@ function initThree() {
     controls.maxPolarAngle = Math.PI * 0.55;
     const group = new THREE.Group(); scene.add(group);
     R = { renderer, scene, camera, controls, group, labels: [], tick: null };
+    controls.enableZoom = false; // ズームは下の「カーソルの所に寄る」処理で行う
+    controls.screenSpacePanning = true;
+    setupZoomToPoint(renderer.domElement);
     const resize = () => {
       const w = stage.clientWidth, h = stage.clientHeight;
       if (!w || !h) return;
@@ -855,6 +902,7 @@ function fitDistance(d, _unused, tanV, tanH) {
   return { dist: need * 1.1, center };
 }
 function frame(focusY, radius, dir) {
+  R.lastFrame = [focusY, radius, dir];
   R.resize();
   const cam = R.camera, stage = $('stage');
   const w = stage.clientWidth || 1, h = stage.clientHeight || 1;
@@ -899,8 +947,10 @@ function layoutLabels() {
     if (L.el.hidden || !L.el.textContent) return;
     v.copy(L.get()).project(R.camera);
     if (v.z > 1) { L.el.style.visibility = 'hidden'; return; }
-    L.el.style.visibility = '';
     const ax = (v.x + 1) / 2 * w, ay = (1 - v.y) / 2 * h;
+    // 拡大して画面の外に出た部分の名前は出さない
+    if (ax < 0 || ax > w || ay < 0 || ay > h) { L.el.style.visibility = 'hidden'; return; }
+    L.el.style.visibility = '';
     if (L.el.classList.contains('warn')) { L.el.style.transform = `translate(${ax.toFixed(1)}px, ${(ay - 14).toFixed(1)}px) translate(-50%, -100%)`; return; }
     L.el.classList.add('co');
     co.push({ L, ax, ay, lw: L.el.offsetWidth, lh: L.el.offsetHeight || 24 });
@@ -3075,7 +3125,18 @@ $('btnParts').addEventListener('click', () => {
   $('btnParts').setAttribute('aria-pressed', String(state.parts));
   if (R) R.labels.forEach(L => { if (L.part) L.el.hidden = !state.parts; });
 });
-$('btnReset').addEventListener('click', () => { if (state.mode === 'practice' && state.id === 'p-cylinder') PR['p-cylinder'].view(); else if (state.mode === 'practice') go('practice', state.id); else if (state.mode === 'see') showItem(state.id); });
+// 向きと位置だけをもどす（実験の進み具合はそのまま）
+$('btnReset').addEventListener('click', () => { if (!R) return; if (state.mode === 'practice' && state.id === 'p-cylinder') PR['p-cylinder'].view(); else if (R.lastFrame) frame(...R.lastFrame); });
+$('btnPan').addEventListener('click', () => {
+  if (!R) return;
+  const on = $('btnPan').getAttribute('aria-pressed') !== 'true';
+  $('btnPan').setAttribute('aria-pressed', String(on));
+  $('stageWrap').classList.toggle('pan', on);
+  R.controls.mouseButtons.LEFT = on ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
+  R.controls.mouseButtons.RIGHT = on ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN;
+  R.controls.touches.ONE = on ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
+  toast(on ? '移動モード：ドラッグで平行に動かせる（右ドラッグで回転）' : '回転モード：ドラッグで回せる（右ドラッグ・Shift＋ドラッグで移動）', 'info');
+});
 $('btnFull').addEventListener('click', () => {
   const w = $('stageWrap');
   if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); return; }
