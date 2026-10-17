@@ -612,6 +612,72 @@ h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display)
 .stamp.s { width: 26px; height: 26px; font-size: 11px; border-width: 1.5px; vertical-align: -6px; margin-left: 4px; }
 .stamp.l { width: 76px; height: 76px; font-size: 22px; border-width: 3px; margin: 4px 0 10px; box-shadow: inset 0 0 0 3px var(--panel), inset 0 0 0 4.5px var(--stamp); }
 .ls-medal { display: none; }
+
+/* ===== スマホ：1画面に収まるアプリの形（ページはスクロールしない） ===== */
+.sbtn, .ln-s { display: none; }
+@media (max-width: 900px) {
+  html, body { height: 100%; }
+  body { overflow: hidden !important; height: 100dvh !important; min-height: 0 !important; display: flex; flex-direction: column; }
+  /* 上のバーは1行 */
+  .top { display: flex !important; flex-wrap: nowrap; align-items: center; gap: 6px; padding: 4px 10px !important; }
+  .brand { font-size: 15px !important; flex: none; }
+  .secnav { flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .secnav::-webkit-scrollbar { display: none; }
+  .secnav button { padding: 6px 9px !important; font-size: 13.5px !important; }
+  .ln-l { display: none; } .ln-s { display: inline; }
+  .labnav { flex: none; font-size: 12px !important; padding: 3px 8px !important; margin: 0 !important; }
+  .sbtn { display: inline-flex; flex: none; align-items: center; gap: 2px; border: 1px solid var(--line); background: var(--panel); border-radius: 4px; padding: 3px 7px; font-size: 12px; font-weight: 700; color: var(--ink); }
+  .sbtn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+  .sbtn[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+  body.present .sbtn { display: none; }
+  /* えらぶ所：3段まで（分野・分類・一覧）、どれも横スクロール */
+  .app { flex: 1 1 auto !important; min-height: 0; display: flex !important; flex-direction: column; gap: 6px !important; padding: 6px 8px 8px !important; }
+  .lib { flex: none !important; padding: 6px 8px !important; gap: 5px !important; border-radius: 6px; }
+  .subnav:not([hidden]), .tabs:not([hidden]), .featbar:not([hidden]) { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; gap: 4px; padding: 0 0 2px !important; border: 0 !important; scrollbar-width: none; }
+  .subnav::-webkit-scrollbar, .tabs::-webkit-scrollbar, .grid::-webkit-scrollbar { display: none; }
+  .subnav button, .tabs button { flex: 0 0 auto; padding: 4px 10px !important; font-size: 13px !important; white-space: nowrap; }
+  .search, .featbar, .feat-toggle, .featbtn { display: none !important; }
+  body.searching .search { display: block !important; }
+  body.searching .search label { display: none; }
+  body.searching .featbar:not([hidden]) { display: flex !important; }
+  .grid:not([hidden]) { display: flex !important; overflow-x: auto; overflow-y: hidden; gap: 6px !important; padding: 0 !important; align-items: stretch !important; scrollbar-width: none; }
+  .card-btn { flex: 0 0 auto; min-width: 0 !important; padding: 5px 10px !important; }
+  .card-btn .f { font-size: 14px; }
+  .card-btn .n { font-size: 11px; }
+  .card-btn.wide { max-width: 62vw; }
+  .card-btn.wide .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .grid.ptable { display: grid !important; grid-template-columns: repeat(8, 34px) !important; grid-auto-rows: 34px; overflow-x: auto; gap: 3px !important; max-height: 112px; overflow-y: auto; }
+  .pt { width: 34px; height: 34px; }
+  .pt b { font-size: 12px; }
+  /* 3Dは残りの高さいっぱい。説明は下からのシート */
+  .stage-wrap { flex: 1 1 auto !important; height: auto !important; min-height: 0 !important; }
+  .card { left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important; width: auto !important; max-width: none !important; max-height: 48% !important; border-radius: 10px 10px 0 0 !important; border-bottom: 0 !important; }
+  .card::before { content: ""; display: block; width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin: 6px auto 0; flex: none; }
+  .card.collapsed { max-height: 58px !important; }
+  body.present .card { max-height: 56% !important; }
+  .stage-wrap[data-kind="quizmenu"] .card { max-height: 88% !important; }
+  .card-head { padding: 4px 12px 0 !important; }
+  .card-body { padding: 6px 12px 12px !important; }
+  .mol-name, .ls-title { font-size: 19px !important; margin-top: 2px !important; }
+  .ls-text { font-size: 16px !important; line-height: 1.65 !important; margin-bottom: 10px !important; }
+  .ls-q { font-size: 17px !important; }
+  .ls-choice { font-size: 15px !important; padding: 9px 12px !important; }
+  .ls-tabs { margin: 4px 12px 0 !important; }
+  .ls-nav .pbtn.big { font-size: 16px !important; }
+  .eyebrow { font-size: 11px; }
+  /* 3Dの上の飾りは小さく。凡例は説明をたたんだときだけ */
+  .ov-tl { top: 6px !important; left: 6px !important; gap: 4px !important; }
+  .ov-tr { top: 6px !important; right: 6px !important; }
+  .seg button { padding: 3px 8px !important; font-size: 12px !important; }
+  .ibtn { width: 32px !important; height: 32px !important; }
+  .ov-bl { display: none !important; }
+  .stage-wrap.card-closed .ov-bl { display: flex !important; bottom: 66px !important; }
+  .caption { top: 44px !important; font-size: 13px !important; }
+  .facts { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 4px !important; }
+  .point { padding: 6px 10px !important; }
+  .note { font-size: 12px; }
+}
+@media (max-width: 380px) { .brand { display: none; } }
 </style>
 </head>
 <body>
@@ -619,7 +685,8 @@ h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display)
 <header class="top">
   <h1 class="brand">分子ラボ<b>3D</b></h1>
   <nav class="secnav" id="secnav" aria-label="分野"></nav>
-  <a class="labnav" href="lab.html" target="_blank" rel="noopener">実験ラボ（器具）↗</a>
+  <button type="button" class="sbtn" id="searchBtn" aria-expanded="false" aria-controls="searchBox" title="分子式か名前で探す"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span>探す</span></button>
+  <a class="labnav" href="lab.html" target="_blank" rel="noopener"><span class="ln-l">実験ラボ（器具）</span><span class="ln-s">実験</span> ↗</a>
 </header>
 
 <main class="app">
@@ -6518,6 +6585,13 @@ function bindUI() {
   $('grid').addEventListener('click', ev => {
     const b = ev.target.closest('[data-id]');
     if (b) selectEntry(LIB.find(e => e.id === b.dataset.id), { scroll: true });
+  });
+  $('searchBtn').addEventListener('click', () => {
+    const on = !document.body.classList.contains('searching');
+    document.body.classList.toggle('searching', on);
+    $('searchBtn').setAttribute('aria-expanded', String(on));
+    if (on) { const q = $('q'); q.focus(); }
+    if (R) setTimeout(() => { onResize(); fitCamera(); }, 50);
   });
   $('card').addEventListener('click', ev => {
     const go = ev.target.closest('[data-go]');
