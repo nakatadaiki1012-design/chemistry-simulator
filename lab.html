@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>実験ラボ3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="化学の実験器具を3Dで見て、使い方を練習できるアプリ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Lexend:wght@400;500;600&display=swap">
+<style>
+/* レイアウト：左に器具の棚、右に3Dの実験台。説明と操作パネルは実験台の中 */
+:root {
+  --bg: #eef1f4; --panel: #ffffff; --glass: rgba(255, 255, 255, 0.94); --ink: #172231; --muted: #5b6676; --line: #d6dce4; --chip: #e8edf2;
+  --accent: #0f7a6e; --accent-ink: #ffffff; --warm: #d9661f; --ok: #1f8a5b; --ng: #d33a2c;
+  --bench-1: #f7f8fa; --bench-2: #d7dde4;
+  --font-display: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  --font-data: "Lexend", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --r: 12px; --card-w: 370px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1218; --panel: #131c25; --glass: rgba(19, 28, 37, 0.93); --ink: #e6edf3; --muted: #97a3b2; --line: #263240; --chip: #1c2833;
+    --accent: #3cc4b2; --accent-ink: #0c1218; --warm: #ffa04d; --ok: #4fd19a; --ng: #ff6b5e; --bench-1: #1b2631; --bench-2: #070b10; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1218; --panel: #131c25; --glass: rgba(19, 28, 37, 0.93); --ink: #e6edf3; --muted: #97a3b2; --line: #263240; --chip: #1c2833;
+  --accent: #3cc4b2; --accent-ink: #0c1218; --warm: #ffa04d; --ok: #4fd19a; --ng: #ff6b5e; --bench-1: #1b2631; --bench-2: #070b10; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.6; display: flex; flex-direction: column; overflow: hidden; margin: 0; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .5; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+sub, sup { font-size: .68em; line-height: 0; }
+.top { display: flex; align-items: center; gap: 14px; padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { font-family: var(--font-display); font-weight: 800; font-size: 20px; margin: 0; white-space: nowrap; }
+.brand b { color: var(--accent); }
+.modes { display: flex; gap: 2px; }
+.modes button { border: 0; background: transparent; padding: 6px 14px; border-radius: 999px; font-size: 15px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.modes button[aria-current="true"] { background: var(--ink); color: var(--panel); }
+.back { margin-left: auto; font-size: 13px; color: var(--accent); text-decoration: none; white-space: nowrap; }
+.app { flex: 1; min-height: 0; display: grid; gap: 12px; grid-template-columns: 250px minmax(0, 1fr); padding-block: 12px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.lib { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); overflow-y: auto; padding: 10px; min-width: 0; }
+.grp { font-size: 11px; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin: 10px 4px 4px; }
+.grp:first-child { margin-top: 2px; }
+.item { width: 100%; display: flex; align-items: center; gap: 8px; text-align: left; border: 1px solid transparent; background: transparent; border-radius: 9px; padding: 6px 8px; font-size: 14px; }
+.item:hover { background: var(--chip); }
+.item[aria-current="true"] { background: var(--chip); border-color: var(--accent); font-weight: 700; }
+.item .ic { width: 22px; height: 22px; border-radius: 6px; background: var(--chip); display: grid; place-items: center; font-size: 11px; font-weight: 700; color: var(--accent); flex: none; font-family: var(--font-data); }
+.item[aria-current="true"] .ic { background: var(--accent); color: var(--accent-ink); }
+.item .done { margin-left: auto; color: var(--ok); font-weight: 700; }
+.stage-wrap { position: relative; border-radius: var(--r); overflow: hidden; min-height: 0; border: 1px solid var(--line); background: radial-gradient(120% 90% at 40% 30%, var(--bench-1), var(--bench-2)); }
+.stage-wrap.is-max { position: fixed; inset: 0; z-index: 50; border-radius: 0; }
+#stage { position: absolute; inset: 0; touch-action: none; }
+#stage canvas { display: block; width: 100%; height: 100%; }
+.labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.lbl { position: absolute; left: 0; top: 0; white-space: nowrap; will-change: transform; font-size: 12.5px; font-weight: 700; color: var(--ink); background: var(--glass); border: 1px solid var(--line); border-radius: 999px; padding: 0 8px; }
+.lbl::before { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 10px; background: var(--muted); }
+.lbl.warn { background: var(--ng); color: #fff; border-color: var(--ng); }
+.ov { position: absolute; z-index: 2; display: flex; gap: 6px; }
+.ov-tl { top: 10px; left: 10px; }
+.ov-tr { top: 10px; right: 10px; }
+.ibtn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); }
+.ibtn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tgl { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 0 12px; height: 36px; font-size: 13px; }
+.tgl[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.toast { position: absolute; z-index: 4; left: 50%; top: 56px; transform: translateX(-50%); max-width: min(560px, calc(100% - 40px)); padding: 8px 14px; border-radius: 12px; font-weight: 700; font-size: 15px; box-shadow: 0 8px 24px rgba(0,0,0,.18); text-align: center; text-wrap: balance; transition: opacity .3s; }
+.toast.ok { background: var(--ok); color: #fff; } .toast.ng { background: var(--ng); color: #fff; } .toast.info { background: var(--panel); color: var(--ink); border: 1px solid var(--line); }
+.card { position: absolute; z-index: 3; top: 56px; right: 10px; bottom: 10px; width: var(--card-w); max-width: 50%; background: var(--glass); border: 1px solid var(--line); border-radius: var(--r); display: flex; flex-direction: column; overflow: hidden; backdrop-filter: blur(6px); }
+.card-head { padding: 10px 14px 4px; }
+.eyebrow { font-size: 11px; color: var(--muted); letter-spacing: .06em; }
+.name { font-family: var(--font-display); font-weight: 800; font-size: 24px; line-height: 1.25; margin: 2px 0 0; }
+.yomi { font-size: 12px; color: var(--muted); font-family: var(--font-data); }
+.tabs { display: flex; gap: 2px; margin: 6px 14px 0; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; background: transparent; padding: 5px 12px; font-size: 13px; font-weight: 700; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.body { overflow-y: auto; padding: 10px 14px 14px; flex: 1; min-height: 0; }
+.use { margin: 0 0 8px; font-size: 14.5px; }
+ol.how { margin: 0; padding-left: 22px; font-size: 14px; }
+ol.how li { margin-bottom: 4px; }
+ul.caution { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+ul.caution li { display: flex; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+ul.caution li b { flex: none; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; color: #fff; margin-top: 2px; }
+ul.caution li b.o { background: var(--ok); } ul.caution li b.x { background: var(--ng); }
+.parts { display: flex; flex-wrap: wrap; gap: 4px; }
+.parts span { font-size: 12.5px; background: var(--chip); border-radius: 6px; padding: 1px 8px; }
+.ctl { display: flex; flex-direction: column; gap: 8px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 7px 12px; font-size: 14px; font-weight: 700; }
+.btn:not(:disabled):hover { border-color: var(--accent); }
+.btn.main { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.bad { color: var(--ng); }
+.btn[aria-pressed="true"] { border-color: var(--accent); background: var(--chip); color: var(--accent); }
+.sl { display: grid; grid-template-columns: 7.5em minmax(0, 1fr) 3.4em; gap: 8px; align-items: center; font-size: 13.5px; }
+.sl input { accent-color: var(--accent); width: 100%; }
+.sl output { font-family: var(--font-data); font-size: 13px; text-align: right; }
+.checklist { list-style: none; margin: 0; padding: 0; font-size: 13.5px; }
+.checklist li { display: flex; gap: 8px; align-items: flex-start; padding: 3px 0; color: var(--muted); }
+.checklist li::before { content: ""; flex: none; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); margin-top: 3px; }
+.checklist li.done { color: var(--ink); }
+.checklist li.done::before { background: var(--ok); border-color: var(--ok); }
+.checklist li.now { color: var(--ink); font-weight: 700; }
+.checklist li.now::before { border-color: var(--accent); }
+.verdict { border-radius: 10px; padding: 8px 10px; font-weight: 700; font-size: 14px; background: var(--chip); border-left: 4px solid var(--warm); }
+.verdict.ok { border-left-color: var(--ok); color: var(--ok); }
+.verdict.ng { border-left-color: var(--ng); color: var(--ng); }
+.note { font-size: 12.5px; color: var(--muted); margin: 0; }
+.readin { display: flex; gap: 8px; align-items: center; }
+.readin input { width: 7em; font-family: var(--font-data); font-size: 18px; font-weight: 600; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
+.qtext { font-size: 17px; font-weight: 700; line-height: 1.55; margin: 2px 0 8px; }
+.qchoices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.qc { border: 1.5px solid var(--line); background: var(--panel); border-radius: 10px; padding: 9px 8px; font-size: 15px; font-weight: 700; min-height: 46px; }
+.qc.right { background: var(--ok); color: #fff; border-color: var(--ok); } .qc.wrong { color: var(--ng); border-color: var(--ng); } .qc.dim { opacity: .5; }
+.qprog { height: 5px; border-radius: 999px; background: var(--chip); overflow: hidden; margin: 6px 0; }
+.qprog i { display: block; height: 100%; background: var(--accent); }
+.fallback { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted); }
+@media (max-width: 900px) {
+  body { overflow: auto; height: auto; min-height: 100%; }
+  .app { display: flex; flex-direction: column; }
+  .lib { display: flex; gap: 6px; overflow-x: auto; padding: 8px; align-items: center; }
+  .lib .note { display: none; }
+  .grp { display: none; }
+  .item { flex: 0 0 auto; width: auto; white-space: nowrap; border-color: var(--line); }
+  .stage-wrap { height: 88vh; height: 88svh; min-height: 540px; }
+  .card { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-width: none; max-height: 50%; }
+  .modes button { padding: 5px 10px; font-size: 14px; }
+  .top { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1 class="brand">実験ラボ<b>3D</b></h1>
+  <nav class="modes" id="modes" aria-label="モード">
+    <button type="button" data-mode="see" aria-current="true">器具を見る</button>
+    <button type="button" data-mode="practice" aria-current="false">操作の練習</button>
+    <button type="button" data-mode="quiz" aria-current="false">クイズ</button>
+  </nav>
+  <a class="back" id="backLink" href="index.html" target="_blank" rel="noopener">分子ラボ3D を開く ↗</a>
+</header>
+<main class="app">
+  <aside class="lib" id="lib" aria-label="器具をえらぶ"></aside>
+  <section class="stage-wrap" id="stageWrap" aria-label="実験台">
+    <div id="stage"></div>
+    <div class="labels" id="labels"></div>
+    <div class="ov ov-tl"><button type="button" class="tgl" id="btnParts" aria-pressed="true">部分の名前</button></div>
+    <div class="ov ov-tr">
+      <button type="button" class="ibtn" id="btnReset" title="向きをもどす" aria-label="向きをもどす"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
+      <button type="button" class="ibtn" id="btnFull" title="全画面" aria-label="全画面"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </div>
+    <div class="toast" id="toast" hidden></div>
+    <aside class="card" id="card" aria-live="polite"></aside>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ===== 小さな道具 =====
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+const DONE_KEY = 'lab-3d:done';
+let done = new Set();
+try { done = new Set(JSON.parse(localStorage.getItem(DONE_KEY) || '[]')); } catch (e) { /* 保存できない環境でも動く */ }
+function markDone(id) { done.add(id); try { localStorage.setItem(DONE_KEY, JSON.stringify([...done])); } catch (e) { /* 無視 */ } renderLib(); }
+
+// ===== 3Dの部品づくり =====
+let R = null;
+const V2 = (x, y) => new THREE.Vector2(x, y);
+function glassMat(extra) {
+  return new THREE.MeshPhongMaterial(Object.assign({ color: 0xd8e9f5, transparent: true, opacity: 0.26, shininess: 140, specular: 0xffffff, side: THREE.DoubleSide, depthWrite: false }, extra || {}));
+}
+function solid(color, extra) { return new THREE.MeshPhongMaterial(Object.assign({ color, shininess: 50, specular: 0x333333 }, extra || {})); }
+function liquidMat(color, op) { return new THREE.MeshPhongMaterial({ color, transparent: true, opacity: op || 0.6, side: THREE.DoubleSide, depthWrite: false, shininess: 60 }); }
+function lathe(pts, mat, seg) {
+  const m = new THREE.Mesh(new THREE.LatheGeometry(pts.map(p => V2(p[0], p[1])), seg || 64), mat);
+  return m;
+}
+function cyl(r1, r2, h, mat, seg) { return new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg || 32), mat); }
+// 内側の形（下から上へ）にそって、高さ h までの液体をつくる。液面は少しへこむ（メニスカス）
+function liquid(inner, h, color, men) {
+  const out = [[0, inner[0][1] + 0.01]];
+  let rTop = inner[0][0];
+  for (let i = 0; i < inner.length; i++) {
+    const [r, y] = inner[i];
+    if (y < h) { out.push([r * 0.985, Math.max(y, inner[0][1] + 0.01)]); rTop = r; continue; }
+    const [r0, y0] = inner[i - 1] || inner[0];
+    rTop = r0 + (r - r0) * (h - y0) / Math.max(y - y0, 1e-6);
+    break;
+  }
+  const m = men === undefined ? 0.05 : men;
+  out.push([rTop * 0.985, h]);
+  out.push([rTop * 0.7, h - m * 0.55]);
+  out.push([rTop * 0.35, h - m * 0.9]);
+  out.push([0, h - m]);
+  const mesh = lathe(out, liquidMat(color));
+  mesh.renderOrder = 1;
+  return mesh;
+}
+// 文字の板（目盛りの数字など）
+function textSprite(txt, h, color) {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 64;
+  const g = c.getContext('2d');
+  g.font = 'bold 44px Lexend, Arial, sans-serif'; g.fillStyle = color || '#24303f'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(txt, 64, 34);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+  sp.scale.set(h * 2, h, 1);
+  return sp;
+}
+// 円筒の表面に目盛りの線
+function ticks(r, y0, y1, n, every, color, label) {
+  const g = new THREE.Group();
+  const pos = [];
+  for (let i = 0; i <= n; i++) {
+    const y = y0 + (y1 - y0) * i / n;
+    const big = i % every === 0, mid = i % (every / 2) === 0;
+    const w = big ? 0.55 : mid ? 0.38 : 0.22;
+    const a0 = Math.PI / 2 - w / 2, steps = 6;
+    for (let k = 0; k < steps; k++) {
+      const a = a0 + w * k / steps, b = a0 + w * (k + 1) / steps;
+      pos.push(Math.cos(a) * r, y, Math.sin(a) * r, Math.cos(b) * r, y, Math.sin(b) * r);
+    }
+    if (big && label) {
+      const s = textSprite(label(i), 0.14, color);
+      s.position.set(0.24, y + 0.02, r + 0.02);
+      g.add(s);
+    }
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: color || '#24303f' })));
+  return g;
+}
+// 炎：外側と内側の2つのしずく形。air が大きいほど青く短くなる
+function makeFlame() {
+  const prof = [[0, 0], [0.16, 0.12], [0.2, 0.35], [0.15, 0.65], [0.07, 0.9], [0, 1]];
+  const geo = new THREE.LatheGeometry(prof.map(p => V2(p[0], p[1])), 32);
+  const outer = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffa940, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  const inner = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x7fb3ff, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  const g = new THREE.Group();
+  g.add(outer, inner);
+  const light = new THREE.PointLight(0xffb060, 0, 6);
+  light.position.y = 0.5;
+  g.add(light);
+  const f = { g, outer, inner, light, size: 0, air: 0, lit: false };
+  f.update = t => {
+    const on = f.lit && f.size > 0.02;
+    g.visible = on;
+    if (!on) { light.intensity = 0; return; }
+    const fl = reduceMotion ? 1 : 1 + 0.06 * Math.sin(t * 23) + 0.04 * Math.sin(t * 37);
+    const h = f.size * (1.25 - 0.5 * f.air) * fl, w = 0.6 + 0.6 * f.size;
+    outer.scale.set(w * (1 - 0.25 * f.air), h, w * (1 - 0.25 * f.air));
+    inner.scale.set(w * 0.55, h * (0.15 + 0.4 * f.air), w * 0.55);
+    outer.material.color.set(new THREE.Color(0xffb347).lerp(new THREE.Color(0x4f8dff), f.air));
+    outer.material.opacity = 0.75 - 0.25 * f.air;
+    inner.material.opacity = 0.2 + 0.6 * f.air;
+    light.intensity = 1.2 * f.size;
+    light.color.set(f.air > 0.5 ? 0x9cc0ff : 0xffb060);
+  };
+  return f;
+}
+// マッチ（棒＋頭＋小さな炎）
+function makeMatch() {
+  const g = new THREE.Group();
+  const stick = cyl(0.03, 0.03, 1.1, solid(0xe6c38f)); stick.position.y = -0.55; g.add(stick);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 12), solid(0x8a2a1e)); g.add(head);
+  const fl = makeFlame(); fl.lit = true; fl.size = 0.35; fl.air = 0.1; fl.g.position.y = 0.02; g.add(fl.g);
+  g.rotation.z = -1.1;
+  return { g, fl };
+}
+// スタンド（台・支柱・クランプ）
+function makeStand(h, clampY, armLen) {
+  const g = new THREE.Group();
+  const metal = solid(0x6f7782, { shininess: 80 });
+  const base = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 1.4), solid(0x3b4350)); base.position.set(-0.6, 0.06, 0); g.add(base);
+  const rod = cyl(0.05, 0.05, h, metal); rod.position.set(-1.3, h / 2, 0); g.add(rod);
+  const boss = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), metal); boss.position.set(-1.3, clampY, 0); g.add(boss);
+  const arm = cyl(0.035, 0.035, armLen, metal); arm.rotation.z = Math.PI / 2; arm.position.set(-1.3 + armLen / 2, clampY, 0); g.add(arm);
+  return g;
+}
+
+// ===== 器具のモデル =====
+// それぞれ { g, parts:[[名前, [x,y,z]]], focus:[y, 半径], inner? }
+const MODELS = {
+  beaker() {
+    const g = new THREE.Group();
+    const prof = [[0, 0.02], [1.12, 0.02], [1.2, 0.1], [1.2, 2.85], [1.24, 2.95], [1.28, 3.0]];
+    const glass = lathe(prof, glassMat()); glass.renderOrder = 2; g.add(glass);
+    g.add(liquid(prof.slice(0, 4), 1.7, 0x6fb7e8));
+    g.add(ticks(1.205, 0.6, 2.4, 6, 2, '#2c3846', i => String(50 + i * 25)));
+    const spout = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.035, 8, 16, Math.PI), glassMat({ opacity: 0.45 }));
+    spout.position.set(-1.25, 3.0, 0); spout.rotation.set(0, Math.PI / 2, Math.PI); g.add(spout);
+    return { g, parts: [['注ぎ口', [-1.28, 3.0, 0]], ['目盛り（目安）', [0.2, 2.4, 1.2]], ['液体', [0, 1.2, 0.6]]], focus: [1.5, 2.2] };
+  },
+  erlen() {
+    const g = new THREE.Group();
+    const prof = [[0, 0.02], [1.25, 0.02], [1.32, 0.12], [0.42, 2.55], [0.4, 3.25], [0.46, 3.32]];
+    const glass = lathe(prof, glassMat()); glass.renderOrder = 2; g.add(glass);
+    g.add(liquid([[1.22, 0.04], [1.28, 0.12], [0.42, 2.55]], 0.9, 0xf2c94c));
+    return { g, parts: [['口（せまい）', [0.45, 3.3, 0]], ['首', [0.42, 2.9, 0]], ['底（広くて安定）', [1.2, 0.2, 0]]], focus: [1.6, 2.2] };
+  },
+  roundflask() {
+    const g = new THREE.Group();
+    const prof = [];
+    for (let k = 0; k <= 16; k++) { const a = -Math.PI / 2 + (Math.PI * 0.78) * k / 16; prof.push([Math.cos(a) * 1.25, 1.25 + Math.sin(a) * 1.25]); }
+    const last = prof[prof.length - 1];
+    prof.push([0.36, last[1] + 0.2], [0.36, 3.9], [0.42, 3.97]);
+    const glass = lathe(prof, glassMat()); glass.renderOrder = 2; g.add(glass);
+    g.add(liquid(prof.slice(0, 12), 1.1, 0xe57373));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.16, 12, 40), solid(0xc8a27a)); ring.rotation.x = Math.PI / 2; ring.position.y = 0.12; g.add(ring);
+    const chips = new THREE.Group();
+    [[0.2, 0.08], [-0.25, 0.12], [0.05, -0.2]].forEach(([x, z]) => { const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.07), solid(0xf0f0f0)); s.position.set(x, 0.1, z); chips.add(s); });
+    g.add(chips);
+    return { g, parts: [['球形の胴（熱が均一に伝わる）', [1.25, 1.25, 0]], ['首', [0.36, 3.3, 0]], ['コルクリング（台）', [0.8, 0.15, 0.4]], ['沸騰石', [0.2, 0.15, 0.1]]], focus: [1.8, 2.4] };
+  },
+  tube() {
+    const g = new THREE.Group();
+    const prof = [];
+    for (let k = 0; k <= 8; k++) { const a = -Math.PI / 2 + Math.PI / 2 * k / 8; prof.push([Math.cos(a) * 0.3, 0.3 + Math.sin(a) * 0.3]); }
+    prof.push([0.3, 3.4], [0.34, 3.45]);
+    const glass = lathe(prof, glassMat()); glass.renderOrder = 2; g.add(glass);
+    g.add(liquid(prof.slice(0, 10), 1.0, 0x8bc34a));
+    return { g, parts: [['口', [0.34, 3.45, 0]], ['液は1/4〜1/3まで', [0.3, 1.0, 0]]], focus: [1.7, 2.0] };
+  },
+  funnel() {
+    const g = new THREE.Group();
+    const prof = [[0.07, -1.6], [0.07, 0], [0.12, 0.08], [1.1, 1.3], [1.15, 1.35]];
+    const glass = lathe(prof, glassMat({ opacity: 0.35 })); glass.renderOrder = 2; g.add(glass);
+    const paper = lathe([[0.02, 0.15], [0.95, 1.22]], new THREE.MeshPhongMaterial({ color: 0xfdfdfa, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
+    g.add(paper);
+    g.position.y = 1.7;
+    return { g, parts: [['ろ紙', [0.6, 2.6, 0.3]], ['ろうと', [1.1, 2.9, 0]], ['足（先は斜めに切ってある）', [0.07, 0.15, 0]]], focus: [1.6, 2.2] };
+  },
+  cylinder() {
+    const g = new THREE.Group();
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.95, 0.12, 6), solid(0x3f6fb5)); foot.position.y = 0.06; g.add(foot);
+    const prof = [[0, 0.12], [0.42, 0.12], [0.42, 5.4], [0.48, 5.5]];
+    const glass = lathe(prof, glassMat()); glass.renderOrder = 2; g.add(glass);
+    g.add(ticks(0.425, 0.4, 5.0, 100, 10, '#24303f', i => String(i)));
+    g.add(liquid(prof.slice(0, 3), 3.1, 0x6fb7e8, 0.07));
+    return { g, parts: [['目盛り（mL）', [0.45, 4.6, 0]], ['液面（へこんだ下の面を読む）', [0.42, 3.05, 0]], ['台座', [0.9, 0.08, 0]]], focus: [2.8, 3.1] };
+  },
+  holepip() {
+    const g = new THREE.Group();
+    const mat = glassMat({ opacity: 0.35 });
+    const prof = [[0.03, 0], [0.07, 0.4], [0.07, 1.6], [0.3, 1.9], [0.32, 2.6], [0.07, 2.9], [0.07, 5.3]];
+    const p = lathe(prof, mat); p.renderOrder = 2; g.add(p);
+    g.add(liquid([[0.05, 0.05], [0.06, 0.4], [0.06, 1.6], [0.28, 1.9], [0.3, 2.6], [0.06, 2.9], [0.06, 5]], 4.2, 0x6fb7e8, 0.02));
+    const mark = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.01, 6, 24), new THREE.MeshBasicMaterial({ color: 0x1b2433 })); mark.rotation.x = Math.PI / 2; mark.position.y = 4.2; g.add(mark);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 18), solid(0xc23b3b, { shininess: 30 })); bulb.scale.set(1, 1.2, 1); bulb.position.y = 5.9; g.add(bulb);
+    return { g, parts: [['標線（ここに液面の底を合わせる）', [0.08, 4.2, 0]], ['ふくらみ', [0.32, 2.25, 0]], ['安全ピペッター', [0.42, 5.9, 0]]], focus: [3.1, 3.4] };
+  },
+  burette() {
+    const g = new THREE.Group();
+    g.add(makeStand(7.4, 6.2, 1.3));
+    const t = new THREE.Group();
+    const prof = [[0.02, -0.5], [0.05, -0.2], [0.05, 0.3], [0.12, 0.4], [0.12, 6.4], [0.14, 6.45]];
+    const b = lathe(prof, glassMat({ opacity: 0.35 })); b.renderOrder = 2; t.add(b);
+    t.add(liquid([[0.04, -0.45], [0.04, 0.3], [0.11, 0.4], [0.11, 6.3]], 5.6, 0x6fb7e8, 0.02));
+    t.add(ticks(0.125, 0.8, 6.0, 50, 10, '#24303f', i => String(50 - i)));
+    const cock = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.08), solid(0x2b5fbf)); cock.position.y = 0.05; t.add(cock);
+    t.position.set(0, 0.9, 0);
+    g.add(t);
+    const fl = MODELS.erlen().g; fl.scale.setScalar(0.45); fl.position.y = 0.12; g.add(fl);
+    return { g, parts: [['目盛り（上が 0）', [0.13, 6.8, 0]], ['コック', [0.25, 0.95, 0]], ['先端', [0.02, 0.4, 0]], ['三角フラスコ', [0.5, 0.5, 0.3]]], focus: [3.6, 4.0] };
+  },
+  komagome() {
+    const g = new THREE.Group();
+    const prof = [[0.03, 0], [0.08, 0.6], [0.12, 1.8], [0.14, 2.6], [0.16, 2.7]];
+    const p = lathe(prof, glassMat({ opacity: 0.35 })); p.renderOrder = 2; g.add(p);
+    g.add(ticks(0.13, 1.3, 2.4, 4, 2, '#24303f'));
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3, 24, 18), solid(0xd84b3c, { shininess: 30 })); bulb.scale.set(1, 1.5, 1); bulb.position.y = 3.1; g.add(bulb);
+    return { g, parts: [['ゴム球', [0.3, 3.2, 0]], ['目盛り', [0.13, 2.0, 0]], ['先端（上に向けない）', [0.03, 0.05, 0]]], focus: [1.6, 2.0] };
+  },
+  dish() {
+    const g = new THREE.Group();
+    const prof = [[0, 0.03], [0.5, 0.05], [1.0, 0.25], [1.35, 0.6], [1.45, 0.68]];
+    const d = lathe(prof, solid(0xf6f4ef, { side: THREE.DoubleSide, shininess: 90 })); g.add(d);
+    const salt = new THREE.Group();
+    for (let i = 0; i < 40; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), solid(0xffffff)); const a = Math.random() * 6.28, r = Math.random() * 0.6; c.position.set(Math.cos(a) * r, 0.1, Math.sin(a) * r); c.rotation.set(a, a * 2, 0); salt.add(c); }
+    g.add(salt);
+    const spout = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), solid(0xf6f4ef)); spout.position.set(1.44, 0.68, 0); g.add(spout);
+    g.position.y = 0.4;
+    return { g, parts: [['磁器（直接加熱できる）', [1.2, 1.0, 0]], ['出てきた結晶', [0, 0.55, 0]]], focus: [0.8, 1.9] };
+  },
+  lamp() {
+    const g = new THREE.Group();
+    const prof = [[0, 0.02], [1.0, 0.02], [1.15, 0.25], [1.2, 0.7], [1.0, 1.25], [0.45, 1.55], [0.32, 1.7]];
+    const body = lathe(prof, glassMat({ opacity: 0.3 })); body.renderOrder = 2; g.add(body);
+    const alc = liquid(prof.slice(0, 5), 0.9, 0xb9d9ff); g.add(alc);
+    const holder = cyl(0.32, 0.32, 0.22, solid(0xb0b5bc, { shininess: 90 })); holder.position.y = 1.78; g.add(holder);
+    const wickIn = cyl(0.08, 0.08, 1.6, solid(0xf2efe6)); wickIn.position.y = 1.0; g.add(wickIn);
+    const wick = cyl(0.08, 0.07, 0.25, solid(0xece6d6)); wick.position.y = 2.0; g.add(wick);
+    const capProf = [[0, 2.85], [0.2, 2.8], [0.42, 2.5], [0.44, 1.95], [0.47, 1.9]];
+    const cap = lathe(capProf, glassMat({ opacity: 0.35 })); cap.renderOrder = 3; g.add(cap);
+    const flame = makeFlame(); flame.g.position.y = 2.1; g.add(flame.g);
+    return { g, alc, wick, cap, flame, prof,
+      parts: [['ふた', [0.44, 2.6, 0]], ['芯（約5 mm 出す）', [0.08, 2.1, 0]], ['芯おさえ', [0.32, 1.8, 0]], ['アルコール（8分目くらい）', [1.1, 0.8, 0]]], focus: [1.4, 2.2] };
+  },
+  burner() {
+    const g = new THREE.Group();
+    const metal = solid(0x8a929c, { shininess: 90 }), dark = solid(0x3b4350);
+    const base = cyl(0.9, 1.0, 0.25, dark, 40); base.position.y = 0.12; g.add(base);
+    const inlet = cyl(0.08, 0.08, 1.3, metal); inlet.rotation.z = Math.PI / 2; inlet.position.set(0.9, 0.45, 0); g.add(inlet);
+    const hose = cyl(0.11, 0.11, 1.4, solid(0xd25b2a)); hose.rotation.z = Math.PI / 2; hose.position.set(2.1, 0.45, 0); g.add(hose);
+    const gasScrew = cyl(0.36, 0.36, 0.22, solid(0x2b5fbf), 12); gasScrew.position.y = 0.45; g.add(gasScrew);
+    const barrel = cyl(0.17, 0.17, 2.6, metal); barrel.position.y = 2.0; g.add(barrel);
+    const airScrew = cyl(0.28, 0.28, 0.4, solid(0xc0392b), 12); airScrew.position.y = 1.0; g.add(airScrew);
+    const flame = makeFlame(); flame.g.position.y = 3.3; flame.g.scale.setScalar(1.6); g.add(flame.g);
+    const cock = new THREE.Group();
+    const valve = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), dark); cock.add(valve);
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.6), solid(0xe0b100)); handle.position.y = 0.2; cock.add(handle);
+    cock.position.set(2.9, 0.45, 0); g.add(cock);
+    return { g, gasScrew, airScrew, flame, handle,
+      parts: [['空気調節ねじ（上）', [0.28, 1.05, 0]], ['ガス調節ねじ（下）', [0.36, 0.5, 0]], ['コック', [2.9, 0.7, 0]], ['ガス管', [2.1, 0.55, 0]], ['筒', [0.17, 2.6, 0]]], focus: [1.8, 2.6] };
+  },
+};
+
+// ===== 器具のデータ =====
+const ITEMS = [
+  { id: 'beaker', grp: 'ガラス器具', name: 'ビーカー', yomi: 'beaker', model: 'beaker',
+    use: '液体を入れて、混ぜたり、温めたり、おおよその量をはかったりする。',
+    how: ['注ぐときは注ぎ口から、ガラス棒を伝わらせて注ぐ。', '加熱するときは、三脚の上に金網（セラミック付き）をしいて置く。', '目盛りはおおよその量。正確にはかるときはメスシリンダーやピペットを使う。'],
+    caution: [['o', '加熱するときは金網をしく'], ['x', '直接炎にあてて加熱する（割れる）'], ['x', '目盛りで正確な体積をはかる']] },
+  { id: 'erlen', grp: 'ガラス器具', name: '三角フラスコ', yomi: 'Erlenmeyer flask', model: 'erlen',
+    use: '口がせまいので、ふって混ぜても液がこぼれにくく、蒸発もしにくい。気体の発生や中和滴定に使う。',
+    how: ['混ぜるときは、底を円をかくように回す。', '加熱するときは金網をしく。'],
+    caution: [['o', '口が細いので、ふり混ぜても飛び出しにくい'], ['x', 'ゴム栓でしっかりふたをしたまま加熱する（中の気体がふくらんで破裂する）']] },
+  { id: 'roundflask', grp: 'ガラス器具', name: '丸底フラスコ', yomi: 'round-bottom flask', model: 'roundflask',
+    use: '球の形なので熱が全体に均一に伝わり、強く加熱しても割れにくい。液体の加熱や蒸留に使う。',
+    how: ['そのままでは立たないので、コルクリングにのせるか、スタンドで固定する。', '加熱する前に沸騰石を入れる（突沸を防ぐ）。'],
+    caution: [['o', '沸騰石を入れてから加熱する'], ['x', '密閉したまま加熱する'], ['x', '加熱の途中で沸騰石を入れる（急に沸騰して危険）']] },
+  { id: 'tube', grp: 'ガラス器具', name: '試験管', yomi: 'test tube', model: 'tube',
+    use: '少量の物質を反応させたり、加熱したりする。',
+    how: ['液体は試験管の 1/4〜1/3 くらいまで入れる。', '加熱は試験管ばさみで口の近くをはさみ、ふりながら加熱する。', '口を人のいない方に向ける。'],
+    caution: [['o', '液は 1/4〜1/3 まで'], ['x', '口を人の方に向けて加熱する（液が飛び出すことがある）'], ['x', '底の1か所だけを加熱し続ける（突沸）']], practice: 'p-tube' },
+  { id: 'funnel', grp: 'ガラス器具', name: 'ろうと（ろ過）', yomi: 'funnel', model: 'funnel',
+    use: 'ろ紙をセットして、液体と固体を分ける（ろ過）。',
+    how: ['ろ紙を4つ折りにして円すいにし、ろうとにはめて水でぬらし、密着させる。', 'ろうとの足の先（とがった方）を、ビーカーの内側のかべにつける。', '液はガラス棒を伝わらせて注ぐ。ろ紙の8分目まで。'],
+    caution: [['o', 'ガラス棒を伝わらせて注ぐ'], ['x', 'ろうとの先をビーカーのまん中に浮かせる（液がはねる）'], ['x', 'ろ紙のふちより上まで液を入れる']], practice: 'p-filter' },
+  { id: 'cylinder', grp: 'はかる器具', name: 'メスシリンダー', yomi: 'graduated cylinder', model: 'cylinder',
+    use: '液体の体積をはかる。',
+    how: ['水平な台の上に置く。', '液面のへこんだ下の面を、真横から目の高さを合わせて読む。', '最小目盛りの 1/10 まで目分量で読む（例：1 mL 目盛りなら 0.1 mL まで）。'],
+    caution: [['o', '液面と目の高さを合わせて真横から読む'], ['x', '上から見下ろして読む（大きく読みすぎる）'], ['x', '加熱する（体積が変わって目盛りがくるう）']], practice: 'p-cylinder' },
+  { id: 'holepip', grp: 'はかる器具', name: 'ホールピペット', yomi: 'volumetric pipette', model: 'holepip',
+    use: '決まった体積（例：10.00 mL）の液体を正確にとる。中和滴定で使う。',
+    how: ['使う液で内側を2〜3回すすぐ（共洗い）。', '安全ピペッターで、標線より少し上まで吸い上げる。', '液面の底を標線に合わせてから、別の容器に流し出す。'],
+    caution: [['o', '安全ピペッターを使う'], ['x', '口で吸う'], ['x', '加熱して乾かす（体積が変わる）']] },
+  { id: 'burette', grp: 'はかる器具', name: 'ビュレット', yomi: 'burette', model: 'burette',
+    use: '滴下した液体の体積を正確にはかる。中和滴定で使う。',
+    how: ['使う液で共洗いしてから入れる。', '先端の空気（気泡）を追い出してから、目盛りを読む。', 'コックで1滴ずつ調節しながら、三角フラスコに滴下する。'],
+    caution: [['o', '目盛りは上が 0 で、下にいくほど大きい'], ['o', '最小目盛りの 1/10 まで読む'], ['x', '先端に気泡を残したまま始める']] },
+  { id: 'komagome', grp: 'はかる器具', name: 'こまごめピペット', yomi: 'dropper pipette', model: 'komagome',
+    use: '少量の液体を、おおよその量だけ別の容器に移す。',
+    how: ['ゴム球を押してから先を液に入れ、ゆっくり力をぬいて吸う。', '移すときは、ゴム球をゆっくり押す。'],
+    caution: [['x', '先を上に向ける（液がゴム球に入る）'], ['x', '液に入れてからゴム球を押す（あわが出て液が飛ぶ）']] },
+  { id: 'lamp', grp: '加熱器具', name: 'アルコールランプ', yomi: 'alcohol lamp', model: 'lamp',
+    use: 'アルコールを燃やして物を加熱する。',
+    how: ['アルコールは8分目くらい入れる。芯は 5 mm くらい出す。', 'マッチの火を、横から芯に近づけて火をつける。', '消すときは、ふたを斜め横からかぶせる。', '火が消えたら一度ふたをとって冷まし、もう一度ふたをする。'],
+    caution: [['x', 'アルコールが少ないまま使う（中に気化したアルコールがたまって引火の危険）'], ['x', '息で吹き消す'], ['x', 'ランプからランプへ火をうつす'], ['x', '火がついたままアルコールを足す']], practice: 'p-lamp' },
+  { id: 'burner', grp: '加熱器具', name: 'ガスバーナー', yomi: 'gas burner', model: 'burner',
+    use: 'ガスを燃やして物を強く加熱する。空気の量で炎の色と温度が変わる。',
+    how: ['上の空気調節ねじと、下のガス調節ねじが閉まっていることを確かめる。', '元栓、コックの順に開く。', 'マッチに火をつけ、炎を筒の口に近づけてから、ガス調節ねじを開いて点火する。', 'ガス調節ねじで炎の大きさを 10 cm くらいにする。', 'ガス調節ねじを押さえたまま空気調節ねじを開き、青い炎にする。'],
+    caution: [['o', '消すときは 空気 → ガス → コック → 元栓 の順に閉める'], ['x', 'マッチより先にガスを出す'], ['x', '赤い（黄色い）炎のまま加熱する（空気不足で不完全燃焼、すすが出る）']], practice: 'p-burner' },
+  { id: 'dish', grp: '加熱器具', name: '蒸発皿', yomi: 'evaporating dish', model: 'dish',
+    use: '溶液を加熱して水を蒸発させ、溶けていた物質（結晶）をとり出す。',
+    how: ['磁器でできているので、三角架にのせて直接加熱できる。', '結晶が出はじめたら火を弱め、ガラス棒でかき混ぜて飛びはねを防ぐ。'],
+    caution: [['o', '直接加熱できる'], ['x', '熱いうちに冷たい台や水の上に置く（割れる）']] },
+];
+const PRACTICES = [
+  { id: 'p-burner', name: 'ガスバーナーに火をつける', icon: '火', item: 'burner' },
+  { id: 'p-lamp', name: 'アルコールランプを使う', icon: '炎', item: 'lamp' },
+  { id: 'p-cylinder', name: 'メスシリンダーを読む', icon: 'mL', item: 'cylinder' },
+  { id: 'p-filter', name: 'ろ過の準備', icon: 'ろ', item: 'funnel' },
+  { id: 'p-tube', name: '試験管を加熱する', icon: '試', item: 'tube' },
+];
+const ICON = { beaker: 'B', erlen: '三', roundflask: '丸', tube: '試', funnel: 'ろ', cylinder: 'mL', holepip: 'P', burette: 'ビ', komagome: 'こ', lamp: 'ア', burner: 'G', dish: '皿' };
+
+// ===== 画面の状態 =====
+const state = { mode: 'see', id: 'beaker', tab: 'use', parts: true, pr: null, quiz: null };
+
+// ===== three.js の準備 =====
+function initThree() {
+  if (!window.THREE || !THREE.OrbitControls) return false;
+  try {
+    const stage = $('stage');
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    stage.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.05, 200);
+    scene.add(camera);
+    const key = new THREE.DirectionalLight(0xffffff, 0.75); key.position.set(3, 5, 4); camera.add(key);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a96a8, 0.55));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.18));
+    // 実験台
+    const bench = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 0.2, 64), new THREE.MeshPhongMaterial({ color: 0x2f3a44, shininess: 20 }));
+    bench.position.y = -0.1; scene.add(bench);
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.09; controls.minDistance = 1.5; controls.maxDistance = 40;
+    controls.maxPolarAngle = Math.PI * 0.55;
+    const group = new THREE.Group(); scene.add(group);
+    R = { renderer, scene, camera, controls, group, labels: [], tick: null };
+    const resize = () => {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      if (!w || !h) return;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      const card = $('card'), narrow = window.matchMedia('(max-width: 900px)').matches;
+      const ox = !narrow && !card.hidden ? Math.min(card.offsetWidth + 20, w * 0.5) / 2 : 0;
+      const oy = narrow && !card.hidden ? Math.min(card.offsetHeight + 16, h * 0.55) / 2 : 0;
+      if (ox || oy) camera.setViewOffset(w, h, ox, oy, w, h); else camera.clearViewOffset();
+      camera.updateProjectionMatrix();
+    };
+    R.resize = resize;
+    new ResizeObserver(resize).observe(stage);
+    resize();
+    requestAnimationFrame(loop);
+    return true;
+  } catch (e) { return false; }
+}
+function clearScene() {
+  const g = R.group;
+  while (g.children.length) {
+    const o = g.children.pop();
+    o.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) { if (x.material.map) x.material.map.dispose(); x.material.dispose(); } });
+  }
+  $('labels').innerHTML = '';
+  R.labels = []; R.tick = null;
+}
+function addLabel(text, getPos, cls) {
+  const el = document.createElement('div');
+  el.className = 'lbl' + (cls ? ' ' + cls : '');
+  el.textContent = text;
+  $('labels').appendChild(el);
+  const L = { el, get: getPos };
+  R.labels.push(L);
+  return L;
+}
+function frame(focusY, radius, dir) {
+  R.resize();
+  const cam = R.camera, stage = $('stage');
+  const w = stage.clientWidth || 1, h = stage.clientHeight || 1;
+  const narrow = window.matchMedia('(max-width: 900px)').matches, card = $('card');
+  const wEff = narrow ? w : w - Math.min(card.offsetWidth + 20, w * 0.5);
+  const hEff = narrow ? h - Math.min(card.offsetHeight + 16, h * 0.55) : h;
+  const tanV = Math.tan(cam.fov * Math.PI / 360);
+  const half = Math.min(Math.atan(tanV * hEff / h), Math.atan(tanV * wEff / h));
+  const dist = radius / Math.sin(half) * 1.05;
+  const d = (dir || new THREE.Vector3(0.35, 0.3, 1)).clone().normalize();
+  R.controls.target.set(0, focusY, 0);
+  cam.position.copy(d.multiplyScalar(dist)).add(R.controls.target);
+  R.controls.update();
+}
+function loop(now) {
+  requestAnimationFrame(loop);
+  if (!R) return;
+  const t = now / 1000;
+  if (R.tick) R.tick(t);
+  R.controls.update();
+  R.renderer.render(R.scene, R.camera);
+  const stage = $('stage'), w = stage.clientWidth, h = stage.clientHeight;
+  const v = new THREE.Vector3();
+  R.labels.forEach(L => {
+    if (L.el.hidden) return;
+    v.copy(L.get()).project(R.camera);
+    if (v.z > 1) { L.el.style.visibility = 'hidden'; return; }
+    L.el.style.visibility = '';
+    L.el.style.transform = `translate(${((v.x + 1) / 2 * w).toFixed(1)}px, ${((1 - v.y) / 2 * h - 14).toFixed(1)}px) translate(-50%, -100%)`;
+  });
+  if (state.quiz && state.quiz.timer) state.quiz.timer();
+}
+let toastTimer = 0;
+function toast(msg, kind) {
+  const el = $('toast');
+  el.textContent = msg; el.className = 'toast ' + (kind || 'info'); el.hidden = false; el.style.opacity = 1;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.style.opacity = 0; setTimeout(() => { el.hidden = true; }, 300); }, kind === 'ng' ? 3200 : 2400);
+}
+
+// ===== 器具を見る =====
+function showItem(id) {
+  const it = ITEMS.find(x => x.id === id);
+  clearScene();
+  const m = MODELS[it.model]();
+  R.group.add(m.g);
+  m.parts.forEach(([name, p]) => { const L = addLabel(name, () => new THREE.Vector3(...p).add(m.g.position)); L.el.hidden = !state.parts; L.part = true; });
+  if (m.flame) R.tick = t => m.flame.update(t);
+  renderCard();
+  frame(m.focus[0], m.focus[1]);
+}
+function seeCardHTML(it) {
+  const tab = state.tab;
+  let h = `<div class="card-head"><div class="eyebrow">${esc(it.grp)}</div><h2 class="name">${esc(it.name)}</h2><div class="yomi">${esc(it.yomi)}</div></div>
+    <div class="tabs" role="tablist">${[['use', '何に使う？'], ['how', '使い方'], ['caution', '注意']].map(([k, n]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div><div class="body">`;
+  if (tab === 'use') {
+    h += `<p class="use">${esc(it.use)}</p>`;
+    h += `<p class="note" style="margin-bottom:4px">部分の名前</p><div class="parts">${MODELS[it.model]().parts.map(p => `<span>${esc(p[0])}</span>`).join('')}</div>`;
+  } else if (tab === 'how') h += `<ol class="how">${it.how.map(s => `<li>${esc(s)}</li>`).join('')}</ol>`;
+  else h += `<ul class="caution">${it.caution.map(([k, s]) => `<li><b class="${k}">${k === 'o' ? '○' : '×'}</b><span>${esc(s)}</span></li>`).join('')}</ul>`;
+  if (it.practice) h += `<p style="margin-top:12px"><button type="button" class="btn main" data-goto="${it.practice}">この器具の操作を練習する →</button></p>`;
+  return h + '</div>';
+}
+
+// ===== 操作の練習 =====
+const PR = {};
+// --- ガスバーナー ---
+PR['p-burner'] = {
+  steps: ['2つのねじが閉まっているか確かめる', '元栓とコックを開く', 'マッチに火をつけて筒の口に近づける', 'ガス調節ねじを開いて点火する', '炎の大きさを 10 cm くらいにする', '空気調節ねじを開いて青い炎にする'],
+  init() {
+    const m = MODELS.burner();
+    R.group.add(m.g);
+    const match = makeMatch(); match.g.position.set(-1.2, 3.4, 0.3); match.g.visible = false; R.group.add(match.g);
+    const s = { m, match, checked: false, open: false, matchOn: false, gas: 0, air: 0, lit: false, step: 0, done: false };
+    state.pr = s;
+    m.parts.forEach(([n, p]) => { const L = addLabel(n, () => new THREE.Vector3(...p)); L.el.hidden = !state.parts; L.part = true; });
+    s.warn = addLabel('', () => new THREE.Vector3(0, 4.8, 0), 'warn'); s.warn.el.hidden = true;
+    R.tick = t => {
+      m.flame.lit = s.lit; m.flame.size = s.gas; m.flame.air = Math.min(1, s.air / Math.max(s.gas, 0.15));
+      m.flame.update(t);
+      m.gasScrew.rotation.y = s.gas * 6; m.airScrew.rotation.y = s.air * 6;
+      m.handle.rotation.y = s.open ? Math.PI / 2 : 0;
+      match.g.visible = s.matchOn; match.fl.update(t);
+      s.warn.el.hidden = !(s.open && s.gas > 0 && !s.lit);
+      s.warn.el.textContent = 'ガスがもれている！';
+    };
+    frame(2.2, 3.1);
+  },
+  html() {
+    const s = state.pr;
+    const ratio = s.gas > 0 ? s.air / s.gas : 0;
+    const flame = !s.lit ? '—' : ratio < 0.45 ? 'オレンジ色（空気が足りない）' : ratio > 1.3 ? '青いが不安定（空気が多すぎる）' : '青い炎（ちょうどよい）';
+    return `<div class="ctl">
+      <ol class="checklist">${this.steps.map((x, i) => `<li class="${i < s.step ? 'done' : i === s.step ? 'now' : ''}">${x}</li>`).join('')}</ol>
+      <div class="row"><button type="button" class="btn" data-a="check" ${s.checked ? 'aria-pressed="true"' : ''}>ねじを確かめる</button>
+      <button type="button" class="btn" data-a="open" aria-pressed="${s.open}">${s.open ? '元栓・コックを閉める' : '元栓・コックを開く'}</button>
+      <button type="button" class="btn" data-a="match" aria-pressed="${s.matchOn}">${s.matchOn ? 'マッチを消す' : 'マッチに火をつける'}</button></div>
+      <div class="sl"><label for="gasS">ガス調節ねじ</label><input id="gasS" type="range" min="0" max="1" step="0.01" value="${s.gas}"><output>${Math.round(s.gas * 100)}%</output></div>
+      <div class="sl"><label for="airS">空気調節ねじ</label><input id="airS" type="range" min="0" max="1" step="0.01" value="${s.air}"><output>${Math.round(s.air * 100)}%</output></div>
+      <p class="note">炎のようす：<b>${flame}</b>${s.lit ? `（高さ 約${Math.round(4 + s.gas * 12)} cm）` : ''}</p>
+      ${s.done ? '<div class="verdict ok">点火成功！ 青い炎は内炎（内側）より外炎（外側）のほうが温度が高い。</div>' : ''}
+      <button type="button" class="btn" data-a="reset">はじめから</button>
+      <p class="note">消すときは逆の順番：空気調節ねじ → ガス調節ねじ → コック → 元栓。</p></div>`;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'check') { if (s.gas > 0 || s.air > 0) { toast('ねじが開いている。両方とも閉めてから始めよう。', 'ng'); return; } s.checked = true; if (s.step === 0) s.step = 1; toast('2つのねじが閉まっていることを確認した。', 'ok'); }
+    if (a === 'open') {
+      if (!s.open && !s.checked) { toast('先に、ねじが閉まっているか確かめよう。', 'ng'); return; }
+      s.open = !s.open;
+      if (!s.open) { s.lit = false; s.gas = 0; s.air = 0; }
+      if (s.open && s.step === 1) s.step = 2;
+    }
+    if (a === 'match') { s.matchOn = !s.matchOn; if (s.matchOn && s.step === 2) s.step = 3; }
+    if (a === 'gas') {
+      s.gas = v;
+      if (s.gas > 0 && !s.open) { toast('元栓とコックが閉じているので、ガスは出ない。', 'info'); s.gas = 0; }
+      else if (s.gas > 0 && !s.lit && !s.matchOn) { toast('危険！ マッチの火を近づける前にガスを出してはいけない。', 'ng'); }
+      else if (s.gas > 0 && s.matchOn && !s.lit) { s.lit = true; s.matchOn = false; if (s.step <= 3) s.step = 4; toast('点火した！ マッチの火は消して、燃えがら入れへ。', 'ok'); }
+      if (s.gas === 0) s.lit = false;
+      if (s.lit && s.step === 4 && s.gas > 0.4 && s.gas < 0.75) s.step = 5;
+    }
+    if (a === 'air') {
+      if (!s.lit && v > 0) { toast('空気調節ねじは、点火して炎の大きさを決めてから開く。', 'ng'); return; }
+      s.air = v;
+      const ratio = s.air / Math.max(s.gas, 0.01);
+      if (s.lit && s.step === 5 && ratio > 0.6 && ratio <= 1.3) { s.step = 6; s.done = true; markDone('p-burner'); toast('青い炎になった！ これで加熱に使える。', 'ok'); }
+      if (s.lit && ratio > 1.6) toast('空気が多すぎて炎が浮き上がりそう。少し閉めよう。', 'info');
+    }
+    if (a === 'reset') { clearScene(); this.init(); }
+    renderCard();
+  },
+};
+// --- アルコールランプ ---
+PR['p-lamp'] = {
+  init() {
+    const m = MODELS.lamp();
+    R.group.add(m.g);
+    const match = makeMatch(); match.g.position.set(-1.0, 2.2, 0.2); match.g.visible = false; R.group.add(match.g);
+    const s = { m, match, amount: 0.8, wick: 5, lit: false, capOn: true, capT: 1, phase: 'cap', done: false, cooled: false };
+    state.pr = s;
+    m.parts.forEach(([n, p]) => { const L = addLabel(n, () => new THREE.Vector3(...p)); L.el.hidden = !state.parts; L.part = true; });
+    const rebuildAlc = () => {
+      m.g.remove(m.alc); m.alc.geometry.dispose();
+      m.alc = liquid(m.prof.slice(0, 5), 0.1 + s.amount * 1.0, 0xb9d9ff); m.g.add(m.alc);
+    };
+    s.rebuildAlc = rebuildAlc; rebuildAlc();
+    R.tick = t => {
+      s.capT += ((s.capOn ? 1 : 0) - s.capT) * 0.15;
+      m.cap.position.set((1 - s.capT) * 1.8, (1 - s.capT) * 0.6, 0);
+      m.cap.rotation.z = -(1 - s.capT) * 0.5;
+      m.wick.scale.y = 0.4 + s.wick / 5 * 0.6; m.wick.position.y = 1.9 + 0.1 * (s.wick / 5);
+      m.flame.lit = s.lit && s.capT < 0.3; m.flame.size = 0.25 + s.wick / 5 * 0.35; m.flame.air = 0.45;
+      m.flame.update(t);
+      match.g.visible = s.matchOn; match.fl.update(t);
+    };
+    frame(1.6, 2.5);
+  },
+  html() {
+    const s = state.pr;
+    const amt = Math.round(s.amount * 10);
+    return `<div class="ctl">
+      <div class="sl"><label for="amtS">アルコールの量</label><input id="amtS" type="range" min="0.1" max="1" step="0.1" value="${s.amount}" ${s.lit ? 'disabled' : ''}><output>${amt}分目</output></div>
+      <div class="sl"><label for="wickS">芯の出す長さ</label><input id="wickS" type="range" min="1" max="15" step="1" value="${s.wick}" ${s.lit ? 'disabled' : ''}><output>${s.wick} mm</output></div>
+      <div class="row">
+        <button type="button" class="btn" data-a="uncap" ${s.capOn ? '' : 'aria-pressed="true"'}>${s.capOn ? 'ふたをとる' : 'ふたをかぶせる'}</button>
+        <button type="button" class="btn" data-a="match" aria-pressed="${!!s.matchOn}">マッチに火をつける</button>
+        <button type="button" class="btn" data-a="side">横から火を近づける</button>
+        <button type="button" class="btn bad" data-a="above">真上から火を近づける</button>
+        <button type="button" class="btn bad" data-a="blow">息で吹き消す</button>
+        <button type="button" class="btn bad" data-a="add">火をつけたままアルコールを足す</button>
+      </div>
+      ${s.done ? '<div class="verdict ok">正しく使えた！ 火を消したら一度ふたをとって冷まし、もう一度ふたをしておく。</div>' : '<p class="note">正しい順番：量と芯を確かめる → ふたをとる → マッチに火 → 横から点火 → ふたをかぶせて消す。赤い文字のボタンはやってはいけない操作（押すと理由がわかる）。</p>'}
+      <button type="button" class="btn" data-a="reset">はじめから</button></div>`;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'amt') { s.amount = v; s.rebuildAlc(); if (v < 0.5) toast('少なすぎる！ 中に気化したアルコールがたまって、引火・爆発する危険がある。8分目くらいに。', 'ng'); else if (v > 0.9) toast('入れすぎると、こぼれたり芯の近くまで来たりして危険。8分目くらいに。', 'info'); }
+    if (a === 'wick') { s.wick = v; if (v > 8) toast('芯を出しすぎると炎が大きくなりすぎる。5 mm くらいに。', 'info'); }
+    if (a === 'uncap') {
+      if (s.capOn) { s.capOn = false; }
+      else {
+        s.capOn = true;
+        if (s.lit) { s.lit = false; s.done = true; markDone('p-lamp'); toast('ふたをかぶせて火を消した。正しい消し方！', 'ok'); }
+      }
+    }
+    if (a === 'match') { s.matchOn = true; }
+    if (a === 'side' || a === 'above') {
+      if (!s.matchOn) { toast('先にマッチに火をつけよう。', 'info'); renderCard(); return; }
+      if (s.capOn) { toast('ふたをとってから火をつけよう。', 'info'); renderCard(); return; }
+      if (s.amount < 0.5) { toast('アルコールが少なすぎて危険。先に8分目くらいまで入れよう（火をつける前に）。', 'ng'); renderCard(); return; }
+      if (a === 'above') { toast('真上から近づけると、炎で手をやけどしやすい。マッチは横から近づける。', 'ng'); renderCard(); return; }
+      s.lit = true; s.matchOn = false; toast('点火した！ マッチの火は消して、燃えがら入れへ。', 'ok');
+    }
+    if (a === 'blow') { toast(s.lit ? '吹き消すと、炎が中のアルコールに引火することがあり危険。ふたをかぶせて消す。' : '息で吹き消してはいけない。ふたをかぶせて消す。', 'ng'); }
+    if (a === 'add') { toast('火がついたままアルコールを足すと、引火して大やけどの危険。必ず火を消し、冷ましてから入れる。', 'ng'); }
+    if (a === 'reset') { clearScene(); this.init(); }
+    renderCard();
+  },
+};
+// --- メスシリンダーの読み方 ---
+PR['p-cylinder'] = {
+  init() {
+    const m = MODELS.cylinder();
+    R.group.add(m.g);
+    const s = { m, eye: 'side', v: Math.round((20 + Math.random() * 70) * 10) / 10, answered: null, streak: 0 };
+    state.pr = s;
+    const setLiquid = () => {
+      if (s.liq) { m.g.remove(s.liq); s.liq.geometry.dispose(); }
+      const h = 0.4 + s.v / 100 * 4.6;
+      s.liq = liquid([[0.41, 0.13], [0.41, 5.3]], h, 0x6fb7e8, 0.06); m.g.add(s.liq);
+      s.h = h;
+    };
+    s.setLiquid = setLiquid;
+    m.g.children.filter(c => c.renderOrder === 1).forEach(c => m.g.remove(c));
+    setLiquid();
+    this.view();
+  },
+  view() {
+    const s = state.pr;
+    const dy = { above: 1.0, side: 0, below: -0.9 }[s.eye];
+    frame(s.h, 1.0, new THREE.Vector3(0.0, dy * 0.7, 1));
+    R.camera.position.y = s.h + dy * 1.6;
+    R.controls.target.set(0, s.h, 0);
+    R.controls.update();
+  },
+  html() {
+    const s = state.pr;
+    const ans = s.answered;
+    return `<div class="ctl">
+      <p class="use">液面のへこんだ下の面を読もう。1 mL ごとの目盛りなので、<b>0.1 mL まで</b>読む。</p>
+      <div class="row">${[['above', '上から見る'], ['side', '真横から見る'], ['below', '下から見る']].map(([k, n]) => `<button type="button" class="btn" data-eye="${k}" aria-pressed="${s.eye === k}">${n}</button>`).join('')}</div>
+      ${s.eye !== 'side' ? `<p class="note">${s.eye === 'above' ? '上から見ると、目盛りを実際より<b>大きく</b>読んでしまう。' : '下から見ると、目盛りを実際より<b>小さく</b>読んでしまう。'}「真横から」で読もう。</p>` : ''}
+      <div class="readin"><input id="readV" type="number" step="0.1" inputmode="decimal" placeholder="例 45.6" aria-label="読んだ値"><span>mL</span><button type="button" class="btn main" data-a="judge">答え合わせ</button></div>
+      ${ans ? `<div class="verdict ${ans.ok ? 'ok' : 'ng'}">${ans.ok ? '正解！' : 'おしい'} 正しい読みは <b>${s.v.toFixed(1)} mL</b>（あなた：${ans.val.toFixed(1)} mL）。${ans.ok ? '' : Math.abs(ans.val - s.v) >= 0.95 ? '目盛りの数え方を見直そう。' : '最後のけた（0.1 mL）は目分量で、だいたい合っていれば OK。'}</div>` : ''}
+      <div class="row"><button type="button" class="btn" data-a="next">次の問題</button></div>
+      <p class="note">連続正解：${s.streak}　（誤差 ±0.2 mL まで正解）</p></div>`;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'eye') { s.eye = v; this.view(); }
+    if (a === 'judge') {
+      const val = parseFloat($('readV').value);
+      if (!isFinite(val)) { toast('読んだ値を入力しよう。', 'info'); return; }
+      const ok = Math.abs(val - s.v) <= 0.21;
+      s.answered = { ok, val };
+      s.streak = ok ? s.streak + 1 : 0;
+      if (s.streak >= 3) markDone('p-cylinder');
+      if (ok && s.eye !== 'side') toast('正解！ でも本番は真横から読もう。', 'info');
+    }
+    if (a === 'next') { s.v = Math.round((20 + Math.random() * 70) * 10) / 10; s.answered = null; s.setLiquid(); s.eye = 'side'; this.view(); }
+    renderCard();
+  },
+};
+// --- ろ過 ---
+PR['p-filter'] = {
+  init() {
+    const g = R.group;
+    g.add(makeStand(5.2, 3.4, 1.5));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.04, 8, 32), solid(0x6f7782)); ring.rotation.x = Math.PI / 2; ring.position.set(0, 3.4, 0); g.add(ring);
+    const fun = MODELS.funnel().g; fun.position.set(0, 2.4, 0); fun.scale.setScalar(0.75); g.add(fun);
+    const bk = MODELS.beaker().g; bk.scale.setScalar(0.62); g.add(bk);
+    bk.children.forEach(c => { if (c.renderOrder === 1) c.visible = false; });
+    const rod = cyl(0.04, 0.04, 2.6, glassMat({ opacity: 0.6 })); g.add(rod);
+    const pour = MODELS.beaker().g; pour.scale.setScalar(0.4); g.add(pour);
+    const drops = [];
+    for (let i = 0; i < 14; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), liquidMat(0x6fb7e8, 0.8)); d.visible = false; g.add(d); drops.push(d); }
+    const s = { fun, rod, pour, drops, wet: false, wall: false, useRod: false, fill: 0.8, pouring: 0, done: false };
+    state.pr = s;
+    const L1 = addLabel('ろうとの先', () => new THREE.Vector3(s.fun.position.x, 1.2, 0)); L1.part = true; L1.el.hidden = !state.parts;
+    const L2 = addLabel('ガラス棒', () => new THREE.Vector3(-0.6, 4.6, 0.2)); L2.part = true; L2.el.hidden = !state.parts;
+    R.tick = t => {
+      fun.position.x = s.wall ? 0.38 : 0;
+      rod.visible = s.useRod;
+      rod.position.set(-0.25, 4.0, 0.1); rod.rotation.z = 0.35;
+      pour.position.set(-1.0, 4.9, 0.1); pour.rotation.z = -1.15;
+      const p = s.pouring > 0 ? (performance.now() - s.pouring) / 1000 : -1;
+      drops.forEach((d, i) => {
+        if (p < 0 || p > 4) { d.visible = false; return; }
+        const k = ((p * 1.6 + i / drops.length) % 1);
+        d.visible = true;
+        if (k < 0.5) {
+          const q = k / 0.5;
+          if (s.useRod) d.position.set(-0.7 + 0.5 * q, 5.0 - 1.3 * q, 0.1);
+          else d.position.set(-0.7 + 0.7 * q, 5.0 - 1.4 * q + (s.splash ? Math.sin(q * 9) * 0.3 : 0), (s.splash ? (i % 3 - 1) * q * 0.6 : 0.1));
+        } else {
+          const q = (k - 0.5) / 0.5;
+          d.position.set(fun.position.x + (s.wall ? 0.3 * q : 0), 1.25 - 0.9 * q, s.wall || q < 0.5 ? 0 : (i % 2 ? 0.3 : -0.3) * (q - 0.5));
+        }
+      });
+    };
+    frame(2.6, 3.0);
+  },
+  html() {
+    const s = state.pr;
+    const opt = (k, on, label) => `<button type="button" class="btn" data-opt="${k}" aria-pressed="${on}">${on ? '✓ ' : ''}${label}</button>`;
+    return `<div class="ctl"><p class="use">正しいろ過の準備をして、「注ぐ」を押そう。</p>
+      <div class="row">${opt('wet', s.wet, 'ろ紙を水でぬらして密着させる')}${opt('wall', s.wall, 'ろうとの先をビーカーのかべにつける')}${opt('useRod', s.useRod, 'ガラス棒を伝わらせる')}</div>
+      <div class="sl"><label for="fillS">注ぐ量</label><input id="fillS" type="range" min="0.4" max="1.2" step="0.1" value="${s.fill}"><output>${s.fill <= 1 ? Math.round(s.fill * 10) + '分目' : 'あふれる'}</output></div>
+      <button type="button" class="btn main" data-a="pour">注ぐ</button>
+      ${s.result ? `<div class="verdict ${s.result.ok ? 'ok' : 'ng'}">${s.result.msg}</div>` : ''}</div>`;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'opt') s[v] = !s[v];
+    if (a === 'fill') s.fill = v;
+    if (a === 'pour') {
+      const bad = [];
+      if (!s.wet) bad.push('ろ紙をぬらしていないので、すき間ができてろ過がおそくなる');
+      if (!s.wall) bad.push('ろうとの先がかべについていないので、液がはねる');
+      if (!s.useRod) bad.push('ガラス棒を使わないと、液がはねたりこぼれたりする');
+      if (s.fill > 0.85) bad.push('ろ紙の8分目より多く入れると、ろ紙のふちから液がもれる');
+      s.splash = !s.useRod;
+      s.pouring = performance.now();
+      s.result = bad.length ? { ok: false, msg: 'うまくいかない：' + bad.join('。') + '。' } : { ok: true, msg: 'きれいにろ過できた！ ろ紙の上に固体が残り、ろ液はかべを伝わって静かに落ちる。' };
+      if (!bad.length) markDone('p-filter');
+    }
+    renderCard();
+  },
+};
+// --- 試験管の加熱 ---
+PR['p-tube'] = {
+  init() {
+    const g = R.group;
+    const bm = MODELS.burner(); bm.g.scale.setScalar(0.75); g.add(bm.g);
+    bm.flame.lit = true; bm.flame.size = 0.55; bm.flame.air = 0.9;
+    const tm = MODELS.tube(); const tube = new THREE.Group(); tube.add(tm.g); tm.g.position.y = -1.6; g.add(tube);
+    const clamp = new THREE.Group();
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 2.2), solid(0x8a6a44)); arm.position.z = 1.2; clamp.add(arm);
+    const jaw = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.05, 8, 20), solid(0x6f7782)); jaw.rotation.x = Math.PI / 2; clamp.add(jaw);
+    tube.add(clamp);
+    const person = new THREE.Group();
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 20, 16), solid(0xf0c8a0)); head.position.y = 3.3; person.add(head);
+    const body = cyl(0.45, 0.55, 1.6, solid(0x4f7cc9)); body.position.y = 2.2; person.add(body);
+    person.position.set(-4, 0, 0); g.add(person);
+    const s = { bm, tube, tm, clamp, dir: 'away', amt: 0.3, clampPos: 'top', shake: true, heating: 0, done: false };
+    state.pr = s;
+    const L = addLabel('となりの人', () => new THREE.Vector3(-4, 4.0, 0)); L.part = true; L.el.hidden = !state.parts;
+    R.tick = t => {
+      bm.flame.update(t);
+      const sh = s.heating && s.shake && !reduceMotion ? Math.sin(t * 10) * 0.08 : 0;
+      tube.position.set(s.dir === 'away' ? 0.9 : -0.9, 3.0, 0);
+      tube.rotation.set(sh, 0, (s.dir === 'away' ? -1 : 1) * 0.65);
+      clamp.position.y = s.clampPos === 'top' ? 1.4 : 0.1;
+      if (s.liqAmt !== s.amt) {
+        if (s.liq) { tm.g.remove(s.liq); s.liq.geometry.dispose(); }
+        tm.g.children.forEach(c => { if (c.renderOrder === 1) c.visible = false; });
+        const prof = []; for (let k = 0; k <= 8; k++) { const a = -Math.PI / 2 + Math.PI / 2 * k / 8; prof.push([Math.cos(a) * 0.29, 0.3 + Math.sin(a) * 0.29]); } prof.push([0.29, 3.4]);
+        s.liq = liquid(prof, 0.05 + s.amt * 3.4, 0x8bc34a, 0.03); tm.g.add(s.liq); s.liqAmt = s.amt;
+      }
+      const boil = s.heating && (performance.now() - s.heating) / 1000;
+      if (s.liq) s.liq.material.color.set(boil && boil > 1 && (!s.shake) ? 0xd9ef9a : 0x8bc34a);
+    };
+    frame(2.4, 4.4, new THREE.Vector3(0, 0.25, 1));
+  },
+  html() {
+    const s = state.pr;
+    const opt = (k, val, label) => `<button type="button" class="btn" data-set="${k}:${val}" aria-pressed="${s[k] === val}">${label}</button>`;
+    return `<div class="ctl"><p class="use">試験管を正しく持って、「加熱する」を押そう。</p>
+      <div class="row">${opt('dir', 'away', '口を人のいない方へ')}${opt('dir', 'person', '口を人の方へ')}</div>
+      <div class="row">${opt('clampPos', 'top', 'ばさみで口の近くをはさむ')}${opt('clampPos', 'bottom', '底の近くをはさむ')}</div>
+      <div class="row">${opt('shake', true, 'ふりながら加熱')}${opt('shake', false, 'じっと止めて加熱')}</div>
+      <div class="sl"><label for="tubeS">液の量</label><input id="tubeS" type="range" min="0.1" max="0.8" step="0.05" value="${s.amt}"><output>${Math.round(s.amt * 100)}%</output></div>
+      <button type="button" class="btn main" data-a="heat">加熱する</button>
+      ${s.result ? `<div class="verdict ${s.result.ok ? 'ok' : 'ng'}">${s.result.msg}</div>` : ''}</div>`;
+  },
+  act(a, v) {
+    const s = state.pr;
+    if (a === 'set') { const [k, val] = v.split(':'); s[k] = val === 'true' ? true : val === 'false' ? false : val; }
+    if (a === 'amt') s.amt = v;
+    if (a === 'heat') {
+      const bad = [];
+      if (s.dir !== 'away') bad.push('口を人に向けると、液が突然飛び出したとき（突沸）にかかって危険');
+      if (s.clampPos !== 'top') bad.push('試験管ばさみは口の近くをはさむ（底の近くだと炎で燃えたり、すべり落ちたりする）');
+      if (!s.shake) bad.push('1か所だけ加熱すると突沸しやすい。ふりながら全体を温める');
+      if (s.amt > 0.36) bad.push('液が多すぎる。1/4〜1/3 までにする');
+      s.heating = performance.now();
+      s.result = bad.length ? { ok: false, msg: '危ない：' + bad.join('。') + '。' } : { ok: true, msg: '安全に加熱できた！' };
+      if (!bad.length) markDone('p-tube');
+    }
+    renderCard();
+  },
+};
+function showPractice(id) {
+  clearScene();
+  PR[id].init();
+  renderCard();
+}
+function practiceCardHTML(p) {
+  const it = ITEMS.find(x => x.id === p.item);
+  return `<div class="card-head"><div class="eyebrow">操作の練習${done.has(p.id) ? ' ・ ✓ クリア' : ''}</div><h2 class="name">${esc(p.name)}</h2></div><div class="body">${PR[p.id].html()}
+    <p style="margin-top:10px"><button type="button" class="btn" data-see="${it.id}">「${esc(it.name)}」の説明を見る</button></p></div>`;
+}
+
+// ===== クイズ =====
+const SAFETY_Q = [
+  ['アルコールランプの火は、息で吹き消す。', false, 'ふたを斜め横からかぶせて消す。'],
+  ['アルコールランプのアルコールは8分目くらいまで入れる。', true, '少ないと、中にたまった気化したアルコールに引火する危険がある。'],
+  ['ガスバーナーに火をつけるときは、先にガス調節ねじを開いてからマッチを近づける。', false, 'マッチの火を近づけてから、ガス調節ねじを開く。'],
+  ['ガスバーナーの炎が赤いときは、空気が不足している。', true, '空気調節ねじを開いて青い炎にする。'],
+  ['ガスバーナーを消すときは、空気調節ねじ → ガス調節ねじ → コック → 元栓 の順に閉める。', true, '火をつけるときと逆の順番。'],
+  ['メスシリンダーの目盛りは、液面のへこんだ下の面を真横から読む。', true, '上から見ると大きく、下から見ると小さく読んでしまう。'],
+  ['メスシリンダーは、加熱して乾かしてよい。', false, '加熱すると体積が変わり、目盛りがくるう。自然乾燥させる。'],
+  ['試験管で液体を加熱するときは、口を人のいない方に向ける。', true, '突沸で液が飛び出すことがある。'],
+  ['試験管に入れる液体の量は、半分以上がよい。', false, '1/4〜1/3 くらいまで。'],
+  ['ろ過では、ろうとの足の先をビーカーの内側のかべにつける。', true, '液がはねずに、かべを伝わって静かに落ちる。'],
+  ['ろ過で液を注ぐときは、ガラス棒を伝わらせる。', true, 'こぼれたり、ろ紙が破れたりするのを防ぐ。'],
+  ['ホールピペットは、口で吸ってもよい。', false, '安全ピペッターを使う。'],
+  ['ビュレットの目盛りは、上が 0 である。', true, '下にいくほど数字が大きくなる。'],
+  ['丸底フラスコで液体を加熱するときは、沸騰石を入れる。', true, '突沸（急に激しく沸騰すること）を防ぐ。'],
+  ['ゴム栓でしっかりふたをした三角フラスコを加熱する。', false, '中の気体がふくらんで破裂する危険がある。'],
+  ['ビーカーを加熱するときは、金網をしく。', true, '直接炎にあてると、割れることがある。'],
+];
+function quizStart(kind) {
+  const qs = [];
+  for (let i = 0; i < 10; i++) {
+    if (kind === 'name' || (kind === 'mix' && i % 2 === 0)) {
+      const it = pick(ITEMS);
+      qs.push({ type: 'name', item: it, q: 'この器具の名前は？', choices: shuffle([it.name, ...shuffle(ITEMS.filter(x => x.id !== it.id)).slice(0, 3).map(x => x.name)]), answer: it.name, explain: it.use });
+    } else {
+      const [q, ans, ex] = pick(SAFETY_Q);
+      const it = ITEMS.find(x => q.includes(x.name.replace('（ろ過）', ''))) || ITEMS.find(x => q.includes(x.name.slice(0, 3))) || ITEMS[0];
+      qs.push({ type: 'safety', item: it, q: '正しい？ まちがい？<br>' + esc(q), choices: ['正しい ○', 'まちがい ×'], answer: ans ? '正しい ○' : 'まちがい ×', explain: ex });
+    }
+  }
+  state.quiz = { kind, qs, i: 0, score: 0, picked: null };
+  quizShow();
+}
+function quizShow() {
+  const qz = state.quiz, q = qz.qs[qz.i];
+  clearScene();
+  const m = MODELS[q.item.model]();
+  R.group.add(m.g);
+  if (m.flame) { m.flame.lit = false; R.tick = t => m.flame.update(t); }
+  renderCard();
+  frame(m.focus[0], m.focus[1]);
+}
+function quizCardHTML() {
+  const qz = state.quiz;
+  if (qz.i >= qz.qs.length) {
+    return `<div class="card-head"><div class="eyebrow">クイズ</div><h2 class="name">結果 ${qz.score} / 10</h2></div><div class="body">
+      <div class="verdict ${qz.score >= 7 ? 'ok' : ''}">${qz.score === 10 ? '全問正解！ 実験の準備はばっちり。' : qz.score >= 7 ? 'よくできました！' : '「器具を見る」の注意を読んでから、もう一度。'}</div>
+      <p style="margin-top:10px" class="row"><button type="button" class="btn main" data-quiz="${qz.kind}">もう一度</button></p></div>`;
+  }
+  const q = qz.qs[qz.i];
+  let h = `<div class="card-head"><div class="eyebrow">クイズ ${qz.i + 1} / 10 ・ 正解 ${qz.score}</div><div class="qprog"><i style="width:${qz.i * 10}%"></i></div></div><div class="body">
+    <p class="qtext">${q.q}</p><div class="qchoices">${q.choices.map((c, k) => {
+    let cls = '';
+    if (qz.picked !== null) cls = c === q.answer ? 'right' : c === qz.picked ? 'wrong' : 'dim';
+    return `<button type="button" class="qc ${cls}" data-pick="${k}" ${qz.picked !== null ? 'disabled' : ''}>${esc(c)}</button>`;
+  }).join('')}</div>`;
+  if (qz.picked !== null) {
+    h += `<div class="verdict ${qz.picked === q.answer ? 'ok' : 'ng'}" style="margin-top:8px">${qz.picked === q.answer ? '正解！' : `正解は「${esc(q.answer)}」`}</div><p class="use" style="margin-top:6px">${esc(q.explain)}</p>
+      <button type="button" class="btn main" data-a="qnext">${qz.i === 9 ? '結果を見る' : '次の問題'}</button>`;
+  }
+  return h + '</div>';
+}
+function quizMenuHTML() {
+  return `<div class="card-head"><div class="eyebrow">クイズ</div><h2 class="name">どのクイズにする？</h2></div><div class="body"><div class="ctl">
+    <button type="button" class="btn main" data-quiz="name">器具の名前あて（10問）</button>
+    <button type="button" class="btn main" data-quiz="safety">安全な使い方 ○×（10問）</button>
+    <button type="button" class="btn main" data-quiz="mix">ミックス（10問）</button>
+    <p class="note">3Dの器具を回してよく見てから答えよう。</p></div></div>`;
+}
+
+// ===== 画面の組み立て =====
+function renderLib() {
+  const lib = $('lib');
+  if (state.mode === 'see') {
+    let h = '', last = '';
+    ITEMS.forEach(it => {
+      if (it.grp !== last) { h += `<div class="grp">${esc(it.grp)}</div>`; last = it.grp; }
+      h += `<button type="button" class="item" data-see="${it.id}" aria-current="${state.id === it.id}"><span class="ic">${ICON[it.id]}</span>${esc(it.name)}</button>`;
+    });
+    lib.innerHTML = h;
+  } else if (state.mode === 'practice') {
+    lib.innerHTML = '<div class="grp">操作の練習</div>' + PRACTICES.map(p => `<button type="button" class="item" data-goto="${p.id}" aria-current="${state.id === p.id}"><span class="ic">${p.icon}</span>${esc(p.name)}${done.has(p.id) ? '<span class="done">✓</span>' : ''}</button>`).join('')
+      + `<p class="note" style="margin:10px 4px">クリア ${PRACTICES.filter(p => done.has(p.id)).length} / ${PRACTICES.length}</p>`;
+  } else {
+    lib.innerHTML = '<div class="grp">クイズ</div>' + [['name', '器具の名前あて'], ['safety', '安全な使い方 ○×'], ['mix', 'ミックス']].map(([k, n]) => `<button type="button" class="item" data-quiz="${k}" aria-current="${state.quiz && state.quiz.kind === k}"><span class="ic">Q</span>${n}</button>`).join('');
+  }
+}
+function renderCard() {
+  const card = $('card');
+  let h;
+  if (state.mode === 'see') h = seeCardHTML(ITEMS.find(x => x.id === state.id));
+  else if (state.mode === 'practice') h = practiceCardHTML(PRACTICES.find(x => x.id === state.id));
+  else h = state.quiz ? quizCardHTML() : quizMenuHTML();
+  const body = card.querySelector('.body'), y = body ? body.scrollTop : 0;
+  card.innerHTML = h;
+  const nb = card.querySelector('.body');
+  if (nb) nb.scrollTop = y;
+  $('btnParts').hidden = state.mode === 'quiz';
+}
+function setMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === mode)));
+  if (mode === 'see') go('see', ITEMS.some(x => x.id === state.id) ? state.id : 'beaker');
+  else if (mode === 'practice') go('practice', PRACTICES.some(x => x.id === state.id) ? state.id : 'p-burner');
+  else { state.quiz = null; state.id = null; renderLib(); if (R) { clearScene(); const m = MODELS.burner(); R.group.add(m.g); frame(m.focus[0], m.focus[1]); } renderCard(); }
+}
+function go(mode, id) {
+  state.mode = mode; state.id = id; state.tab = 'use'; state.quiz = null;
+  document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === mode)));
+  renderLib();
+  if (!R) { renderCard(); return; }
+  if (mode === 'see') showItem(id); else showPractice(id);
+  try { history.replaceState(null, '', '#' + id); } catch (e) { /* 無視 */ }
+}
+
+// ===== イベント =====
+document.addEventListener('click', ev => {
+  const t = ev.target;
+  const m = t.closest('#modes [data-mode]');
+  if (m) { setMode(m.dataset.mode); return; }
+  const see = t.closest('[data-see]');
+  if (see) { go('see', see.dataset.see); return; }
+  const gt = t.closest('[data-goto]');
+  if (gt) { go('practice', gt.dataset.goto); return; }
+  const qz = t.closest('[data-quiz]');
+  if (qz) { state.mode = 'quiz'; document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === 'quiz'))); quizStart(qz.dataset.quiz); renderLib(); return; }
+  const tab = t.closest('[data-tab]');
+  if (tab) { state.tab = tab.dataset.tab; renderCard(); return; }
+  const pk = t.closest('[data-pick]');
+  if (pk && state.quiz) { const q = state.quiz.qs[state.quiz.i]; state.quiz.picked = q.choices[+pk.dataset.pick]; if (state.quiz.picked === q.answer) state.quiz.score++; renderCard(); return; }
+  const a = t.closest('[data-a]');
+  if (a) {
+    if (a.dataset.a === 'qnext') { state.quiz.i++; state.quiz.picked = null; if (state.quiz.i >= 10) renderCard(); else quizShow(); return; }
+    PR[state.id].act(a.dataset.a); return;
+  }
+  const eye = t.closest('[data-eye]');
+  if (eye) { PR[state.id].act('eye', eye.dataset.eye); return; }
+  const opt = t.closest('[data-opt]');
+  if (opt) { PR[state.id].act('opt', opt.dataset.opt); return; }
+  const set = t.closest('[data-set]');
+  if (set) { PR[state.id].act('set', set.dataset.set); return; }
+});
+document.addEventListener('input', ev => {
+  const id = ev.target.id, v = +ev.target.value;
+  const map = { gasS: 'gas', airS: 'air', amtS: 'amt', wickS: 'wick', fillS: 'fill', tubeS: 'amt' };
+  if (map[id] && state.pr) {
+    PR[state.id].act(map[id], v);
+    const el = $(id); if (el) el.focus();
+  }
+});
+document.addEventListener('keydown', ev => { if (ev.key === 'Enter' && ev.target.id === 'readV') PR['p-cylinder'].act('judge'); });
+$('btnParts').addEventListener('click', () => {
+  state.parts = !state.parts;
+  $('btnParts').setAttribute('aria-pressed', String(state.parts));
+  if (R) R.labels.forEach(L => { if (L.part) L.el.hidden = !state.parts; });
+});
+$('btnReset').addEventListener('click', () => { if (state.mode === 'practice' && state.id === 'p-cylinder') PR['p-cylinder'].view(); else if (state.mode === 'practice') go('practice', state.id); else if (state.mode === 'see') showItem(state.id); });
+$('btnFull').addEventListener('click', () => {
+  const w = $('stageWrap');
+  if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); return; }
+  if (w.requestFullscreen) w.requestFullscreen().catch(() => w.classList.toggle('is-max')); else w.classList.toggle('is-max');
+});
+
+// ===== はじめる =====
+(function start() {
+  const ok = initThree();
+  if (!ok) $('stage').innerHTML = '<div class="fallback">3D表示の部品（three.js）を読み込めませんでした。<br>インターネットにつながっているか確認して、開き直してください。</div>';
+  let h = '';
+  try { h = decodeURIComponent(location.hash.slice(1)); } catch (e) { /* 無視 */ }
+  if (PRACTICES.some(p => p.id === h)) go('practice', h);
+  else if (ITEMS.some(x => x.id === h)) go('see', h);
+  else go('see', 'beaker');
+})();
+</script>
+</body>
+</html>
