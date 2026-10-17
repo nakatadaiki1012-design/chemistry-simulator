@@ -79,7 +79,7 @@ sub, sup { font-size: .68em; line-height: 0; }
 .name { font-family: var(--font-display); font-weight: 800; font-size: 24px; line-height: 1.25; margin: 2px 0 0; }
 .yomi { font-size: 12px; color: var(--muted); font-family: var(--font-data); }
 .tabs { display: flex; gap: 2px; margin: 6px 14px 0; border-bottom: 1px solid var(--line); }
-.tabs button { border: 0; background: transparent; padding: 5px 12px; font-size: 13px; font-weight: 700; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button { white-space: nowrap; border: 0; background: transparent; padding: 5px 9px; font-size: 13px; font-weight: 700; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
 .body { overflow-y: auto; padding: 10px 14px 14px; flex: 1; min-height: 0; }
 .use { margin: 0 0 8px; font-size: 14.5px; }
@@ -120,6 +120,13 @@ ul.caution li b.o { background: var(--ok); } ul.caution li b.x { background: var
 .qc.right { background: var(--ok); color: #fff; border-color: var(--ok); } .qc.wrong { color: var(--ng); border-color: var(--ng); } .qc.dim { opacity: .5; }
 .qprog { height: 5px; border-radius: 999px; background: var(--chip); overflow: hidden; margin: 6px 0; }
 .qprog i { display: block; height: 100%; background: var(--accent); }
+.purpose { background: var(--chip); border-left: 3px solid var(--accent); border-radius: 8px; padding: 8px 10px; margin: 8px 0; font-size: 14px; line-height: 1.65; }
+.purpose b { display: block; font-size: 12px; color: var(--accent); }
+ol.whysteps { margin: 6px 0 0; padding-left: 22px; font-size: 14px; }
+ol.whysteps li { margin-bottom: 8px; }
+ol.whysteps li b { display: block; }
+ol.whysteps li span { display: block; color: var(--muted); font-size: 13px; line-height: 1.6; }
+ul.caution.danger li b.x { background: #b7791f; }
 .fallback { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted); }
 @media (max-width: 900px) {
   body { overflow: auto; height: auto; min-height: 100%; }
@@ -179,16 +186,48 @@ function markDone(id) { done.add(id); try { localStorage.setItem(DONE_KEY, JSON.
 // ===== 3Dの部品づくり =====
 let R = null;
 const V2 = (x, y) => new THREE.Vector2(x, y);
+// まわりの景色（実験室の明るい窓と天井）をガラスや金属に映りこませる
+let ENV = null;
+function envMap() {
+  if (ENV) return ENV;
+  const face = (top, bottom, win) => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const grd = g.createLinearGradient(0, 0, 0, 128); grd.addColorStop(0, top); grd.addColorStop(1, bottom);
+    g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
+    if (win) { g.fillStyle = 'rgba(255,255,255,0.95)'; g.fillRect(18, 20, 40, 56); g.fillRect(70, 20, 40, 56); }
+    return c;
+  };
+  ENV = new THREE.CubeTexture([face('#f4f7fb', '#7d8794', true), face('#eef2f6', '#77808c', false), face('#ffffff', '#ffffff'), face('#2b3038', '#1b1f25'), face('#f2f5f9', '#808a96', true), face('#e9edf2', '#737c88', false)]);
+  ENV.needsUpdate = true;
+  return ENV;
+}
 function glassMat(extra) {
-  return new THREE.MeshPhongMaterial(Object.assign({ color: 0xd8e9f5, transparent: true, opacity: 0.26, shininess: 140, specular: 0xffffff, side: THREE.DoubleSide, depthWrite: false }, extra || {}));
+  return new THREE.MeshPhongMaterial(Object.assign({ color: 0xeaf4fb, transparent: true, opacity: 0.17, shininess: 220, specular: 0xffffff,
+    envMap: envMap(), combine: THREE.MixOperation, reflectivity: 0.28, side: THREE.DoubleSide, depthWrite: false }, extra || {}));
 }
 function solid(color, extra) { return new THREE.MeshPhongMaterial(Object.assign({ color, shininess: 50, specular: 0x333333 }, extra || {})); }
-function liquidMat(color, op) { return new THREE.MeshPhongMaterial({ color, transparent: true, opacity: op || 0.6, side: THREE.DoubleSide, depthWrite: false, shininess: 60 }); }
-function lathe(pts, mat, seg) {
-  const m = new THREE.Mesh(new THREE.LatheGeometry(pts.map(p => V2(p[0], p[1])), seg || 64), mat);
+function metal(color, refl) { return new THREE.MeshPhongMaterial({ color, shininess: 120, specular: 0xffffff, envMap: envMap(), combine: THREE.MixOperation, reflectivity: refl === undefined ? 0.45 : refl }); }
+function liquidMat(color, op) { return new THREE.MeshPhongMaterial({ color, transparent: true, opacity: op || 0.55, side: THREE.DoubleSide, depthWrite: false, shininess: 90, envMap: envMap(), combine: THREE.MixOperation, reflectivity: 0.12 }); }
+function lathe(pts, mat, seg) { return new THREE.Mesh(new THREE.LatheGeometry(pts.map(p => V2(Math.max(p[0], 0), p[1])), seg || 72), mat); }
+function cyl(r1, r2, h, mat, seg) { return new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg || 32), mat); }
+// 厚みのあるガラス：内側の形（下から上）から、外側・丸めた口・内側をつなぐ
+function shell(inner, t, mat, seg) {
+  const out = inner.map(([r, y]) => (r < 1e-6 ? [0, y - t] : [r + t, y]));
+  if (inner[0][0] < 1e-6 && inner.length > 1) out[1] = [out[1][0], out[1][1] - t * 0.7];
+  const arc = (p, q, up) => {
+    const cx = (p[0] + q[0]) / 2, cy = (p[1] + q[1]) / 2, rr = Math.hypot(p[0] - q[0], p[1] - q[1]) / 2;
+    const a0 = Math.atan2(p[1] - cy, p[0] - cx), pts = [];
+    for (let k = 1; k < 7; k++) { const a = a0 + (up ? 1 : -1) * Math.PI * k / 7; pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]); }
+    return pts;
+  };
+  const last = inner.length - 1;
+  let pts = out.concat(arc(out[last], inner[last], true), inner.slice().reverse());
+  if (inner[0][0] > 1e-6) pts = pts.concat(arc(inner[0], out[0], false));
+  const m = lathe(pts, mat || glassMat(), seg);
+  m.renderOrder = 2;
   return m;
 }
-function cyl(r1, r2, h, mat, seg) { return new THREE.Mesh(new THREE.CylinderGeometry(r1, r2, h, seg || 32), mat); }
 // 内側の形（下から上へ）にそって、高さ h までの液体をつくる。液面は少しへこむ（メニスカス）
 function liquid(inner, h, color, men) {
   const out = [[0, inner[0][1] + 0.01]];
@@ -201,15 +240,11 @@ function liquid(inner, h, color, men) {
     break;
   }
   const m = men === undefined ? 0.05 : men;
-  out.push([rTop * 0.985, h]);
-  out.push([rTop * 0.7, h - m * 0.55]);
-  out.push([rTop * 0.35, h - m * 0.9]);
-  out.push([0, h - m]);
+  out.push([rTop * 0.985, h], [rTop * 0.8, h - m * 0.45], [rTop * 0.5, h - m * 0.85], [0, h - m]);
   const mesh = lathe(out, liquidMat(color));
   mesh.renderOrder = 1;
   return mesh;
 }
-// 文字の板（目盛りの数字など）
 function textSprite(txt, h, color) {
   const c = document.createElement('canvas'); c.width = 128; c.height = 64;
   const g = c.getContext('2d');
@@ -243,189 +278,363 @@ function ticks(r, y0, y1, n, every, color, label) {
   g.add(new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: color || '#24303f' })));
   return g;
 }
-// 炎：外側と内側の2つのしずく形。air が大きいほど青く短くなる
-function makeFlame() {
-  const prof = [[0, 0], [0.16, 0.12], [0.2, 0.35], [0.15, 0.65], [0.07, 0.9], [0, 1]];
-  const geo = new THREE.LatheGeometry(prof.map(p => V2(p[0], p[1])), 32);
-  const outer = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffa940, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
-  const inner = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x7fb3ff, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+// 器具の下にできる、やわらかい影
+let SHADOW_TEX = null;
+function contactShadow(w, d, op) {
+  if (!SHADOW_TEX) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const grd = g.createRadialGradient(64, 64, 4, 64, 64, 64);
+    grd.addColorStop(0, 'rgba(0,0,0,0.55)'); grd.addColorStop(0.6, 'rgba(0,0,0,0.18)'); grd.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
+    SHADOW_TEX = new THREE.CanvasTexture(c);
+  }
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshBasicMaterial({ map: SHADOW_TEX, transparent: true, opacity: op || 0.7, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2; m.position.y = 0.006;
+  m.userData.keepMap = true;
+  return m;
+}
+// ぎざぎざ（ローレット）のついた調節ねじ
+function knurl(r, h, mat, n) {
   const g = new THREE.Group();
-  g.add(outer, inner);
+  g.add(cyl(r, r, h, mat, 40));
+  const ridge = new THREE.BoxGeometry(r * 0.12, h * 0.92, r * 0.12);
+  for (let i = 0; i < (n || 28); i++) {
+    const a = i / (n || 28) * Math.PI * 2;
+    const b = new THREE.Mesh(ridge, mat); b.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); b.rotation.y = -a; g.add(b);
+  }
+  return g;
+}
+// 炎：外炎・内炎・光のにじみ。air が大きいほど青く短くなる
+let GLOW_TEX = null;
+function makeFlame() {
+  const prof = [[0, 0], [0.15, 0.1], [0.2, 0.32], [0.16, 0.6], [0.09, 0.84], [0.03, 0.97], [0, 1]];
+  const geo = new THREE.LatheGeometry(prof.map(p => V2(p[0], p[1])), 40);
+  const mk = (c, o) => new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, depthWrite: false, side: THREE.DoubleSide }));
+  const outer = mk(0xffa940, 0.7), mid = mk(0xffe08a, 0.5), inner = mk(0x7fb3ff, 0.7);
+  if (!GLOW_TEX) {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g2 = c.getContext('2d'), grd = g2.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grd.addColorStop(0, 'rgba(255,255,255,0.9)'); grd.addColorStop(1, 'rgba(255,255,255,0)'); g2.fillStyle = grd; g2.fillRect(0, 0, 64, 64);
+    GLOW_TEX = new THREE.CanvasTexture(c);
+  }
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW_TEX, color: 0xffb060, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }));
+  glow.userData.keepMap = true;
+  const g = new THREE.Group();
+  g.add(outer, mid, inner, glow);
   const light = new THREE.PointLight(0xffb060, 0, 6);
   light.position.y = 0.5;
   g.add(light);
-  const f = { g, outer, inner, light, size: 0, air: 0, lit: false };
+  const f = { g, outer, mid, inner, glow, light, size: 0, air: 0, lit: false };
   f.update = t => {
     const on = f.lit && f.size > 0.02;
     g.visible = on;
     if (!on) { light.intensity = 0; return; }
-    const fl = reduceMotion ? 1 : 1 + 0.06 * Math.sin(t * 23) + 0.04 * Math.sin(t * 37);
-    const h = f.size * (1.25 - 0.5 * f.air) * fl, w = 0.6 + 0.6 * f.size;
-    outer.scale.set(w * (1 - 0.25 * f.air), h, w * (1 - 0.25 * f.air));
-    inner.scale.set(w * 0.55, h * (0.15 + 0.4 * f.air), w * 0.55);
-    outer.material.color.set(new THREE.Color(0xffb347).lerp(new THREE.Color(0x4f8dff), f.air));
-    outer.material.opacity = 0.75 - 0.25 * f.air;
-    inner.material.opacity = 0.2 + 0.6 * f.air;
+    const fl = reduceMotion ? 1 : 1 + 0.06 * Math.sin(t * 23) + 0.04 * Math.sin(t * 37 + 1);
+    const sway = reduceMotion ? 0 : 0.04 * Math.sin(t * 7) * (1 - f.air);
+    const h = f.size * (1.3 - 0.55 * f.air) * fl, w = 0.6 + 0.6 * f.size;
+    outer.scale.set(w * (1 - 0.25 * f.air), h, w * (1 - 0.25 * f.air)); outer.rotation.z = sway;
+    mid.scale.set(w * 0.75, h * (0.75 - 0.5 * f.air), w * 0.75); mid.rotation.z = sway * 0.6;
+    inner.scale.set(w * 0.5, h * (0.18 + 0.4 * f.air), w * 0.5);
+    outer.material.color.set(new THREE.Color(0xffa63c).lerp(new THREE.Color(0x3f7dff), f.air));
+    mid.material.color.set(new THREE.Color(0xffe27a).lerp(new THREE.Color(0x6fa4ff), f.air));
+    outer.material.opacity = 0.62 - 0.22 * f.air; mid.material.opacity = 0.6 - 0.4 * f.air;
+    inner.material.opacity = 0.15 + 0.65 * f.air;
+    glow.position.y = h * 0.45; glow.scale.setScalar(h * 1.1 + 0.15);
+    glow.material.color.set(f.air > 0.5 ? 0x7fa8ff : 0xffb060);
     light.intensity = 1.2 * f.size;
     light.color.set(f.air > 0.5 ? 0x9cc0ff : 0xffb060);
   };
   return f;
 }
-// マッチ（棒＋頭＋小さな炎）
 function makeMatch() {
   const g = new THREE.Group();
-  const stick = cyl(0.03, 0.03, 1.1, solid(0xe6c38f)); stick.position.y = -0.55; g.add(stick);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 12), solid(0x8a2a1e)); g.add(head);
+  const stick = new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.1, 0.05), solid(0xe6c38f)); stick.position.y = -0.55; g.add(stick);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 12), solid(0x7a2418)); head.scale.set(1, 1.3, 1); g.add(head);
   const fl = makeFlame(); fl.lit = true; fl.size = 0.35; fl.air = 0.1; fl.g.position.y = 0.02; g.add(fl.g);
   g.rotation.z = -1.1;
   return { g, fl };
 }
-// スタンド（台・支柱・クランプ）
-function makeStand(h, clampY, armLen) {
+// ガラス棒（両はしが丸い）
+function glassRod(len, r) {
   const g = new THREE.Group();
-  const metal = solid(0x6f7782, { shininess: 80 });
-  const base = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 1.4), solid(0x3b4350)); base.position.set(-0.6, 0.06, 0); g.add(base);
-  const rod = cyl(0.05, 0.05, h, metal); rod.position.set(-1.3, h / 2, 0); g.add(rod);
-  const boss = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), metal); boss.position.set(-1.3, clampY, 0); g.add(boss);
-  const arm = cyl(0.035, 0.035, armLen, metal); arm.rotation.z = Math.PI / 2; arm.position.set(-1.3 + armLen / 2, clampY, 0); g.add(arm);
+  const mat = glassMat({ opacity: 0.45, reflectivity: 0.35, color: 0xdff2fb });
+  const body = cyl(r, r, len, mat, 20); body.renderOrder = 3; g.add(body);
+  [-1, 1].forEach(s => { const e = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 10), mat); e.position.y = s * len / 2; e.renderOrder = 3; g.add(e); });
+  // 光の筋（ガラスの棒らしく見せる）
+  const hl = cyl(r * 0.25, r * 0.25, len * 0.96, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 }), 8);
+  hl.position.x = r * 0.55; hl.position.z = r * 0.55; g.add(hl);
+  return g;
+}
+// 2点のあいだにものを置く（棒の向きを合わせる）
+function placeBetween(obj, a, b) {
+  const d = new THREE.Vector3().subVectors(b, a);
+  obj.position.copy(a).addScaledVector(d, 0.5);
+  obj.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+}
+// 鉄製スタンド（台・支柱・ムッフ・クランプ）
+function makeStand(h, clampY, armLen, kind) {
+  const g = new THREE.Group();
+  const iron = solid(0x3a4049, { shininess: 30 }), chrome = metal(0xc7ccd3, 0.55);
+  const base = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.14, 1.5), iron); base.position.set(-0.55, 0.07, 0); g.add(base);
+  const bevel = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.04, 1.4), solid(0x4a515b)); bevel.position.set(-0.55, 0.16, 0); g.add(bevel);
+  const rod = cyl(0.055, 0.055, h, chrome, 20); rod.position.set(-1.35, h / 2, 0); g.add(rod);
+  const boss = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 0.24), metal(0x8f969f, 0.3)); boss.position.set(-1.35, clampY, 0); g.add(boss);
+  const screw = cyl(0.03, 0.03, 0.3, chrome); screw.rotation.x = Math.PI / 2; screw.position.set(-1.35, clampY, 0.25); g.add(screw);
+  const knob = cyl(0.08, 0.08, 0.06, iron, 16); knob.rotation.x = Math.PI / 2; knob.position.set(-1.35, clampY, 0.42); g.add(knob);
+  const arm = cyl(0.035, 0.035, armLen, chrome); arm.rotation.z = Math.PI / 2; arm.position.set(-1.35 + armLen / 2, clampY, 0); g.add(arm);
+  g.add(contactShadow(3.2, 2.2, 0.5));
   return g;
 }
 
 // ===== 器具のモデル =====
-// それぞれ { g, parts:[[名前, [x,y,z]]], focus:[y, 半径], inner? }
+// それぞれ { g, parts:[[名前, [x,y,z]]], focus:[y, 半径] }
+function withShadow(g, w, d) { g.add(contactShadow(w, d || w)); return g; }
 const MODELS = {
   beaker() {
     const g = new THREE.Group();
-    const prof = [[0, 0.02], [1.12, 0.02], [1.2, 0.1], [1.2, 2.85], [1.24, 2.95], [1.28, 3.0]];
-    const glass = lathe(prof, glassMat()); glass.renderOrder = 2; g.add(glass);
-    g.add(liquid(prof.slice(0, 4), 1.7, 0x6fb7e8));
-    g.add(ticks(1.205, 0.6, 2.4, 6, 2, '#2c3846', i => String(50 + i * 25)));
-    const spout = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.035, 8, 16, Math.PI), glassMat({ opacity: 0.45 }));
-    spout.position.set(-1.25, 3.0, 0); spout.rotation.set(0, Math.PI / 2, Math.PI); g.add(spout);
-    return { g, parts: [['注ぎ口', [-1.28, 3.0, 0]], ['目盛り（目安）', [0.2, 2.4, 1.2]], ['液体', [0, 1.2, 0.6]]], focus: [1.5, 2.2] };
+    const inner = [[0, 0.1], [1.0, 0.1], [1.08, 0.17], [1.1, 0.3], [1.1, 2.86], [1.13, 2.96], [1.17, 3.0]];
+    g.add(shell(inner, 0.05));
+    g.add(liquid(inner.slice(0, 5), 1.7, 0x7fc0ea));
+    g.add(ticks(1.155, 0.62, 2.42, 6, 2, '#2c3846', i => String(50 + i * 25)));
+    // 白いすりガラスの記入欄（実物のビーカーにある）
+    const patch = new THREE.Mesh(new THREE.CylinderGeometry(1.156, 1.156, 0.5, 24, 1, true, Math.PI * 0.85, 0.5), new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.7, side: THREE.DoubleSide }));
+    patch.position.y = 1.0; g.add(patch);
+    const mL = textSprite('mL', 0.13); mL.position.set(0.25, 2.7, 1.16); g.add(mL);
+    const spout = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.04, 10, 20, Math.PI), glassMat({ opacity: 0.4 }));
+    spout.position.set(-1.2, 2.99, 0); spout.rotation.set(0, Math.PI / 2, Math.PI); g.add(spout);
+    withShadow(g, 3.2);
+    return { g, parts: [['注ぎ口', [-1.24, 3.0, 0]], ['目盛り（目安）', [0.2, 2.42, 1.16]], ['記入欄（すりガラス）', [-0.6, 1.0, -0.9]], ['液体', [0, 1.2, 0.6]]], focus: [1.5, 2.2] };
   },
   erlen() {
     const g = new THREE.Group();
-    const prof = [[0, 0.02], [1.25, 0.02], [1.32, 0.12], [0.42, 2.55], [0.4, 3.25], [0.46, 3.32]];
-    const glass = lathe(prof, glassMat()); glass.renderOrder = 2; g.add(glass);
-    g.add(liquid([[1.22, 0.04], [1.28, 0.12], [0.42, 2.55]], 0.9, 0xf2c94c));
-    return { g, parts: [['口（せまい）', [0.45, 3.3, 0]], ['首', [0.42, 2.9, 0]], ['底（広くて安定）', [1.2, 0.2, 0]]], focus: [1.6, 2.2] };
+    const inner = [[0, 0.1], [1.15, 0.1], [1.24, 0.2], [1.24, 0.28], [0.42, 2.5], [0.36, 2.66], [0.36, 3.24], [0.4, 3.3]];
+    g.add(shell(inner, 0.05));
+    g.add(liquid(inner.slice(0, 5), 0.95, 0xf2c94c));
+    const marks = ticks(0.95, 0.5, 1.3, 2, 1, '#2c3846'); g.add(marks);
+    withShadow(g, 3.3);
+    return { g, parts: [['口（せまい）', [0.42, 3.3, 0]], ['首', [0.4, 2.9, 0]], ['底（広くて安定）', [1.2, 0.2, 0]]], focus: [1.6, 2.2] };
   },
   roundflask() {
     const g = new THREE.Group();
-    const prof = [];
-    for (let k = 0; k <= 16; k++) { const a = -Math.PI / 2 + (Math.PI * 0.78) * k / 16; prof.push([Math.cos(a) * 1.25, 1.25 + Math.sin(a) * 1.25]); }
-    const last = prof[prof.length - 1];
-    prof.push([0.36, last[1] + 0.2], [0.36, 3.9], [0.42, 3.97]);
-    const glass = lathe(prof, glassMat()); glass.renderOrder = 2; g.add(glass);
-    g.add(liquid(prof.slice(0, 12), 1.1, 0xe57373));
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.16, 12, 40), solid(0xc8a27a)); ring.rotation.x = Math.PI / 2; ring.position.y = 0.12; g.add(ring);
-    const chips = new THREE.Group();
-    [[0.2, 0.08], [-0.25, 0.12], [0.05, -0.2]].forEach(([x, z]) => { const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.07), solid(0xf0f0f0)); s.position.set(x, 0.1, z); chips.add(s); });
-    g.add(chips);
-    return { g, parts: [['球形の胴（熱が均一に伝わる）', [1.25, 1.25, 0]], ['首', [0.36, 3.3, 0]], ['コルクリング（台）', [0.8, 0.15, 0.4]], ['沸騰石', [0.2, 0.15, 0.1]]], focus: [1.8, 2.4] };
+    const inner = [];
+    for (let k = 0; k <= 18; k++) { const a = -Math.PI / 2 + (Math.PI * 0.8) * k / 18; inner.push([Math.cos(a) * 1.22, 1.32 + Math.sin(a) * 1.22]); }
+    const lst = inner[inner.length - 1];
+    inner.push([0.33, lst[1] + 0.22], [0.33, 3.9], [0.38, 3.98]);
+    const body = shell(inner, 0.045); g.add(body);
+    g.add(liquid(inner.slice(0, 13), 1.15, 0xe57373));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.17, 14, 48), solid(0xb98e62, { shininess: 10 })); ring.rotation.x = Math.PI / 2; ring.position.y = 0.17; g.add(ring);
+    [[0.2, 0.08], [-0.25, 0.12], [0.05, -0.2]].forEach(([x, z]) => { const s = new THREE.Mesh(new THREE.DodecahedronGeometry(0.07), solid(0xf0f0f0)); s.position.set(x, 0.2, z); g.add(s); });
+    withShadow(g, 3.0);
+    return { g, parts: [['球形の胴（熱が均一に伝わる）', [1.22, 1.32, 0]], ['首', [0.33, 3.3, 0]], ['コルクリング（台）', [0.8, 0.2, 0.4]], ['沸騰石', [0.2, 0.22, 0.1]]], focus: [1.8, 2.4] };
   },
   tube() {
     const g = new THREE.Group();
-    const prof = [];
-    for (let k = 0; k <= 8; k++) { const a = -Math.PI / 2 + Math.PI / 2 * k / 8; prof.push([Math.cos(a) * 0.3, 0.3 + Math.sin(a) * 0.3]); }
-    prof.push([0.3, 3.4], [0.34, 3.45]);
-    const glass = lathe(prof, glassMat()); glass.renderOrder = 2; g.add(glass);
-    g.add(liquid(prof.slice(0, 10), 1.0, 0x8bc34a));
-    return { g, parts: [['口', [0.34, 3.45, 0]], ['液は1/4〜1/3まで', [0.3, 1.0, 0]]], focus: [1.7, 2.0] };
+    const inner = [];
+    for (let k = 0; k <= 9; k++) { const a = -Math.PI / 2 + Math.PI / 2 * k / 9; inner.push([Math.cos(a) * 0.27, 0.32 + Math.sin(a) * 0.27]); }
+    inner.push([0.27, 3.38], [0.31, 3.44]);
+    g.add(shell(inner, 0.03));
+    g.add(liquid(inner.slice(0, 11), 1.0, 0x8bc34a));
+    return { g, parts: [['口', [0.31, 3.44, 0]], ['液は1/4〜1/3まで', [0.28, 1.0, 0]]], focus: [1.7, 2.0] };
   },
   funnel() {
     const g = new THREE.Group();
-    const prof = [[0.07, -1.6], [0.07, 0], [0.12, 0.08], [1.1, 1.3], [1.15, 1.35]];
-    const glass = lathe(prof, glassMat({ opacity: 0.35 })); glass.renderOrder = 2; g.add(glass);
-    const paper = lathe([[0.02, 0.15], [0.95, 1.22]], new THREE.MeshPhongMaterial({ color: 0xfdfdfa, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
+    // 足は斜めに切ってある
+    const inner = [[0.045, -1.55], [0.045, 0], [0.09, 0.08], [1.05, 1.28], [1.1, 1.33]];
+    g.add(shell(inner, 0.035));
+    const paper = lathe([[0.03, 0.14], [0.94, 1.22]], new THREE.MeshPhongMaterial({ color: 0xfbfbf6, side: THREE.DoubleSide, transparent: true, opacity: 0.92 }));
     g.add(paper);
+    // ろ紙の3枚重なった部分
+    const tri = lathe([[0.03, 0.15], [0.95, 1.23]], new THREE.MeshPhongMaterial({ color: 0xf2f1e6, side: THREE.DoubleSide, transparent: true, opacity: 0.95 }), 24);
+    tri.geometry = new THREE.LatheGeometry([V2(0.035, 0.15), V2(0.955, 1.235)], 24, 0, Math.PI * 0.75);
+    g.add(tri);
     g.position.y = 1.7;
-    return { g, parts: [['ろ紙', [0.6, 2.6, 0.3]], ['ろうと', [1.1, 2.9, 0]], ['足（先は斜めに切ってある）', [0.07, 0.15, 0]]], focus: [1.6, 2.2] };
+    return { g, parts: [['ろ紙（3枚重なった所）', [0.6, 2.6, 0.3]], ['ろうと', [1.1, 2.95, 0]], ['足（先は斜めに切ってある）', [0.05, 0.2, 0]]], focus: [1.6, 2.2] };
   },
   cylinder() {
     const g = new THREE.Group();
-    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.95, 0.12, 6), solid(0x3f6fb5)); foot.position.y = 0.06; g.add(foot);
-    const prof = [[0, 0.12], [0.42, 0.12], [0.42, 5.4], [0.48, 5.5]];
-    const glass = lathe(prof, glassMat()); glass.renderOrder = 2; g.add(glass);
-    g.add(ticks(0.425, 0.4, 5.0, 100, 10, '#24303f', i => String(i)));
-    g.add(liquid(prof.slice(0, 3), 3.1, 0x6fb7e8, 0.07));
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.88, 0.95, 0.14, 6), solid(0x2f63b0, { shininess: 70 })); foot.position.y = 0.07; g.add(foot);
+    const inner = [[0, 0.24], [0.4, 0.24], [0.4, 5.4], [0.44, 5.48]];
+    g.add(shell(inner, 0.035));
+    g.add(ticks(0.437, 0.4, 5.0, 100, 10, '#24303f', i => String(i)));
+    g.add(liquid(inner.slice(0, 3), 3.1, 0x7fc0ea, 0.07));
+    const spout = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.03, 8, 16, Math.PI), glassMat({ opacity: 0.4 }));
+    spout.position.set(-0.44, 5.48, 0); spout.rotation.set(0, Math.PI / 2, Math.PI); g.add(spout);
+    withShadow(g, 2.2);
     return { g, parts: [['目盛り（mL）', [0.45, 4.6, 0]], ['液面（へこんだ下の面を読む）', [0.42, 3.05, 0]], ['台座', [0.9, 0.08, 0]]], focus: [2.8, 3.1] };
   },
   holepip() {
     const g = new THREE.Group();
-    const mat = glassMat({ opacity: 0.35 });
-    const prof = [[0.03, 0], [0.07, 0.4], [0.07, 1.6], [0.3, 1.9], [0.32, 2.6], [0.07, 2.9], [0.07, 5.3]];
-    const p = lathe(prof, mat); p.renderOrder = 2; g.add(p);
-    g.add(liquid([[0.05, 0.05], [0.06, 0.4], [0.06, 1.6], [0.28, 1.9], [0.3, 2.6], [0.06, 2.9], [0.06, 5]], 4.2, 0x6fb7e8, 0.02));
-    const mark = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.01, 6, 24), new THREE.MeshBasicMaterial({ color: 0x1b2433 })); mark.rotation.x = Math.PI / 2; mark.position.y = 4.2; g.add(mark);
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 18), solid(0xc23b3b, { shininess: 30 })); bulb.scale.set(1, 1.2, 1); bulb.position.y = 5.9; g.add(bulb);
-    return { g, parts: [['標線（ここに液面の底を合わせる）', [0.08, 4.2, 0]], ['ふくらみ', [0.32, 2.25, 0]], ['安全ピペッター', [0.42, 5.9, 0]]], focus: [3.1, 3.4] };
+    const inner = [[0.02, 0], [0.05, 0.4], [0.05, 1.6], [0.27, 1.9], [0.29, 2.6], [0.05, 2.9], [0.05, 5.3]];
+    g.add(shell(inner, 0.025));
+    g.add(liquid([[0.03, 0.05], [0.045, 0.4], [0.045, 1.6], [0.26, 1.9], [0.28, 2.6], [0.045, 2.9], [0.045, 5]], 4.2, 0x7fc0ea, 0.02));
+    const mark = new THREE.Mesh(new THREE.TorusGeometry(0.078, 0.008, 6, 32), new THREE.MeshBasicMaterial({ color: 0x1b2433 })); mark.rotation.x = Math.PI / 2; mark.position.y = 4.2; g.add(mark);
+    const label = textSprite('10 mL', 0.12); label.position.set(0, 2.25, 0.33); g.add(label);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.42, 28, 20), solid(0xb83232, { shininess: 25 })); bulb.scale.set(1, 1.2, 1); bulb.position.y = 6.0; g.add(bulb);
+    const neck = cyl(0.12, 0.14, 0.5, solid(0xa82c2c)); neck.position.y = 5.45; g.add(neck);
+    return { g, parts: [['標線（ここに液面の底を合わせる）', [0.08, 4.2, 0]], ['ふくらみ', [0.31, 2.25, 0]], ['安全ピペッター', [0.42, 6.0, 0]]], focus: [3.1, 3.4] };
   },
   burette() {
     const g = new THREE.Group();
-    g.add(makeStand(7.4, 6.2, 1.3));
+    g.add(makeStand(7.4, 6.2, 1.35));
     const t = new THREE.Group();
-    const prof = [[0.02, -0.5], [0.05, -0.2], [0.05, 0.3], [0.12, 0.4], [0.12, 6.4], [0.14, 6.45]];
-    const b = lathe(prof, glassMat({ opacity: 0.35 })); b.renderOrder = 2; t.add(b);
-    t.add(liquid([[0.04, -0.45], [0.04, 0.3], [0.11, 0.4], [0.11, 6.3]], 5.6, 0x6fb7e8, 0.02));
-    t.add(ticks(0.125, 0.8, 6.0, 50, 10, '#24303f', i => String(50 - i)));
-    const cock = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.08), solid(0x2b5fbf)); cock.position.y = 0.05; t.add(cock);
+    const inner = [[0.015, -0.5], [0.04, -0.2], [0.04, 0.3], [0.11, 0.42], [0.11, 6.4], [0.13, 6.46]];
+    t.add(shell(inner, 0.022));
+    t.add(liquid([[0.03, -0.45], [0.03, 0.3], [0.1, 0.42], [0.1, 6.3]], 5.6, 0x7fc0ea, 0.02));
+    t.add(ticks(0.133, 0.8, 6.0, 50, 10, '#24303f', i => String(50 - i)));
+    const cockBody = new THREE.Mesh(new THREE.SphereGeometry(0.11, 16, 12), glassMat({ opacity: 0.4 })); cockBody.position.y = 0.05; t.add(cockBody);
+    const cock = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.07, 0.09), solid(0x2b5fbf)); cock.position.y = 0.05; t.add(cock);
     t.position.set(0, 0.9, 0);
     g.add(t);
-    const fl = MODELS.erlen().g; fl.scale.setScalar(0.45); fl.position.y = 0.12; g.add(fl);
+    // ビュレットばさみ
+    const clamp = new THREE.Group();
+    [-1, 1].forEach(s => { const j = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.3, 0.06), solid(0x2f343b)); j.position.set(0, 0, s * 0.15); clamp.add(j); });
+    clamp.position.set(0, 6.2, 0); g.add(clamp);
+    const fl = MODELS.erlen().g; fl.scale.setScalar(0.45); fl.position.y = 0.16; g.add(fl);
     return { g, parts: [['目盛り（上が 0）', [0.13, 6.8, 0]], ['コック', [0.25, 0.95, 0]], ['先端', [0.02, 0.4, 0]], ['三角フラスコ', [0.5, 0.5, 0.3]]], focus: [3.6, 4.0] };
   },
   komagome() {
     const g = new THREE.Group();
-    const prof = [[0.03, 0], [0.08, 0.6], [0.12, 1.8], [0.14, 2.6], [0.16, 2.7]];
-    const p = lathe(prof, glassMat({ opacity: 0.35 })); p.renderOrder = 2; g.add(p);
-    g.add(ticks(0.13, 1.3, 2.4, 4, 2, '#24303f'));
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3, 24, 18), solid(0xd84b3c, { shininess: 30 })); bulb.scale.set(1, 1.5, 1); bulb.position.y = 3.1; g.add(bulb);
-    return { g, parts: [['ゴム球', [0.3, 3.2, 0]], ['目盛り', [0.13, 2.0, 0]], ['先端（上に向けない）', [0.03, 0.05, 0]]], focus: [1.6, 2.0] };
+    const inner = [[0.02, 0], [0.06, 0.6], [0.1, 1.8], [0.12, 2.6], [0.14, 2.7]];
+    g.add(shell(inner, 0.025));
+    g.add(ticks(0.135, 1.3, 2.4, 4, 2, '#24303f'));
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.3, 28, 20), solid(0xc8402f, { shininess: 25 })); bulb.scale.set(1, 1.5, 1); bulb.position.y = 3.15; g.add(bulb);
+    const collar = cyl(0.17, 0.19, 0.25, solid(0xb3392a)); collar.position.y = 2.72; g.add(collar);
+    return { g, parts: [['ゴム球', [0.3, 3.25, 0]], ['目盛り', [0.13, 2.0, 0]], ['先端（上に向けない）', [0.03, 0.05, 0]]], focus: [1.6, 2.0] };
   },
   dish() {
     const g = new THREE.Group();
-    const prof = [[0, 0.03], [0.5, 0.05], [1.0, 0.25], [1.35, 0.6], [1.45, 0.68]];
-    const d = lathe(prof, solid(0xf6f4ef, { side: THREE.DoubleSide, shininess: 90 })); g.add(d);
-    const salt = new THREE.Group();
-    for (let i = 0; i < 40; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), solid(0xffffff)); const a = Math.random() * 6.28, r = Math.random() * 0.6; c.position.set(Math.cos(a) * r, 0.1, Math.sin(a) * r); c.rotation.set(a, a * 2, 0); salt.add(c); }
-    g.add(salt);
-    const spout = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), solid(0xf6f4ef)); spout.position.set(1.44, 0.68, 0); g.add(spout);
-    g.position.y = 0.4;
-    return { g, parts: [['磁器（直接加熱できる）', [1.2, 1.0, 0]], ['出てきた結晶', [0, 0.55, 0]]], focus: [0.8, 1.9] };
+    const inner = [[0, 0.1], [0.5, 0.12], [1.0, 0.3], [1.33, 0.62], [1.4, 0.68]];
+    const porcelain = new THREE.MeshPhongMaterial({ color: 0xf7f5f0, shininess: 140, specular: 0xffffff, envMap: envMap(), combine: THREE.MixOperation, reflectivity: 0.15, side: THREE.DoubleSide });
+    g.add(shell(inner, 0.07, porcelain));
+    const foot = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.04, 8, 32), porcelain); foot.rotation.x = Math.PI / 2; foot.position.y = 0.05; g.add(foot);
+    for (let i = 0; i < 50; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), solid(0xffffff, { shininess: 120 })); const a = Math.random() * 6.28, r = Math.random() * 0.62; c.position.set(Math.cos(a) * r, 0.16 + r * 0.15, Math.sin(a) * r); c.rotation.set(a, a * 2, 0); g.add(c); }
+    const spout = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), porcelain); spout.position.set(1.45, 0.66, 0); g.add(spout);
+    g.position.y = 0.0;
+    withShadow(g, 3.2);
+    return { g, parts: [['磁器（直接加熱できる）', [1.2, 0.6, 0]], ['出てきた結晶', [0, 0.25, 0]]], focus: [0.5, 1.9] };
   },
   lamp() {
     const g = new THREE.Group();
-    const prof = [[0, 0.02], [1.0, 0.02], [1.15, 0.25], [1.2, 0.7], [1.0, 1.25], [0.45, 1.55], [0.32, 1.7]];
-    const body = lathe(prof, glassMat({ opacity: 0.3 })); body.renderOrder = 2; g.add(body);
-    const alc = liquid(prof.slice(0, 5), 0.9, 0xb9d9ff); g.add(alc);
-    const holder = cyl(0.32, 0.32, 0.22, solid(0xb0b5bc, { shininess: 90 })); holder.position.y = 1.78; g.add(holder);
-    const wickIn = cyl(0.08, 0.08, 1.6, solid(0xf2efe6)); wickIn.position.y = 1.0; g.add(wickIn);
-    const wick = cyl(0.08, 0.07, 0.25, solid(0xece6d6)); wick.position.y = 2.0; g.add(wick);
-    const capProf = [[0, 2.85], [0.2, 2.8], [0.42, 2.5], [0.44, 1.95], [0.47, 1.9]];
-    const cap = lathe(capProf, glassMat({ opacity: 0.35 })); cap.renderOrder = 3; g.add(cap);
-    const flame = makeFlame(); flame.g.position.y = 2.1; g.add(flame.g);
+    const prof = [[0, 0.06], [0.95, 0.06], [1.12, 0.22], [1.18, 0.62], [1.02, 1.18], [0.5, 1.5], [0.33, 1.62], [0.33, 1.72]];
+    g.add(shell(prof, 0.06, glassMat({ opacity: 0.22 })));
+    const alc = liquid(prof.slice(0, 5), 0.9, 0xc7e2ff); g.add(alc);
+    const holder = new THREE.Group();
+    const ring = cyl(0.38, 0.38, 0.06, metal(0xbfc4ca), 32); ring.position.y = 1.75; holder.add(ring);
+    const tubeM = cyl(0.12, 0.12, 0.32, metal(0xbfc4ca), 24); tubeM.position.y = 1.9; holder.add(tubeM);
+    g.add(holder);
+    const wickIn = cyl(0.075, 0.075, 1.7, solid(0xf0ebe0, { shininess: 5 })); wickIn.position.y = 1.0; g.add(wickIn);
+    const wick = cyl(0.085, 0.07, 0.25, solid(0xe9e2d0, { shininess: 5 })); wick.position.y = 2.05; g.add(wick);
+    const capInner = [[0, 2.78], [0.16, 2.75], [0.38, 2.5], [0.42, 2.0], [0.44, 1.94]];
+    const cap = shell(capInner, 0.04, glassMat({ opacity: 0.26 })); cap.renderOrder = 3; g.add(cap);
+    const flame = makeFlame(); flame.g.position.y = 2.16; g.add(flame.g);
+    withShadow(g, 3.0);
     return { g, alc, wick, cap, flame, prof,
-      parts: [['ふた', [0.44, 2.6, 0]], ['芯（約5 mm 出す）', [0.08, 2.1, 0]], ['芯おさえ', [0.32, 1.8, 0]], ['アルコール（8分目くらい）', [1.1, 0.8, 0]]], focus: [1.4, 2.2] };
+      parts: [['ふた', [0.44, 2.6, 0]], ['芯（約5 mm 出す）', [0.08, 2.15, 0]], ['芯おさえ', [0.38, 1.78, 0]], ['アルコール（8分目くらい）', [1.1, 0.8, 0]]], focus: [1.4, 2.2] };
   },
   burner() {
     const g = new THREE.Group();
-    const metal = solid(0x8a929c, { shininess: 90 }), dark = solid(0x3b4350);
-    const base = cyl(0.9, 1.0, 0.25, dark, 40); base.position.y = 0.12; g.add(base);
-    const inlet = cyl(0.08, 0.08, 1.3, metal); inlet.rotation.z = Math.PI / 2; inlet.position.set(0.9, 0.45, 0); g.add(inlet);
-    const hose = cyl(0.11, 0.11, 1.4, solid(0xd25b2a)); hose.rotation.z = Math.PI / 2; hose.position.set(2.1, 0.45, 0); g.add(hose);
-    const gasScrew = cyl(0.36, 0.36, 0.22, solid(0x2b5fbf), 12); gasScrew.position.y = 0.45; g.add(gasScrew);
-    const barrel = cyl(0.17, 0.17, 2.6, metal); barrel.position.y = 2.0; g.add(barrel);
-    const airScrew = cyl(0.28, 0.28, 0.4, solid(0xc0392b), 12); airScrew.position.y = 1.0; g.add(airScrew);
+    const chrome = metal(0xc9ced5, 0.5), dark = solid(0x2f353d, { shininess: 40 });
+    const base = lathe([[0, 0], [0.95, 0], [1.0, 0.06], [0.9, 0.22], [0.35, 0.3], [0, 0.3]], dark, 48); g.add(base);
+    // ガスの入口（ゴム管をさす所）
+    const inlet = cyl(0.07, 0.07, 1.3, chrome); inlet.rotation.z = Math.PI / 2; inlet.position.set(0.9, 0.48, 0); g.add(inlet);
+    for (let i = 0; i < 3; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.018, 6, 16), chrome); r.rotation.y = Math.PI / 2; r.position.set(1.35 + i * 0.1, 0.48, 0); g.add(r); }
+    const hose = cyl(0.12, 0.12, 1.5, solid(0xc9552a, { shininess: 30 })); hose.rotation.z = Math.PI / 2; hose.position.set(2.2, 0.48, 0); g.add(hose);
+    const gasScrew = knurl(0.34, 0.24, chrome, 32); gasScrew.position.y = 0.46; g.add(gasScrew);
+    const barrel = cyl(0.16, 0.16, 2.5, chrome, 32); barrel.position.y = 2.05; g.add(barrel);
+    const lip = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.025, 8, 32), chrome); lip.rotation.x = Math.PI / 2; lip.position.y = 3.3; g.add(lip);
+    const airScrew = knurl(0.26, 0.36, metal(0x9aa1aa, 0.4), 24); airScrew.position.y = 1.0; g.add(airScrew);
     const flame = makeFlame(); flame.g.position.y = 3.3; flame.g.scale.setScalar(1.6); g.add(flame.g);
     const cock = new THREE.Group();
-    const valve = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), dark); cock.add(valve);
-    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.6), solid(0xe0b100)); handle.position.y = 0.2; cock.add(handle);
-    cock.position.set(2.9, 0.45, 0); g.add(cock);
+    const pipe = cyl(0.09, 0.09, 0.9, chrome); pipe.position.y = 0.3; cock.add(pipe);
+    const valve = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 12), chrome); valve.position.y = 0.5; cock.add(valve);
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.6), solid(0xe0b100)); handle.position.y = 0.66; cock.add(handle);
+    cock.position.set(3.05, 0, 0); g.add(cock);
+    withShadow(g, 2.4);
     return { g, gasScrew, airScrew, flame, handle,
-      parts: [['空気調節ねじ（上）', [0.28, 1.05, 0]], ['ガス調節ねじ（下）', [0.36, 0.5, 0]], ['コック', [2.9, 0.7, 0]], ['ガス管', [2.1, 0.55, 0]], ['筒', [0.17, 2.6, 0]]], focus: [1.8, 2.6] };
+      parts: [['空気調節ねじ（上）', [0.26, 1.05, 0]], ['ガス調節ねじ（下）', [0.34, 0.5, 0]], ['コック', [3.05, 0.9, 0]], ['ゴム管', [2.2, 0.6, 0]], ['筒', [0.16, 2.6, 0]]], focus: [1.8, 2.6] };
   },
+};
+
+// ===== 実験の解説（目的・手順とそのわけ・まちがえやすい点・危険） =====
+const INFO = {
+  'p-burner': {
+    purpose: 'ガスバーナーは、実験で物を強く加熱するための器具。ガスは目に見えず、火のつけ方をまちがえると、ガスもれ・爆発的な燃え上がり・やけどにつながる。正しい順番を体で覚えるために練習する。',
+    steps: [
+      ['2つのねじが閉まっているか確かめる', 'ねじが開いたまま元栓を開けると、火をつける前にガスが出てたまり、点火した瞬間に大きな炎が上がる。'],
+      ['元栓 → コックの順に開く', 'ガスの通り道を、元（上流）から順に開ける。コックはバーナーの近くにあるので、何かあったときにすぐ閉められる。'],
+      ['マッチに火をつけ、筒の口の横から近づける', '先にガスを出すと、たまったガスに一気に火がつく。火を先に用意しておけば、出たガスにすぐ点火できる。'],
+      ['ガス調節ねじを少しずつ開いて点火する', '一気に開くと炎が急に大きくなり危険。'],
+      ['炎の高さを 10 cm くらいにする', '大きすぎると加熱する器具からはみ出して危険で、ガスもむだになる。'],
+      ['ガス調節ねじを押さえたまま、空気調節ねじを開いて青い炎にする', '2つのねじはいっしょに回りやすいので、下のねじを押さえる。空気（酸素）が十分だと完全燃焼して、高温の青い炎になり、すすも出ない。'],
+      ['消すときは 空気調節ねじ → ガス調節ねじ → コック → 元栓', 'つけたときの逆の順。先に空気を閉めると炎が安定し、炎が筒の中にもどる（逆火）のを防げる。'],
+    ],
+    mistakes: ['上のねじ（空気）と下のねじ（ガス）を逆に覚えてしまう。', '空気調節ねじだけを回したつもりで、ガス調節ねじまで回してしまう。', '炎が赤い（黄色い）まま加熱して、器具がすすで黒くなる。', 'ガスを出しすぎて、ゴーッと音を立てる不安定な炎にする。', '空気を入れすぎて、炎が筒から浮き上がって消える。'],
+    danger: ['ガスのにおいがしたら、火を使わずにすぐ元栓を閉め、窓を開けて換気し、先生に知らせる。', 'ゴム管にひび割れがないか、しっかりはまっているかを使う前に確かめる。', '髪の長い人は結ぶ。ノートやプリントなど燃えやすいものを近くに置かない。', '火を消したあとも筒はとても熱い。すぐにさわらない。'],
+  },
+  'p-lamp': {
+    purpose: 'アルコールランプは、おだやかな炎で加熱する器具。中のアルコールは気化しやすく燃えやすいので、扱いをまちがえるとランプの中に引火して破裂・火災になる。安全なつけ方・消し方を身につける。',
+    steps: [
+      ['ひび・欠けがないか確かめ、アルコールを8分目くらいにする', 'アルコールが少ないと、容器の中の空間に気化したアルコールと空気がまざってたまり、引火すると爆発する。多すぎるとあふれて危険。'],
+      ['芯を 5 mm くらい出す', '長いと炎が大きくなりすぎ、短いと火がつきにくい。'],
+      ['マッチの火を、横から芯に近づける', '炎は上にのびるので、真上から近づけると手をやけどしやすい。'],
+      ['使い終わったら、ふたを斜め横からかぶせて消す', 'ふたで空気（酸素）をさえぎって火を消す。真上からかぶせると炎が手にかかる。'],
+      ['火が消えたら一度ふたをとって、もう一度ふたをする', 'ふたの中の空気が冷えて縮むと、ふたがとれなくなる。一度とって冷ますのを防ぐ。ふたはアルコールの蒸発も防ぐので、必ずしておく。'],
+    ],
+    mistakes: ['ふたを真上から押しつける。', '火がついたまま持ち歩く（必ず消してから運ぶ）。', 'アルコールが減ったのに、そのまま使い続ける。'],
+    danger: ['息で吹き消すと、炎が芯を伝って中のアルコールに引火することがある。', 'ランプからランプへ火をうつすと、アルコールがこぼれて火事になる。', '火がついたままアルコールを足さない。火を消して冷めてから、ろうとを使って入れる。', '倒してアルコールに火がついたら、あわてずにぬれぞうきんや砂をかぶせて消し、先生に知らせる。'],
+  },
+  'p-cylinder': {
+    purpose: '液体の体積を正確にはかるため。水溶液の濃さや、反応させる量を決める実験の基本になる。読み方をまちがえると、実験の結果がずれてしまう。',
+    steps: [
+      ['水平な机の上に置く', '傾いていると液面が斜めになり、正しく読めない。手で持ち上げて読むのもだめ。'],
+      ['目的の量の少し手前まで入れ、最後はこまごめピペットで少しずつ合わせる', '一気に注ぐと入れすぎてしまう。'],
+      ['目の高さを液面に合わせる（真横から見る）', '見る角度がずれると、目盛りがずれて見える（視差）。上から見ると大きく、下から見ると小さく読んでしまう。'],
+      ['液面のへこんだ下の面（メニスカスの底）を読む', '水はガラスにぬれて、まわりが少し盛り上がる。だから「底」を読むと決められている。'],
+      ['最小目盛りの 1/10 まで目分量で読む', '1けた多く読むことで、より正確な値になる（1 mL 目盛りなら 0.1 mL まで）。'],
+    ],
+    mistakes: ['1目盛りが何 mL かを確かめずに読む（100 mL 用は 1 mL、10 mL 用は 0.2 mL など、器具によってちがう）。', '液面の上のふち（盛り上がった所）を読む。', '最後のけたを読まずに「45 mL」と答える（「45.0 mL」と読む）。'],
+    danger: ['加熱したり、熱い液を入れたりしない（目盛りがくるい、割れることもある）。', '背が高くて倒れやすいので、机の端に置かない。使い終わったら横に寝かせず立てておく。'],
+  },
+  'p-filter': {
+    purpose: '液体と、液体に溶けていない固体を分ける。たとえば、泥水から泥を取りのぞいたり、反応でできた沈殿を取り出したりする。',
+    steps: [
+      ['ろ紙を4つ折りにして、円すいの形に開く', '片側が3枚、反対側が1枚になる。3枚の側は丈夫になる。'],
+      ['ろうとにはめ、少量の水でぬらしてぴったり密着させる', 'すき間がなくなり、液がろ紙を通ってなめらかに流れる（ろ過が速くなる）。'],
+      ['ろうとの足のとがった方を、ビーカーの内側のかべにつける', '液がかべを伝わって静かに流れ、はねない。足の中に液がつながるので、吸い出される力で速く落ちる。'],
+      ['液はガラス棒を伝わらせて注ぐ。棒の先はろ紙の3枚重なった所にあてる', '液がはねたり、こぼれたりしない。3枚の所なら棒が当たっても破れにくい。'],
+      ['液はろ紙の8分目まで', 'ふちを越えると、ろ紙とろうとのすき間から液がもれ、固体がまざってしまう。'],
+    ],
+    mistakes: ['ガラス棒の先をろ紙の1枚の所にあてて、ろ紙を破る。', 'ろうとの先がビーカーのかべから離れている。', '一度にたくさん注いで、ろ紙からあふれさせる。', 'ろ紙をぬらさず、すき間があいたまま始める。'],
+    danger: ['酸や熱い液をろ過するときは、保護めがねをかける。', 'ガラス器具にひびや欠けがないか確かめる。スタンドがぐらつかないように置く。'],
+  },
+  'p-tube': {
+    purpose: '少量の物質を加熱して、気体の発生や色の変化などを観察する。量が少ないので、安全に、すばやく試すことができる。',
+    steps: [
+      ['液は試験管の 1/4〜1/3 まで入れる', '多いと、沸騰したときに液があふれ出る。'],
+      ['試験管ばさみで、試験管の口の近く（上の方）をはさむ', '炎から遠いので、ばさみが燃えたり熱くなったりしない。加熱する部分もよく見える。'],
+      ['口を人のいない方に向け、斜めに傾ける', '液が急に飛び出しても人にかからない。傾けると液面が広くなり、泡が抜けやすい。'],
+      ['外炎（いちばん温度の高い所）で、ふりながら全体を温める', '1か所だけを加熱すると、急に激しく沸騰して（突沸）液が飛ぶ。ふると温度が均一になる。'],
+      ['固体を加熱するときは、口を少し下げる', '加熱で出た水が加熱部分に流れもどると、急に冷えて試験管が割れる。口を下げればそれを防げる。'],
+    ],
+    mistakes: ['試験管の底だけを炎に入れたまま止めておく。', '加熱中に試験管の口をのぞきこむ。', 'ばさみで底の近くをはさむ。'],
+    danger: ['突沸で熱い液が飛び出すことがあるので、保護めがねをかけ、口を絶対に人に向けない。', '加熱したあとの試験管はとても熱い。試験管立てにもどして冷ます。', '加熱した試験管を、すぐに水につけない（急に冷えて割れる）。'],
+  },
+};
+// 器具の形のひみつ（なぜその形？）
+const WHY = {
+  beaker: '口が広く、液を入れたり混ぜたりしやすい。注ぎ口があるので、液をこぼさずに注げる。',
+  erlen: '底が広くて安定し、口がせまいので、ふり混ぜても液がこぼれにくく、蒸発もしにくい。',
+  roundflask: '球の形は力が全体に均等にかかるので、加熱しても割れにくい。',
+  tube: '細くて少量で済むので、すぐに温まり、薬品も少なくて安全。',
+  funnel: '円すいの形でろ紙を支え、細い足で液をビーカーのかべに導く。足の先が斜めなのは、かべにつけやすく液が伝わりやすいから。',
+  cylinder: '細長いので、少しの体積の変化でも液面の高さが大きく変わり、細かく読める。',
+  holepip: '標線のある部分がとても細いので、液面が少しずれても体積の差が小さく、正確な体積がとれる。',
+  burette: '細長くて目盛りが細かく、コックで1滴ずつ出せるので、滴下した体積を正確にはかれる。',
+  komagome: 'ゴム球の力で少量の液を吸ったり出したりでき、目盛りでおよその量もわかる。',
+  lamp: '炎がおだやかで扱いやすく、ガスがなくても使える。ただし温度はガスバーナーより低い。',
+  burner: '空気をまぜて完全燃焼させるので、高温の炎（約1500 ℃）が得られる。炎の外側（外炎）がいちばん熱い。',
+  dish: '磁器は熱に強く、浅くて広いので液の表面積が大きく、水が速く蒸発する。',
 };
 
 // ===== 器具のデータ =====
@@ -506,8 +715,14 @@ function initThree() {
     scene.add(new THREE.HemisphereLight(0xffffff, 0x8a96a8, 0.55));
     scene.add(new THREE.AmbientLight(0xffffff, 0.18));
     // 実験台
-    const bench = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 0.2, 64), new THREE.MeshPhongMaterial({ color: 0x2f3a44, shininess: 20 }));
-    bench.position.y = -0.1; scene.add(bench);
+    // 実験台（黒い天板）
+    const tc = document.createElement('canvas'); tc.width = tc.height = 256;
+    const tg = tc.getContext('2d'); tg.fillStyle = '#323a42'; tg.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 2200; i++) { tg.fillStyle = `rgba(255,255,255,${Math.random() * 0.05})`; tg.fillRect(Math.random() * 256, Math.random() * 256, 1.5, 1.5); }
+    const tex = new THREE.CanvasTexture(tc); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(4, 3);
+    const bench = new THREE.Mesh(new THREE.BoxGeometry(18, 0.4, 11), new THREE.MeshPhongMaterial({ map: tex, shininess: 60, specular: 0x333333, envMap: envMap(), combine: THREE.MixOperation, reflectivity: 0.06 }));
+    bench.position.y = -0.2; scene.add(bench);
+    const edge = new THREE.Mesh(new THREE.BoxGeometry(18.1, 0.12, 11.1), new THREE.MeshPhongMaterial({ color: 0x1f252b })); edge.position.y = -0.05; scene.add(edge);
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; controls.dampingFactor = 0.09; controls.minDistance = 1.5; controls.maxDistance = 40;
     controls.maxPolarAngle = Math.PI * 0.55;
@@ -535,7 +750,7 @@ function clearScene() {
   const g = R.group;
   while (g.children.length) {
     const o = g.children.pop();
-    o.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) { if (x.material.map) x.material.map.dispose(); x.material.dispose(); } });
+    o.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) { if (x.material.map && !x.userData.keepMap) x.material.map.dispose(); x.material.dispose(); } });
   }
   $('labels').innerHTML = '';
   R.labels = []; R.tick = null;
@@ -607,6 +822,7 @@ function seeCardHTML(it) {
     <div class="tabs" role="tablist">${[['use', '何に使う？'], ['how', '使い方'], ['caution', '注意']].map(([k, n]) => `<button type="button" role="tab" data-tab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div><div class="body">`;
   if (tab === 'use') {
     h += `<p class="use">${esc(it.use)}</p>`;
+    if (WHY[it.id]) h += `<div class="purpose"><b>この形のわけ</b>${esc(WHY[it.id])}</div>`;
     h += `<p class="note" style="margin-bottom:4px">部分の名前</p><div class="parts">${MODELS[it.model]().parts.map(p => `<span>${esc(p[0])}</span>`).join('')}</div>`;
   } else if (tab === 'how') h += `<ol class="how">${it.how.map(s => `<li>${esc(s)}</li>`).join('')}</ol>`;
   else h += `<ul class="caution">${it.caution.map(([k, s]) => `<li><b class="${k}">${k === 'o' ? '○' : '×'}</b><span>${esc(s)}</span></li>`).join('')}</ul>`;
@@ -702,7 +918,7 @@ PR['p-lamp'] = {
       m.cap.position.set((1 - s.capT) * 1.8, (1 - s.capT) * 0.6, 0);
       m.cap.rotation.z = -(1 - s.capT) * 0.5;
       m.wick.scale.y = 0.4 + s.wick / 5 * 0.6; m.wick.position.y = 1.9 + 0.1 * (s.wick / 5);
-      m.flame.lit = s.lit && s.capT < 0.3; m.flame.size = 0.25 + s.wick / 5 * 0.35; m.flame.air = 0.45;
+      m.flame.lit = s.lit && s.capT < 0.3; m.flame.size = 0.25 + s.wick / 5 * 0.35; m.flame.air = 0.2;
       m.flame.update(t);
       match.g.visible = s.matchOn; match.fl.update(t);
     };
@@ -808,40 +1024,55 @@ PR['p-cylinder'] = {
 PR['p-filter'] = {
   init() {
     const g = R.group;
-    g.add(makeStand(5.2, 3.4, 1.5));
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.04, 8, 32), solid(0x6f7782)); ring.rotation.x = Math.PI / 2; ring.position.set(0, 3.4, 0); g.add(ring);
-    const fun = MODELS.funnel().g; fun.position.set(0, 2.4, 0); fun.scale.setScalar(0.75); g.add(fun);
-    const bk = MODELS.beaker().g; bk.scale.setScalar(0.62); g.add(bk);
+    g.add(makeStand(5.4, 3.45, 1.55));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.045, 10, 40), metal(0x8f969f, 0.35)); ring.rotation.x = Math.PI / 2; ring.position.set(0.2, 3.45, 0); g.add(ring);
+    const fun = MODELS.funnel().g; fun.scale.setScalar(0.75); g.add(fun);
+    const bk = MODELS.beaker().g; bk.scale.setScalar(0.62); bk.position.x = 0.2; g.add(bk);
     bk.children.forEach(c => { if (c.renderOrder === 1) c.visible = false; });
-    const rod = cyl(0.04, 0.04, 2.6, glassMat({ opacity: 0.6 })); g.add(rod);
-    const pour = MODELS.beaker().g; pour.scale.setScalar(0.4); g.add(pour);
+    const filtrate = liquid([[0, 0.1], [1.0, 0.1], [1.08, 0.17], [1.1, 0.3], [1.1, 2.8]], 0.25, 0x9fd3f2); filtrate.scale.setScalar(0.62); filtrate.position.x = 0.2; g.add(filtrate);
+    // 注ぐビーカー（傾けて持つ）
+    const pour = MODELS.beaker().g; pour.scale.setScalar(0.42);
+    pour.children.forEach(c => { if (c.renderOrder === 1) c.visible = false; });
+    const muddy = liquid([[0, 0.1], [1.0, 0.1], [1.1, 0.3], [1.1, 2.8]], 0.9, 0x8a7a5a); pour.add(muddy);
+    g.add(pour);
+    // ガラス棒
+    const rod = glassRod(2.5, 0.045); g.add(rod);
     const drops = [];
-    for (let i = 0; i < 14; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), liquidMat(0x6fb7e8, 0.8)); d.visible = false; g.add(d); drops.push(d); }
-    const s = { fun, rod, pour, drops, wet: false, wall: false, useRod: false, fill: 0.8, pouring: 0, done: false };
+    for (let i = 0; i < 16; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 8), liquidMat(0x8fb7cf, 0.85)); d.visible = false; g.add(d); drops.push(d); }
+    const s = { fun, rod, pour, drops, filtrate, wet: false, wall: false, useRod: false, fill: 0.8, pouring: 0, done: false };
     state.pr = s;
-    const L1 = addLabel('ろうとの先', () => new THREE.Vector3(s.fun.position.x, 1.2, 0)); L1.part = true; L1.el.hidden = !state.parts;
-    const L2 = addLabel('ガラス棒', () => new THREE.Vector3(-0.6, 4.6, 0.2)); L2.part = true; L2.el.hidden = !state.parts;
+    const rodTop = new THREE.Vector3(-0.55, 5.05, 0.12), rodBot = new THREE.Vector3(0.12, 2.92, 0.12);
+    const L1 = addLabel('ろうとの先', () => new THREE.Vector3(s.fun.position.x, 0.75, 0)); L1.part = true; L1.el.hidden = !state.parts;
+    const L2 = addLabel('ガラス棒', () => rodTop.clone().lerp(rodBot, 0.35)); L2.part = true;
+    const L3 = addLabel('注ぐビーカー', () => new THREE.Vector3(-1.3, 5.6, 0.1)); L3.part = true; L3.el.hidden = !state.parts;
+    const L4 = addLabel('ろ紙', () => new THREE.Vector3(0.65, 3.45, 0.2)); L4.part = true; L4.el.hidden = !state.parts;
+    s.rodLabel = L2;
     R.tick = t => {
-      fun.position.x = s.wall ? 0.38 : 0;
-      rod.visible = s.useRod;
-      rod.position.set(-0.25, 4.0, 0.1); rod.rotation.z = 0.35;
-      pour.position.set(-1.0, 4.9, 0.1); pour.rotation.z = -1.15;
+      fun.position.set(s.wall ? 0.48 : 0.2, 2.4 - 1.7 * 0.75 + 1.7 * 0.75, 0);
+      fun.position.y = 2.42;
+      rod.visible = s.useRod; L2.el.hidden = !s.useRod || !state.parts;
+      placeBetween(rod, rodTop, rodBot);
+      // 注ぎ口がガラス棒の上の方に来るように傾ける
+      pour.rotation.set(0, 0, -1.2); pour.position.set(-1.35 + (s.useRod ? 0 : 0.35), 4.75, 0.12);
       const p = s.pouring > 0 ? (performance.now() - s.pouring) / 1000 : -1;
+      const fill = p < 0 ? 0 : Math.min(1, p / 3.5);
+      filtrate.scale.set(0.62, 0.62 * (1 + fill * 2.2), 0.62);
       drops.forEach((d, i) => {
-        if (p < 0 || p > 4) { d.visible = false; return; }
-        const k = ((p * 1.6 + i / drops.length) % 1);
+        if (p < 0 || p > 3.6) { d.visible = false; return; }
+        const k = ((p * 1.4 + i / drops.length) % 1);
         d.visible = true;
-        if (k < 0.5) {
-          const q = k / 0.5;
-          if (s.useRod) d.position.set(-0.7 + 0.5 * q, 5.0 - 1.3 * q, 0.1);
-          else d.position.set(-0.7 + 0.7 * q, 5.0 - 1.4 * q + (s.splash ? Math.sin(q * 9) * 0.3 : 0), (s.splash ? (i % 3 - 1) * q * 0.6 : 0.1));
+        if (k < 0.45) {
+          const q = k / 0.45;
+          if (s.useRod) d.position.copy(rodTop).lerp(rodBot, q).add(new THREE.Vector3(0.05, 0, 0));
+          else d.position.set(-0.6 + 0.85 * q, 4.95 - 1.9 * q + Math.sin(q * 9) * 0.15, 0.1 + (i % 3 - 1) * q * 0.5);
         } else {
-          const q = (k - 0.5) / 0.5;
-          d.position.set(fun.position.x + (s.wall ? 0.3 * q : 0), 1.25 - 0.9 * q, s.wall || q < 0.5 ? 0 : (i % 2 ? 0.3 : -0.3) * (q - 0.5));
+          const q = (k - 0.45) / 0.55, x0 = fun.position.x;
+          if (s.wall) d.position.set(x0 + 0.03 + 0.55 * Math.min(1, q * 1.4) * 0.5, 1.25 - 1.05 * q, 0);
+          else d.position.set(x0, 1.25 - 1.05 * q, q > 0.55 ? (i % 2 ? 0.25 : -0.25) * (q - 0.55) * 2 : 0);
         }
       });
     };
-    frame(2.6, 3.0);
+    frame(2.7, 3.2);
   },
   html() {
     const s = state.pr;
@@ -939,9 +1170,17 @@ function showPractice(id) {
   renderCard();
 }
 function practiceCardHTML(p) {
-  const it = ITEMS.find(x => x.id === p.item);
-  return `<div class="card-head"><div class="eyebrow">操作の練習${done.has(p.id) ? ' ・ ✓ クリア' : ''}</div><h2 class="name">${esc(p.name)}</h2></div><div class="body">${PR[p.id].html()}
-    <p style="margin-top:10px"><button type="button" class="btn" data-see="${it.id}">「${esc(it.name)}」の説明を見る</button></p></div>`;
+  const it = ITEMS.find(x => x.id === p.item), info = INFO[p.id], tab = state.ptab || 'op';
+  let h = `<div class="card-head"><div class="eyebrow">操作の練習${done.has(p.id) ? ' ・ ✓ クリア' : ''}</div><h2 class="name">${esc(p.name)}</h2></div>
+    <div class="tabs" role="tablist">${[['op', 'やってみる'], ['why', '手順のわけ'], ['miss', 'ミスしやすい点'], ['danger', '危険']].map(([k, n]) => `<button type="button" role="tab" data-ptab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div><div class="body">`;
+  if (tab === 'op') h += PR[p.id].html();
+  else if (tab === 'why') {
+    h += `<div class="purpose"><b>なぜこの実験をするの？</b>${esc(info.purpose)}</div><ol class="whysteps">${info.steps.map(([st, why]) => `<li><b>${esc(st)}</b><span>なぜ？ ${esc(why)}</span></li>`).join('')}</ol>`;
+  } else if (tab === 'miss') h += `<ul class="caution">${info.mistakes.map(x => `<li><b class="x">!</b><span>${esc(x)}</span></li>`).join('')}</ul>`;
+  else h += `<ul class="caution danger">${info.danger.map(x => `<li><b class="x">⚠</b><span>${esc(x)}</span></li>`).join('')}</ul>`;
+  if (tab !== 'op') h += `<p style="margin-top:12px"><button type="button" class="btn main" data-ptab="op">やってみる →</button></p>`;
+  h += `<p style="margin-top:10px"><button type="button" class="btn" data-see="${it.id}">「${esc(it.name)}」の説明を見る</button></p></div>`;
+  return h;
 }
 
 // ===== クイズ =====
@@ -1052,7 +1291,7 @@ function setMode(mode) {
   else { state.quiz = null; state.id = null; renderLib(); if (R) { clearScene(); const m = MODELS.burner(); R.group.add(m.g); frame(m.focus[0], m.focus[1]); } renderCard(); }
 }
 function go(mode, id) {
-  state.mode = mode; state.id = id; state.tab = 'use'; state.quiz = null;
+  state.mode = mode; state.id = id; state.tab = 'use'; state.ptab = 'op'; state.quiz = null;
   document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === mode)));
   renderLib();
   if (!R) { renderCard(); return; }
@@ -1071,6 +1310,8 @@ document.addEventListener('click', ev => {
   if (gt) { go('practice', gt.dataset.goto); return; }
   const qz = t.closest('[data-quiz]');
   if (qz) { state.mode = 'quiz'; document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === 'quiz'))); quizStart(qz.dataset.quiz); renderLib(); return; }
+  const ptab = t.closest('[data-ptab]');
+  if (ptab) { state.ptab = ptab.dataset.ptab; renderCard(); const b = $('card').querySelector('.body'); if (b) b.scrollTop = 0; return; }
   const tab = t.closest('[data-tab]');
   if (tab) { state.tab = tab.dataset.tab; renderCard(); return; }
   const pk = t.closest('[data-pick]');
