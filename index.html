@@ -720,6 +720,17 @@ body.sec-atom .app { grid-template-columns: 620px minmax(0, 1fr); }
   .pt-legend { display: none; }
 }
 @media (max-width: 760px) { .lbl-atom { font-size: 15px; } .lbl-atom.sm { font-size: 12.5px; } }
+/* 表示の大きさ（Aa） */
+.ov-tr { z-index: 5; }
+.sizewrap { position: relative; }
+.ibtn.aa { font-family: var(--font-display); font-weight: 800; font-size: 15px; letter-spacing: -.02em; }
+.ibtn.aa[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+.sizepanel { position: absolute; top: 42px; right: 0; width: 260px; background: var(--panel); border: 1.5px solid var(--ink); border-radius: 4px; padding: 10px 12px; box-shadow: 3px 3px 0 var(--ink); display: grid; gap: 8px; }
+.sp-h { font-weight: 700; font-size: 13px; }
+.sp-row { display: grid; grid-template-columns: 5.6em minmax(0, 1fr) 3.2em; align-items: center; gap: 8px; font-size: 13px; }
+.sp-row input { width: 100%; accent-color: var(--accent); }
+.sp-row b { font-family: var(--font-data); font-size: 12.5px; text-align: right; }
+.card-head, .card-body, .card > .ctabs, .card > .ls-tabs { zoom: var(--card-zoom, 1); }
 </style>
 </head>
 <body>
@@ -785,6 +796,16 @@ body.sec-atom .app { grid-template-columns: 620px minmax(0, 1fr); }
       </div>
     </div>
     <div class="ov ov-tr">
+      <div class="sizewrap">
+        <button type="button" class="ibtn aa" id="btnSize" title="文字と3Dの大きさ" aria-label="文字と3Dの大きさ" aria-expanded="false" aria-controls="sizePanel">Aa</button>
+        <div class="sizepanel" id="sizePanel" hidden>
+          <div class="sp-h">表示の大きさ</div>
+          <label class="sp-row"><span>3Dの文字</span><input type="range" id="szLbl" min="0.8" max="2.4" step="0.1"><b id="szLblV"></b></label>
+          <label class="sp-row"><span>3Dの大きさ</span><input type="range" id="szZoom" min="0.6" max="2.5" step="0.1"><b id="szZoomV"></b></label>
+          <label class="sp-row"><span>説明の文字</span><input type="range" id="szCard" min="0.9" max="1.6" step="0.05"><b id="szCardV"></b></label>
+          <button type="button" class="pbtn ghost" id="szReset">もとの大きさにもどす</button>
+        </div>
+      </div>
       <button type="button" class="ibtn" id="btnReset" title="向きをもどす" aria-label="向きをもどす">
         <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
       </button>
@@ -5171,6 +5192,17 @@ try {
   const saved = JSON.parse(localStorage.getItem(PREF_KEY) || 'null');
   if (saved) { Object.assign(state.show, saved.show || {}); if (saved.mode) state.mode = saved.mode; }
 } catch (e) { /* 保存できない環境でも動く */ }
+// 表示の大きさ（3Dの文字・3Dの大きさ・説明の文字）。端末ごとに覚えておく
+const SIZE_KEY = 'molecule-lab:sizes';
+const sizes = { lbl: 1, zoom: 1, card: 1 };
+try { Object.assign(sizes, JSON.parse(localStorage.getItem(SIZE_KEY) || '{}')); } catch (e) { /* 無視 */ }
+function applySizes(save) {
+  document.documentElement.style.setProperty('--card-zoom', sizes.card);
+  if (typeof R !== 'undefined' && R) { R.camera.zoom = sizes.zoom; R.camera.updateProjectionMatrix(); }
+  const pct = v => Math.round(v * 100) + '%';
+  [['szLbl', 'lbl'], ['szZoom', 'zoom'], ['szCard', 'card']].forEach(([id, k]) => { const el = document.getElementById(id); if (el) { el.value = sizes[k]; document.getElementById(id + 'V').textContent = pct(sizes[k]); } });
+  if (save) try { localStorage.setItem(SIZE_KEY, JSON.stringify(sizes)); } catch (e) { /* 無視 */ }
+}
 function savePrefs() {
   try { localStorage.setItem(PREF_KEY, JSON.stringify({ show: state.show, mode: state.mode })); } catch (e) { /* 無視 */ }
 }
@@ -5253,6 +5285,7 @@ function onResize() {
   const sp = cardSpace();
   if (sp.x || sp.y) R.camera.setViewOffset(w, h, sp.x / 2, (sp.y - sp.top) / 2, w, h);
   else R.camera.clearViewOffset();
+  R.camera.zoom = sizes.zoom;
   R.camera.updateProjectionMatrix();
 }
 
@@ -6123,7 +6156,7 @@ function updateLabels() {
     tmpV.copy(v).applyMatrix4(R.group.matrixWorld).project(R.camera);
     if (tmpV.z > 1) { L.el.style.visibility = 'hidden'; return; }
     L.el.style.visibility = '';
-    L.el.style.transform = `translate(${((tmpV.x + 1) / 2 * w).toFixed(1)}px, ${((1 - tmpV.y) / 2 * h).toFixed(1)}px) translate(-50%, -50%)`;
+    L.el.style.transform = `translate(${((tmpV.x + 1) / 2 * w).toFixed(1)}px, ${((1 - tmpV.y) / 2 * h).toFixed(1)}px) translate(-50%, -50%)` + (sizes.lbl !== 1 ? ` scale(${sizes.lbl})` : '');
     if (L.atom >= 0) {
       // 手前の原子にかくれた原子のラベルは出さない
       const target = view.atoms[L.atom].position;
@@ -6942,6 +6975,14 @@ function bindUI() {
     }
   });
   $('btnReset').addEventListener('click', () => { if (R && state.entry) fitCamera(); });
+  const sizeBtn = $('btnSize'), sizePanel = $('sizePanel');
+  const openSize = on => { sizePanel.hidden = !on; sizeBtn.setAttribute('aria-expanded', String(on)); };
+  sizeBtn.addEventListener('click', e => { e.stopPropagation(); openSize(sizePanel.hidden); });
+  document.addEventListener('pointerdown', e => { if (!sizePanel.hidden && !e.target.closest('.sizewrap')) openSize(false); }, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !sizePanel.hidden) { openSize(false); sizeBtn.focus(); } });
+  [['szLbl', 'lbl'], ['szZoom', 'zoom'], ['szCard', 'card']].forEach(([id, k]) => $(id).addEventListener('input', e => { sizes[k] = +e.target.value; applySizes(true); }));
+  $('szReset').addEventListener('click', () => { Object.assign(sizes, { lbl: 1, zoom: 1, card: 1 }); applySizes(true); });
+  applySizes(false);
   $('btnFull').addEventListener('click', () => {
     const w = $('stageWrap');
     const done = () => setTimeout(() => R && state.entry && fitCamera(), 150);
