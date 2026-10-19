@@ -123,13 +123,13 @@ sub, sup { font-size: 0.68em; line-height: 0; }
 #stage canvas { display: block; width: 100%; height: 100%; }
 .labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .lbl { position: absolute; left: 0; top: 0; white-space: nowrap; font-family: var(--font-data); font-weight: 600; will-change: transform; }
-.lbl-atom { font-size: 14px; color: #111; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 5px #fff; }
-.lbl-atom.sm { font-size: 11px; }
+.lbl-atom { font-size: 17px; font-weight: 700; color: #111; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 5px #fff, 0 0 2px #fff; }
+.lbl-atom.sm { font-size: 14px; }
 .lbl-angle { font-size: 13px; color: var(--accent-ink); background: var(--accent); padding: 0 6px; border-radius: 6px; }
 .lbl-mu { font-size: 12px; color: var(--accent-ink); background: var(--warm); padding: 1px 7px; border-radius: 6px; font-family: var(--font-body); }
 .lbl-shell { font-size: 12px; font-weight: 500; color: var(--ink); background: var(--glass); border: 1px solid var(--line); padding: 0 7px; border-radius: 999px; font-family: var(--font-body); }
 .lbl-shell b { font-family: var(--font-data); }
-.lbl-nuc { font-size: 11px; text-align: center; line-height: 1.2; color: var(--ink); font-family: var(--font-body); font-weight: 500; }
+.lbl-nuc { font-size: 13px; text-align: center; line-height: 1.2; color: var(--ink); font-family: var(--font-body); font-weight: 500; }
 .lbl-ion { font-size: 22px; color: var(--ink); }
 .lbl-ion.pos { color: var(--red); }
 .lbl-ion.neg { color: var(--blue); }
@@ -680,11 +680,11 @@ h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display)
 @media (max-width: 380px) { .brand { display: none; } }
 
 /* ===== 周期表（全118元素） ===== */
-body.sec-atom .app { grid-template-columns: 520px minmax(0, 1fr); }
+body.sec-atom .app { grid-template-columns: 620px minmax(0, 1fr); }
 .grid.ptable { display: grid; grid-template-columns: 16px repeat(18, minmax(0, 1fr)); grid-template-rows: 14px repeat(7, auto) 6px auto auto; gap: 2px; align-content: start; }
 .grid.ptable .pt { aspect-ratio: 1; width: auto; height: auto; min-width: 0; padding: 0; border: 1px solid var(--line); border-left: 3px solid var(--cc, var(--line)); border-radius: 2px; background: var(--panel); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
-.grid.ptable .pt b { font-family: var(--font-data); font-size: 11.5px; font-weight: 600; }
-.grid.ptable .pt .z { font-size: 7.5px; color: var(--muted); }
+.grid.ptable .pt b { font-family: var(--font-data); font-size: 15px; font-weight: 700; }
+.grid.ptable .pt .z { font-size: 9px; color: var(--muted); }
 .grid.ptable .pt.kiso { border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px; border-top-color: var(--ink); border-right-color: var(--ink); border-bottom-color: var(--ink); }
 .grid.ptable .pt[aria-current="true"] { background: var(--ink); color: var(--panel); }
 .grid.ptable .pt[aria-current="true"] .z { color: var(--panel); }
@@ -710,15 +710,16 @@ body.sec-atom .app { grid-template-columns: 520px minmax(0, 1fr); }
 .el-tags span { border: 1px solid var(--line); padding: 1px 7px; border-radius: 3px; }
 .el-tags .el-cat { border-left: 4px solid var(--c); font-weight: 700; }
 .note.orb { font-family: var(--font-data); font-size: 12px; word-break: break-word; }
-@media (max-width: 1180px) { body.sec-atom .app { grid-template-columns: 440px minmax(0, 1fr); } }
+@media (max-width: 1180px) { body.sec-atom .app { grid-template-columns: 500px minmax(0, 1fr); } .grid.ptable .pt b { font-size: 13px; } .grid.ptable .pt .z { font-size: 8px; } }
 @media (max-width: 900px) {
-  .grid.ptable:not([hidden]) { display: grid !important; grid-template-columns: 12px repeat(18, 21px) !important; grid-template-rows: 10px repeat(7, 21px) 3px 21px 21px !important; grid-auto-rows: auto; overflow: auto; max-height: 34vh; gap: 1.5px !important; }
-  .grid.ptable .pt { width: 21px !important; height: 21px !important; aspect-ratio: auto; border-left-width: 2px; }
+  .grid.ptable:not([hidden]) { display: grid !important; grid-template-columns: 12px repeat(18, 30px) !important; grid-template-rows: 12px repeat(7, 30px) 3px 30px 30px !important; grid-auto-rows: auto; overflow: auto; max-height: 34vh; gap: 1.5px !important; }
+  .grid.ptable .pt { width: 30px !important; height: 30px !important; aspect-ratio: auto; border-left-width: 2px; }
   .grid.ptable .pt .z { display: none; }
-  .grid.ptable .pt b { font-size: 9.5px; }
+  .grid.ptable .pt b { font-size: 14px; }
   .pt-p.lan { font-size: 0; }
   .pt-legend { display: none; }
 }
+@media (max-width: 760px) { .lbl-atom { font-size: 15px; } .lbl-atom.sm { font-size: 12.5px; } }
 </style>
 </head>
 <body>
