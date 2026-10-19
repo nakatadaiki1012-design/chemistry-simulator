@@ -731,6 +731,11 @@ body.sec-atom .app { grid-template-columns: 620px minmax(0, 1fr); }
 .sp-row input { width: 100%; accent-color: var(--accent); }
 .sp-row b { font-family: var(--font-data); font-size: 12.5px; text-align: right; }
 .card-head, .card-body, .card > .ctabs, .card > .ls-tabs { zoom: var(--card-zoom, 1); }
+/* スマホ：3Dの上の説明や名前が画面からはみ出さないように折り返す */
+@media (max-width: 600px) {
+  .lbl-sep { white-space: normal; max-width: 86vw; width: max-content; text-align: center; line-height: 1.45; }
+  .lbl-rx { white-space: normal; max-width: 27vw; width: max-content; text-align: center; font-size: 12.5px; line-height: 1.35; padding: 1px 6px; }
+}
 </style>
 </head>
 <body>
@@ -1373,7 +1378,9 @@ function orientMolecule(mol) {
 function localShape(mol, c) {
   const a = mol.atoms[c], nA = mol.nb[c].length, lp = a.lp;
   if (nA < 2) return null;
-  const same = new Set(mol.nb[c].map(x => mol.atoms[x.j].el + x.o)).size === 1;
+  // 共鳴（SO₄²⁻ や CO₃²⁻ のように電荷をもつ原子がある）ときは、結合の種類のちがいは見かけだけなので元素だけで比べる
+  const res = mol.nb[c].some(x => mol.atoms[x.j].charge);
+  const same = new Set(mol.nb[c].map(x => mol.atoms[x.j].el + (res ? '' : x.o))).size === 1;
   const key = nA + ',' + lp;
   const table = {
     '2,0': '直線形', '2,1': '折れ線形', '2,2': '折れ線形', '2,3': '直線形',
@@ -1715,7 +1722,7 @@ const LIB = [
     desc: '無色でねばりけのある液体。濃硫酸には脱水作用や吸湿性がある。うすめた希硫酸は強い酸性を示す。',
     props: [['沸点', '約340 ℃'], ['酸の強さ', '2価の強酸']],
     point: '中心のS原子に、4個のO原子が四面体形に結合している。水溶液中では H⁺ を2個出して硫酸イオン SO₄²⁻ になる。' },
-  { id: 'hno3', f: 'HNO3', cat: 'ion', name: '硝酸', en: 'nitric acid', smiles: 'O[N+](=O)[O-]', bond: '共有結合',
+  { id: 'hno3', f: 'HNO3', cat: 'ion', name: '硝酸', en: 'nitric acid', smiles: 'O[N+](=O)[O-]', bond: '共有結合', shape: '平面形',
     desc: '無色の液体で、強い酸性と酸化力をもつ。光で分解しやすいので、褐色のびんに入れて保存する。',
     props: [['沸点', '83 ℃'], ['酸の強さ', '1価の強酸']],
     point: 'N原子のまわりは平面三角形。水溶液中では H⁺ を出して硝酸イオン NO₃⁻ になる。' },
@@ -1947,7 +1954,9 @@ function buildCrystal(kind, n = 1) {
 
 // ===== 原子（電子殻）の一覧：原子番号1〜20 =====
 const ELEMENTS_20 = ['H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar', 'K', 'Ca'];
-const NEUTRONS = { H: 0, He: 2, Li: 4, Be: 5, B: 6, C: 6, N: 7, O: 8, F: 10, Ne: 10, Na: 12, Mg: 12, Al: 14, Si: 14, P: 16, S: 16, Cl: 18, Ar: 22, K: 20, Ca: 20 };
+const NEUTRONS = { H: 0, He: 2, Li: 4, Be: 5, B: 6, C: 6, N: 7, O: 8, F: 10, Ne: 10, Na: 12, Mg: 12, Al: 14, Si: 14, P: 16, S: 16, Cl: 18, Ar: 22, K: 20, Ca: 20,
+  // 原子量を四捨五入すると不安定な同位体になってしまう元素は、いちばん多い同位体の中性子数
+  Ni: 30, Cu: 34, Zn: 34, Ga: 38, Se: 46, Br: 44, Ag: 60, Sb: 70, Eu: 90, Re: 112, Ir: 116, Tl: 124 };
 const ION_OF = { H: 1, Li: 1, Be: 2, Na: 1, Mg: 2, Al: 3, K: 1, Ca: 2, O: -2, F: -1, S: -2, Cl: -1 };
 const ION_NAME = { H: '水素イオン', Li: 'リチウムイオン', Be: 'ベリリウムイオン', Na: 'ナトリウムイオン', Mg: 'マグネシウムイオン', Al: 'アルミニウムイオン', K: 'カリウムイオン', Ca: 'カルシウムイオン', O: '酸化物イオン', F: 'フッ化物イオン', S: '硫化物イオン', Cl: '塩化物イオン' };
 const HANDS = { H: 1, B: 3, C: 4, N: 3, O: 2, F: 1, Si: 4, P: 3, S: 2, Cl: 1 };
@@ -2070,8 +2079,8 @@ const chargeSup = c => (!c ? '' : (Math.abs(c) > 1 ? Math.abs(c) : '') + (c > 0 
 // ===== 分子の特徴（タグ） =====
 // st: 常温（25 ℃）・1気圧での状態
 const ROOM_STATE = {
-  gas: ['hydrogen', 'nitrogen', 'oxygen', 'ozone', 'chlorine', 'ammonia', 'methane', 'co2', 'hcl', 'h2s', 'so2', 'co', 'ethane', 'ethylene', 'acetylene', 'propane', 'butane', 'isobutane', 'dme', 'formaldehyde', 'helium'],
-  liquid: ['water', 'hf', 'ccl4', 'chcl3', 'h2o2', 'methanol', 'ethanol', 'acetic', 'benzene', 'cyclohexane', 'h2so4', 'hno3', 'acetone', 'ethylacetate', 'glycerol', 'octane', 'lactic', 'formic'],
+  gas: ['hf', 'hydrogen', 'nitrogen', 'oxygen', 'ozone', 'chlorine', 'ammonia', 'methane', 'co2', 'hcl', 'h2s', 'so2', 'co', 'ethane', 'ethylene', 'acetylene', 'propane', 'butane', 'isobutane', 'dme', 'formaldehyde', 'helium'],
+  liquid: ['water', 'ccl4', 'chcl3', 'h2o2', 'methanol', 'ethanol', 'acetic', 'benzene', 'cyclohexane', 'h2so4', 'hno3', 'acetone', 'ethylacetate', 'glycerol', 'octane', 'lactic', 'formic'],
   solid: ['urea', 'glucose', 'sucrose', 'citric', 'vitc', 'caffeine', 'aspirin', 'naphthalene', 'menthol', 'glycine', 'naoh', 'caco3', 'nahco3', 'naclo', 'nacl', 'diamond', 'graphite', 'copper', 'iron', 'dryice'],
 };
 const FEATURE_SETS = {
@@ -2103,7 +2112,10 @@ LIB.forEach(e => {
   if (!e.def || e.kind !== 'mol') return;
   const a = e.def.atoms;
   e.hb = e.def.bonds.some(b => (a[b.a].el === 'H' && 'ONF'.includes(a[b.b].el)) || (a[b.b].el === 'H' && 'ONF'.includes(a[b.a].el)));
-  if (e.cat === 'ion') e.hb = false;
+  // イオン（電荷をもつ粒子）や、イオンからなる物質（NaOH など）は「分子どうしの水素結合」にしない
+  const q = a.reduce((t, x) => t + x.charge, 0);
+  const loneIon = a.some((x, i) => x.charge && !e.def.bonds.some(bd => bd.a === i || bd.b === i));
+  if (q !== 0 || loneIon) e.hb = false;
 });
 function featuresOf(e) {
   if (e.kind !== 'mol' || e.cat === 'bond') return [];
@@ -2622,7 +2634,7 @@ function makeQuestion(type) {
   const L = id => getModel(LIB.find(e => e.id === id));
   if (type === 'shape') {
     const e = L(pick(['water', 'ammonia', 'methane', 'co2', 'h2s', 'so2', 'formaldehyde', 'ccl4', 'nh4', 'h3o', 'co3', 'hcl', 'nitrogen', 'ethylene', 'acetylene', 'benzene', 'hf']));
-    const ans = SHAPE_NORMAL[e.an.shape] || e.an.shape;
+    const sh = e.shape || e.an.shape, ans = SHAPE_NORMAL[sh] || sh;
     return { subject: e.id, q: `「${e.name}」${formulaHTML(displayFormula(e))} の形は？`, choices: choicesWith(ans, ['直線形', '折れ線形', '三角錐形', '正四面体形', '平面三角形', '平面形']), answer: ans,
       explain: `${e.name}は${ans}。${e.point || ''}` };
   }
@@ -3495,7 +3507,7 @@ const LESSONS_CHEM = [
   { id: 'ls-c-cell', no: '化3-2', part: 3, chap: 0, name: '電池と電気分解', steps: [
     { go: 'ch-daniell', title: 'ダニエル電池', text: 'イオン化傾向の大きい亜鉛が負極、銅が正極。電子は導線を通って亜鉛板から銅板へ流れる。化学エネルギーを電気エネルギーに変える。', lab: 'p-ionize' },
     { go: 'rx-h2o', title: '燃料電池', text: '水素と酸素が反応して水ができるときの化学エネルギーを、直接電気エネルギーとして取り出す。出るのは水だけ。', solve: true },
-    { go: 'rx-elec', title: '電気分解', text: '電気エネルギーで、自然には起こらない酸化還元反応を起こす。陰極で還元（H₂）、陽極で酸化（O₂）。変化する物質の量は流れた電気量に比例する（ファラデーの法則）。', solve: true, lab: 'p-elec' },
+    { go: 'rx-elec', title: '電気分解', text: '電気エネルギーで、自然には起こらない酸化還元反応を起こす。陰極では還元、陽極では酸化が起こる（水の電気分解では陰極に H₂、陽極に O₂）。変化する物質の量は流れた電気量に比例する（ファラデーの法則）。', solve: true, lab: 'p-elec' },
     { go: 'copper', title: '銅の電解精錬', text: '粗銅を陽極、純銅を陰極にして、硫酸銅(II)水溶液を電気分解すると、陰極に純粋な銅が出てくる。' },
   ] },
   { id: 'ls-c-rate', no: '化4-1', part: 3, chap: 1, name: '化学反応の速さ', steps: [
@@ -4141,7 +4153,7 @@ function atomCardHTML(e) {
   const ionSym = ion === undefined ? '' : el + '<sup>' + chargeSup(ion) + '</sup>';
   const head = ionOn ? `${ionSym}<small>${esc(ionNameOf(el))}</small>` : `${esc(el)}<small>原子番号 ${Z}・${g}族・第${p}周期</small>`;
   let html = headHTML(e, head) + '<div class="card-body">';
-  html += `<div class="el-tags"><span class="el-cat" style="--c:${EL_CAT[cat][1]}">${EL_CAT[cat][0]}</span><span>${NONMETAL.has(el) ? '非金属元素' : Z > 103 ? '金属元素（性質はまだよくわからない）' : '金属元素'}</span><span>${(g >= 3 && g <= 12) || la ? '遷移元素' : '典型元素'}</span><span>常温：${Z > 100 ? '不明' : GAS25.has(el) ? '気体' : LIQ25.has(el) ? '液体' : '固体'}</span></div>`;
+  html += `<div class="el-tags"><span class="el-cat" style="--c:${EL_CAT[cat][1]}">${EL_CAT[cat][0]}</span><span>${NONMETAL.has(el) ? '非金属元素' : Z > 103 ? (g === 18 || g === 17 ? '性質はまだよくわからない' : '金属元素（性質はまだよくわからない）') : '金属元素'}</span><span>${(g >= 3 && g <= 12) || la ? '遷移元素' : '典型元素'}</span><span>常温：${Z > 100 ? '不明' : GAS25.has(el) ? '気体' : LIQ25.has(el) ? '液体' : '固体'}</span></div>`;
   html += '<div class="shells">' + c.map((n, i) => {
     if (!n && c.slice(i).every(x => !x)) return '';
     const max = 2 * (i + 1) * (i + 1);
@@ -4151,7 +4163,9 @@ function atomCardHTML(e) {
   html += fact('陽子', Z + '<span class="u">個</span>');
   html += fact('中性子', nN + '<span class="u">個</span>');
   html += fact('電子', electrons + '<span class="u">個</span>');
-  html += fact('原子量', d.m >= 100 && Number.isInteger(d.m) ? `(${d.m})` : String(d.m));
+  // 安定な同位体がない元素だけ、代表的な同位体の質量数を（ ）で示す
+  const noStable = Z === 43 || Z === 61 || (Z >= 84 && Z <= 89) || Z >= 93;
+  html += fact('原子量', noStable ? `(${Math.round(d.m)})` : String(d.m));
   html += fact(valence === null ? '最外殻電子' : '価電子', (valence === null ? outer : valence) + '<span class="u">個</span>');
   html += fact('電子配置', esc(configText(c) || 'なし'));
   html += '</dl>';
@@ -4704,11 +4718,13 @@ Object.assign(SEP_SCENES, {
     sepPart('半透膜', () => new THREE.Vector3(0, YB - RB - 0.45, 0.4));
     sepPart('純水', () => new THREE.Vector3(XL - 0.6, 2.0, 0));
     sepPart('スクロース水溶液', () => new THREE.Vector3(XR + 0.6, 2.0, 0));
-    const dh = addLabel('lbl-sep warm', '', () => new THREE.Vector3(XR, 5.4, 0));
+    let hRnow = 3.0;
+    const dh = addLabel('lbl-sep warm', '', () => new THREE.Vector3(XR + 1.3, hRnow, 0)); // 右の液面の横に出す
     view.sepR = 3.4; view.sepTarget.set(0, 2.4, 0); view.sepTop = 5.4;
     return t => {
       const k = sepLoop(t, 16), f = Math.min(1, Math.max(0, (k - 0.15) / 0.6));
       const hL = 3.0 - 0.8 * f, hR = 3.0 + 0.8 * f;
+      hRnow = hR;
       liqL.scale.y = hL - YB; liqL.position.set(XL, YB + (hL - YB) / 2, 0);
       liqR.scale.y = hR - YB; liqR.position.set(XR, YB + (hR - YB) / 2, 0);
       const txt = f > 0.1 ? '液面が上がる ↑' : '同じ高さ';
@@ -5446,7 +5462,7 @@ function buildMolView() {
   // 原子がとても多いときは、ラベルで画面がうまらないように出さない
   if (m.atoms.length <= 64) {
     m.atoms.forEach((a, i) => {
-      const L = addLabel('lbl-atom' + (m.atoms.length > 40 ? ' sm' : ''), '', () => view.cur[i], { atom: i });
+      const L = addLabel('lbl-atom' + (m.atoms.length > (isNarrow() ? 16 : 40) ? ' sm' : ''), '', () => view.cur[i], { atom: i });
       L.kind = 'atom'; L.i = i;
     });
   }
@@ -6460,7 +6476,7 @@ function molCardHTML(e) {
     if (e.perCell) html += fact('単位格子中', esc(e.perCell));
   } else if (!e.custom) {
     html += fact(an.charge || an.nComp > 1 ? '式量' : '分子量', fmtMass(an.mass.total));
-    html += fact('形', esc(an.shape));
+    html += fact('形', esc(e.shape || an.shape)); // 3Dの計算で少しずれる分子は、データの形を優先
     html += fact('極性', esc(an.polarity), an.polarity === '極性分子' ? 'polar' : an.polarity === '無極性分子' ? 'nonpolar' : '');
     if (an.keyAngle && m.atoms.length >= 3) {
       const k = an.keyAngle;

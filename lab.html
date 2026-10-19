@@ -642,33 +642,37 @@ const MODELS = {
   },
   dish() {
     const g = new THREE.Group();
-    const inner = [[0, 0.1], [0.5, 0.12], [1.0, 0.3], [1.33, 0.62], [1.4, 0.68]];
+    // 丸く深めの器。口のふちに注ぎ口がある
+    const inner = [[0, 0.1], [0.45, 0.13], [0.85, 0.3], [1.15, 0.6], [1.3, 0.9], [1.36, 1.05]];
     const porcelain = new THREE.MeshPhongMaterial({ color: 0xf7f5f0, shininess: 140, specular: 0xffffff, envMap: envMap(), combine: THREE.MixOperation, reflectivity: 0.15, side: THREE.DoubleSide });
     g.add(shell(inner, 0.07, porcelain));
     const foot = new THREE.Mesh(new THREE.TorusGeometry(0.45, 0.04, 8, 32), porcelain); foot.rotation.x = Math.PI / 2; foot.position.y = 0.05; g.add(foot);
-    for (let i = 0; i < 50; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), solid(0xffffff, { shininess: 120 })); const a = Math.random() * 6.28, r = Math.random() * 0.62; c.position.set(Math.cos(a) * r, 0.16 + r * 0.15, Math.sin(a) * r); c.rotation.set(a, a * 2, 0); g.add(c); }
-    const spout = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), porcelain); spout.position.set(1.45, 0.66, 0); g.add(spout);
+    for (let i = 0; i < 50; i++) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.06), solid(0xffffff, { shininess: 120 })); const a = Math.random() * 6.28, r = Math.random() * 0.62; c.position.set(Math.cos(a) * r, 0.16 + r * 0.22, Math.sin(a) * r); c.rotation.set(a, a * 2, 0); g.add(c); }
+    const spout = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), porcelain); spout.position.set(1.42, 1.03, 0); g.add(spout);
     g.position.y = 0.0;
     withShadow(g, 3.2);
-    return { g, parts: [['磁器（直接加熱できる）', [1.2, 0.6, 0]], ['出てきた結晶', [0, 0.25, 0]]], focus: [0.5, 1.9] };
+    return { g, parts: [['磁器（直接加熱できる）', [1.28, 0.85, 0]], ['出てきた結晶', [0, 0.25, 0]], ['注ぎ口', [1.45, 1.05, 0]]], focus: [0.6, 1.9] };
   },
   lamp() {
     const g = new THREE.Group();
-    const prof = [[0, 0.06], [0.95, 0.06], [1.12, 0.22], [1.18, 0.62], [1.02, 1.18], [0.5, 1.5], [0.33, 1.62], [0.33, 1.72]];
+    // 丸みのある胴（なめらかな曲線にする）
+    const body = new THREE.SplineCurve([[0.95, 0.06], [1.12, 0.22], [1.18, 0.62], [1.02, 1.18], [0.5, 1.5], [0.33, 1.62]].map(([r, y]) => new THREE.Vector2(r, y))).getPoints(24).map(v => [v.x, v.y]);
+    const prof = [[0, 0.06]].concat(body, [[0.33, 1.72]]);
     g.add(shell(prof, 0.06, glassMat({ opacity: 0.22 })));
-    const alc = liquid(prof.slice(0, 5), 0.9, 0xc7e2ff); g.add(alc);
+    const alc = liquid(prof.filter(p => p[1] <= 1.2), 0.9, 0xc7e2ff); g.add(alc);
     const holder = new THREE.Group();
     const ring = cyl(0.38, 0.38, 0.06, metal(0xbfc4ca), 32); ring.position.y = 1.75; holder.add(ring);
     const tubeM = cyl(0.12, 0.12, 0.32, metal(0xbfc4ca), 24); tubeM.position.y = 1.9; holder.add(tubeM);
     g.add(holder);
     const wickIn = cyl(0.075, 0.075, 1.7, solid(0xf0ebe0, { shininess: 5 })); wickIn.position.y = 1.0; g.add(wickIn);
     const wick = cyl(0.085, 0.07, 0.25, solid(0xe9e2d0, { shininess: 5 })); wick.position.y = 2.05; g.add(wick);
-    const capInner = [[0, 2.78], [0.16, 2.75], [0.38, 2.5], [0.42, 2.0], [0.44, 1.94]];
+    // ふたは首にかぶせる（すき間があるとアルコールが蒸発してしまう）
+    const capInner = [[0, 2.38], [0.16, 2.35], [0.38, 2.1], [0.42, 1.6], [0.44, 1.54]];
     const cap = shell(capInner, 0.04, glassMat({ opacity: 0.26 })); cap.renderOrder = 3; g.add(cap);
     const flame = makeFlame(); flame.g.position.y = 2.16; g.add(flame.g);
     withShadow(g, 3.0);
     return { g, alc, wick, cap, flame, prof,
-      parts: [['ふた', [0.44, 2.6, 0]], ['芯（約5 mm 出す）', [0.08, 2.15, 0]], ['芯おさえ', [0.38, 1.78, 0]], ['アルコール（8分目くらい）', [1.1, 0.8, 0]]], focus: [1.4, 2.2] };
+      parts: [['ふた', [0.44, 2.2, 0]], ['芯（約5 mm 出す）', [0.08, 2.15, 0]], ['芯おさえ', [0.38, 1.78, 0]], ['アルコール（8分目くらい）', [1.1, 0.8, 0]]], focus: [1.4, 2.2] };
   },
   burner() {
     const g = new THREE.Group();
@@ -1188,7 +1192,7 @@ PR['p-lamp'] = {
     s.rebuildAlc = rebuildAlc; rebuildAlc();
     R.tick = t => {
       s.capT += ((s.capOn ? 1 : 0) - s.capT) * 0.15;
-      m.cap.position.set((1 - s.capT) * 1.8, (1 - s.capT) * 0.6, 0);
+      m.cap.position.set((1 - s.capT) * 1.8, -(1 - s.capT) * 1.54 + Math.sin(Math.PI * (1 - s.capT)) * 1.2, 0);
       m.cap.rotation.z = -(1 - s.capT) * 0.5;
       m.wick.scale.y = 0.4 + s.wick / 5 * 0.6; m.wick.position.y = 1.9 + 0.1 * (s.wick / 5);
       m.flame.lit = s.lit && s.capT < 0.3; m.flame.size = 0.25 + s.wick / 5 * 0.35; m.flame.air = 0.2;
@@ -1657,6 +1661,8 @@ PR['p-gas'] = {
         r = { level: 'ng', leak: -1, msg: `${gas.name}は空気より重い（分子量${gas.M} > 29）ので、口が下を向いたびんからこぼれ落ちてしまう。` };
       } else if (m === 'down' && !heavy) {
         r = { level: 'ng', leak: 1, msg: `${gas.name}は空気より軽い（分子量${gas.M} < 29）ので、口が上を向いたびんから上へにげてしまう。` };
+      } else if (gas.id === 'n2') {
+        r = { level: 'ng', leak: m === 'up' ? 1 : -1, msg: '窒素は空気とほぼ同じ重さ（分子量28、空気は約29）なので、上方・下方置換ではほとんど集められない。水に溶けにくいので<b>水上置換</b>で集める。' };
       } else {
         r = { level: 'mid', msg: `一応集まるが、${gas.name}は水に溶けにくいので、<b>水上置換</b>がいちばんよい。上方・下方置換では空気がまざりやすく、どれだけたまったかも見えない。` };
       }
@@ -2006,8 +2012,8 @@ PR['p-distill'] = {
       });
       rcLiq.scale.y = good && s.running ? Math.min(1.6, 0.4 + e * 0.15) : 0.4;
       rcLiq.visible = good && (s.running || (s.result && s.result.done));
-      // 温度計の表示：はじめは室温 → エタノールが出ている間は 78〜80 ℃ くらいで止まる
-      const T = !s.running && !(s.result && s.result.done) ? 20 : s.running ? (e < 2 ? 20 + e * 29 : 78 + Math.min(2, (e - 2) * 0.5)) : 80;
+      // 温度計の表示：はじめは室温 → ワイン（エタノール約12%）は 80 ℃台から出はじめ、しだいに上がる
+      const T = !s.running && !(s.result && s.result.done) ? 20 : s.running ? (e < 2 ? 20 + e * 31 : 82 + Math.min(12, (e - 2) * 3)) : 94;
       const txt = s.therm === 'branch' ? `温度計 ${Math.round(T)} ℃` : '温度計';
       if (LT.el.textContent !== txt) LT.el.textContent = txt;
       if (s.running && e > 6) { s.running = false; s.result.done = true; renderCard(); }
@@ -2037,7 +2043,7 @@ PR['p-distill'] = {
       if (s.water !== 'bottom') bad.push('冷却水は下から入れて上から出す（上から入れると冷却器の中に水が満たされず、よく冷えない）');
       if (s.amount !== 'half') bad.push('液はフラスコの半分以下にする（多いと、沸騰した液が枝に入ってしまう）');
       if (s.seal) bad.push('受け器をゴム栓で密閉すると、中の圧力が上がって装置が破裂する危険がある');
-      s.result = bad.length ? { ok: false, msg: 'このままでは危ない・うまくいかない：' + bad.join('。') + '。' } : { ok: true, msg: 'うまく蒸留できた！ 沸点の低いエタノール（78 ℃）が先に気体になり、冷却器で冷やされて液体にもどり、受け器にたまる。温度計が 78〜80 ℃ くらいの間に出てくる液はエタノールが多い（水も少しまざるので、純粋なエタノールにはならない）。温度が上がりはじめたら受け器をかえる。' };
+      s.result = bad.length ? { ok: false, msg: 'このままでは危ない・うまくいかない：' + bad.join('。') + '。' } : { ok: true, msg: 'うまく蒸留できた！ 沸点の低いエタノール（78 ℃）が先に気体になり、冷却器で冷やされて液体にもどり、受け器にたまる。ワインはエタノールが約12%なので、温度計はエタノールの沸点（78 ℃）より高い 80 ℃台から液が出はじめ、しだいに上がっていく。はじめに出てくる液ほどエタノールが多い（水もまざるので、純粋なエタノールにはならない）。100 ℃ に近づくと水が多くなる。' };
       if (!bad.length) { s.running = true; s.t0 = performance.now(); markDone('p-distill'); }
     }
     renderCard();
@@ -2066,7 +2072,7 @@ const EXP_INFO = {
       ['たまった気体の体積をくらべる', '水素：酸素 ＝ 2：1。反応式 2H₂O → 2H₂ + O₂ の係数の比と同じになる。'],
       ['気体を確かめる', '陰極の気体にマッチの火を近づけるとポンと燃える（水素）。陽極の気体に火のついた線香を入れると激しく燃える（酸素）。'],
     ],
-    mistakes: ['陰極と陽極を逆に覚える（「陰極から水素」は、＋の電気をもつ H⁺ が−極に引きよせられるとイメージする。実際は水分子が電子を受け取って水素ができる）。', '体積の比を 1：2 と逆にする。', '純粋な水のまま電流を流して、気体が出ないと思いこむ。'],
+    mistakes: ['陰極と陽極を逆に覚える（「陰極から水素」は、＋の電気をもつ H⁺ が−極に引きよせられるとイメージする。実際は水分子が電子を受け取って水素ができる）。', '体積の比を 1：2 と逆にする。', '水酸化ナトリウムを溶かし忘れて、純粋な水のまま電流を流してしまう（電気がほとんど流れず、気体がほとんど出ない）。'],
     danger: ['水酸化ナトリウム水溶液は皮ふや目をいためる。保護めがねをかけ、ついたらすぐ大量の水で洗う。', '水素と酸素が混ざった気体に火を近づけると爆発する。それぞれ別に確かめる。', '電源を入れたまま電極にさわらない。'],
   },
   'p-flame': {
@@ -2090,7 +2096,7 @@ const EXP_INFO = {
       ['終点の近くは1滴ずつ。うすい赤色が消えなくなったら終点', '終点の近くでは1滴でpHが大きく変わる。'],
       ['滴下した体積から濃度を計算する', '酸の価数×濃度×体積 ＝ 塩基の価数×濃度×体積。'],
     ],
-    mistakes: ['ビュレットの目盛りを下から読む（上が0）。', '一気に流して終点を通りすぎる。', '三角フラスコを共洗いしてしまう（三角フラスコは水でぬれていてもよい。酸の物質量は変わらないから）。', '計算で体積の単位（mL と L）をそろえない。'],
+    mistakes: ['ビュレットの目盛りを、下が0だと思って読んでしまう（上が0で、下にいくほど大きい）。', '一気に流して終点を通りすぎる。', '三角フラスコを共洗いしてしまう（三角フラスコは水でぬれていてもよい。酸の物質量は変わらないから）。', '計算で体積の単位（mL と L）をそろえない。'],
     danger: ['水酸化ナトリウム水溶液や酸が目に入ると危険。保護めがねをかける。', 'ビュレットに液を入れるときは、目の高さより低い位置でろうとを使う。'],
   },
   'p-distill': {
@@ -2101,7 +2107,7 @@ const EXP_INFO = {
       ['冷却水は、冷却器の下から入れて上から出す', '下から入れると冷却器の中が水で満たされ、よく冷える。上から入れると水がすぐ流れ落ちて、すき間ができる。'],
       ['冷却水を流しはじめてから、加熱する', '先に加熱すると、冷えていない冷却器から蒸気がそのまま出てしまう。エタノールの蒸気は燃えやすく危険。'],
       ['受け器（三角フラスコ）は密閉しない（アルミはくでかるくおおう）', '密閉すると中の圧力が上がって破裂する。アルミはくで蒸発やごみを防ぐ。'],
-      ['ゆっくり加熱し、温度計を見ながら集める', '沸点の低い成分（エタノール 78 ℃）が先に出てくる。温度が上がりはじめたら受け器をかえる。'],
+      ['ゆっくり加熱し、温度計を見ながら集める', '沸点の低いエタノール（78 ℃）が多くふくまれた液が先に出てくる。温度計の値が上がっていくにつれて水が多くなるので、受け器をとりかえて分けて集める。'],
     ],
     mistakes: ['温度計を液の中に入れてしまう。', '冷却水を上から入れる。', '冷却水を流す前に加熱を始める。', '沸騰石を入れ忘れ、加熱中にあわてて入れる（突沸の危険。一度冷ましてから入れる）。'],
     danger: ['エタノールは燃えやすい。受け器を炎の近くに置かない。', '装置を密閉しない。', '加熱をやめたあとも、しばらくは冷却水を流しておく。'],
@@ -2302,7 +2308,7 @@ PR['p-recryst'] = {
     if (a === 'rcreset') { s.T = 20; s.dissolvedOnce = false; s.filtered = false; s.msg = ''; }
     if (a === 'rcfilter') {
       const ex = Math.max(0, 60 - solub(s.T));
-      if (!s.dissolvedOnce) { s.ok = false; s.msg = 'まだ一度も全部溶かしていない。最初に溶け残っていた固体には、塩化ナトリウムもまざっている。いったん加熱して全部溶かそう（約40 ℃以上）。'; }
+      if (!s.dissolvedOnce) { s.ok = false; s.msg = 'まだ一度も全部溶かしていない。混合物の粒のままだと、結晶の表面や内側に不純物（塩化ナトリウム）がついたまま残る。いったん加熱して全部溶かそう（約40 ℃以上）。'; }
       else if (ex < 1) { s.ok = false; s.msg = 'この温度ではまだ全部溶けているので、結晶が出てこない。温度を下げよう。'; }
       else { s.ok = true; s.filtered = true; s.msg = `純粋な硝酸カリウムの結晶が ${ex.toFixed(1)} g 取り出せた！ 塩化ナトリウムは 5 g しかなく、低い温度でも溶けたまま（ろ液に残る）。`; markDone('p-recryst'); }
     }
@@ -2759,10 +2765,10 @@ SEQ['p-nahco3'] = {
     { do: '試験管の口についた液体に、青い塩化コバルト紙をつける', why: '青色 → 赤（桃）色 に変われば水 H₂O。', wrong: [['口についた液体を指でさわって確かめる', '実験の薬品にふれたり、なめたりしない。塩化コバルト紙で調べる。']] },
     { do: '火を消す前に、誘導管を石灰水から抜く', why: '先に火を消すと、試験管の中の気体が冷えて縮み、石灰水が吸いこまれる（逆流）。熱い試験管に冷たい液が入ると割れる。', wrong: [['先に火を消してから、誘導管を抜く', '中の気体が冷えて縮み、石灰水が逆流して熱い試験管が割れる。必ず「抜いてから消す」。']] },
     { do: 'ガスバーナーの火を消し、試験管が冷めるのを待つ', why: '熱いままさわるとやけどする。', wrong: [['熱い試験管にすぐ水をかけて冷やす', '急に冷えて試験管が割れる。自然に冷ます。']] },
-    { do: '残った白い固体を水に溶かし、フェノールフタレインを加える', why: '濃い赤色になる。もとの炭酸水素ナトリウム（うすい赤色）より水によく溶け、強い塩基性を示す。残った固体は炭酸ナトリウム Na₂CO₃。', wrong: [['残った固体を少しなめて、味を確かめる', '薬品は絶対になめない。指示薬で性質を調べる。']] },
+    { do: '残った白い固体を水に溶かし、フェノールフタレインを加える', why: '濃い赤色になる。もとの炭酸水素ナトリウム（うすい赤色）より水によく溶け、より強い塩基性を示す（炭酸水素ナトリウム水溶液は弱い塩基性）。残った固体は炭酸ナトリウム Na₂CO₃。', wrong: [['残った固体を少しなめて、味を確かめる', '薬品は絶対になめない。指示薬で性質を調べる。']] },
   ],
   mistakes: ['試験管の口を上げてしまう。', '火を消してから誘導管を抜く（逆流）。', '石灰水のにごりが二酸化炭素、塩化コバルト紙の色の変化が水、と結びつけられない。'],
-  danger: ['逆流で試験管が割れると、熱い破片や液が飛ぶ。保護めがねをかける。', '加熱した試験管・スタンドの金具は熱い。', '石灰水は弱いアルカリ性。目に入ったらすぐ水で洗う。'],
+  danger: ['逆流で試験管が割れると、熱い破片や液が飛ぶ。保護めがねをかける。', '加熱した試験管・スタンドの金具は熱い。', '石灰水（水酸化カルシウム水溶液）は強い塩基性（アルカリ性）。目に入ったらすぐ大量の水で洗う。'],
   frame: [1.6, 3.6, new THREE.Vector3(0.2, 0.35, 1)],
   build(g, s) {
     const tb = MODELS.tube();
@@ -2789,7 +2795,7 @@ SEQ['p-nahco3'] = {
     const paper = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.22), solid(0x2d6fe0)); paper.position.set(-2.6, 1.25, 0.25); g.add(paper);
     const bk = MODELS.beaker(); bk.g.scale.setScalar(0.4); bk.g.position.set(1.9, 0, 1.3); g.add(bk.g);
     let bkLiq = null; bk.g.children.forEach(c => { if (c.renderOrder === 1) bkLiq = c; });
-    const L1 = addLabel('炭酸水素ナトリウム', () => new THREE.Vector3(0.3, 2.3, 0)); L1.part = true;
+    const L1 = addLabel('炭酸水素ナトリウム', () => pw.localToWorld(new THREE.Vector3(-0.16, 0.5, 0))); L1.part = true;
     const L2 = addLabel('石灰水', () => lwG.position.clone().add(new THREE.Vector3(0.3, 1.2, 0))); L2.part = true;
     [L1, L2].forEach(L => { L.el.hidden = !state.parts; });
     return {
@@ -2799,6 +2805,7 @@ SEQ['p-nahco3'] = {
         tube.position.set(1.0, k >= 1 ? 1.9 : 1.5, 0);
         st.visible = pipe.visible = k >= 2;
         lwG.visible = k >= 1;
+        L2.el.hidden = !state.parts || !lwG.visible; // まだ置いていない石灰水には名前を出さない
         lwG.position.set(-3.4, 0, k >= 6 ? lerp(0, 1.1, k > 6 ? 1 : e * 2) : 0);
         const lit = k >= 3 && k < 7;
         bm.flame.lit = lit; bm.flame.update(t);
@@ -3107,8 +3114,12 @@ function containerPlay(cfg) {
               if (P.mL <= 0.001) {
                 P.mL = 0; P.T = 100;
                 const solids = [];
-                if (P.salt > 0 || (P.acid > 0 && P.base > 0) || P.base > P.acid) solids.push(P.base > P.acid + 1e-9 && P.salt === 0 ? '水酸化ナトリウム（白）' : '塩化ナトリウム（白）');
-                if (P.cu > 0) solids.push('硫酸銅(II)の結晶（青）');
+                // 残る OH⁻ は、水酸化銅(II)の沈殿になった分を差し引く
+                const exOH = P.base - P.acid - 2 * (P.cuoh || 0);
+                if (P.salt > 0 || (P.acid > 0 && P.base > 0)) solids.push('塩化ナトリウム（白）');
+                if (P.cuoh > 0) solids.push('硫酸ナトリウム（白）');
+                if (exOH > 1e-9) solids.push('水酸化ナトリウム（白）');
+                if (P.cu > 0) solids.push('硫酸銅(II)の結晶（青。強く熱し続けると水和水が抜けて白くなる）');
                 if (P.cuoh > 0) solids.push('酸化銅(II)（黒：水酸化銅(II)が加熱で変化）');
                 P.residue = solids.length ? solids : null;
                 P.acid = P.acid > P.base ? 0 : P.acid; // 塩酸の HCl は水といっしょに出ていく
@@ -3253,7 +3264,7 @@ PLAY.lamp = {
     Object.assign(P, { m, capOn: true, lit: false });
     m.flame.size = 0.38; m.flame.air = 0.45;
     R.tick = t => {
-      m.cap.position.set(P.capOn ? 0 : 1.6, P.capOn ? 0 : -1.94, 0);
+      m.cap.position.set(P.capOn ? 0 : 1.6, P.capOn ? 0 : -1.54, 0);
       m.flame.lit = P.lit; m.flame.update(t);
     };
   },
@@ -3563,6 +3574,14 @@ $('btnFull').addEventListener('click', () => {
   if (PRACTICES.some(p => p.id === h)) go('practice', h);
   else if (ITEMS.some(x => x.id === h)) go('see', h);
   else go('see', 'beaker');
+  // リンク（#p-filter など）を開き直したときも、その器具・実験に切りかえる
+  window.addEventListener('hashchange', () => {
+    let k = '';
+    try { k = decodeURIComponent(location.hash.slice(1)); } catch (e) { return; }
+    if (k === state.id && state.mode !== 'quiz') return;
+    if (PRACTICES.some(p => p.id === k)) go('practice', k);
+    else if (ITEMS.some(x => x.id === k)) go('see', k);
+  });
 })();
 </script>
 </body>
