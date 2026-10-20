@@ -280,10 +280,12 @@ h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display)
 .dgpanel .dg-row { display: flex; gap: 8px; margin: 10px 0 -12px; padding: 8px 14px 10px; flex-wrap: wrap; position: sticky; bottom: -12px; background: var(--panel); border-top: 1px solid var(--line); }
 .dgpanel .dg-real { font-size: 12.5px; color: var(--muted); margin: 8px 14px 0; }
 @keyframes dangerIn { from { transform: translateY(20px) scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
-.stage-wrap.hit::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 20; animation: hitFlash .9s ease-out forwards; }
+.stage-wrap.hit::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 20; animation: hitFlash 1.8s ease-out forwards; }
 @keyframes hitFlash { 0% { background: rgba(255, 244, 214, .85); box-shadow: inset 0 0 0 0 rgba(192,57,43,0); } 25% { background: rgba(255, 170, 90, .25); box-shadow: inset 0 0 80px 20px rgba(192,57,43,.55); } 100% { background: transparent; box-shadow: inset 0 0 40px 0 rgba(192,57,43,0); } }
 @media (max-width: 760px) { .dgpanel { max-height: none; margin: 8px 8px 4px; } .dgpanel h3 { font-size: 17px; } .dgpanel dl { font-size: 13.5px; } }
 @media (prefers-reduced-motion: reduce) { .dgpanel { animation: none; } .stage-wrap.hit::after { animation-duration: .01s; } }
+.slowbadge { position: absolute; z-index: 6; left: 50%; top: 12px; transform: translateX(-50%); background: #24282b; color: #fbf9f4; font-weight: 800; font-size: 13px; letter-spacing: .1em; padding: 3px 12px; border-radius: 3px; pointer-events: none; }
+.slowbadge::before { content: "● "; color: #e74c3c; }
 </style>
 </head>
 <body>
@@ -309,6 +311,7 @@ h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display)
       <button type="button" class="ibtn" id="btnFull" title="全画面" aria-label="全画面"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
     <div class="toast" id="toast" hidden></div>
+    <div class="slowbadge" id="slowBadge" hidden>スロー再生</div>
   </section>
   <aside class="card" id="card" aria-live="polite"></aside>
 </main>
@@ -1074,21 +1077,24 @@ function layoutLabels() {
 }
 // ===== 危険の演出（爆発・引火・突沸・ガラスが割れる・ガスもれ） =====
 // 本物ではできない「まちがえたらどうなるか」を、目で見てわかるようにする
-const FX = { list: [], shakeUntil: 0, shakeAmp: 0 };
+// speed：演出をスローモーションで見せる（1 = ふつうの速さ）
+const FX = { list: [], shakeUntil: 0, shakeAmp: 0, speed: 0.35 };
 function fxMat(color, opacity, add) { return new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending }); }
-function fxAdd(obj, life, update) { R.fx.add(obj); FX.list.push({ obj, t0: performance.now() / 1000, life, update }); }
+function fxAdd(obj, life, update, done, amb) { R.fx.add(obj); FX.list.push({ obj, t0: performance.now() / 1000, life, update, done, amb }); }
 function fxClear() { FX.list.forEach(f => { R.fx.remove(f.obj); f.obj.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) x.material.dispose(); }); }); FX.list = []; }
 function fxTick(t) {
   const now = performance.now() / 1000;
   FX.list = FX.list.filter(f => {
-    const k = (now - f.t0) / f.life;
-    if (k >= 1) { R.fx.remove(f.obj); f.obj.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) x.material.dispose(); }); return false; }
-    f.update(k, now - f.t0);
+    const sec = (now - f.t0) * (f.amb ? 1 : FX.speed), k = sec / f.life; // amb：ガスもれの雲など、ふだんの速さで動くもの
+    if (k >= 1) { R.fx.remove(f.obj); f.obj.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) x.material.dispose(); }); if (f.done) setTimeout(f.done, 0); return false; }
+    f.update(k, sec);
     return true;
   });
+  const slow = FX.speed < 1 && FX.list.some(f => !f.amb), b = $('slowBadge');
+  if (b && b.hidden === slow) b.hidden = !slow;
 }
-function fxShake(sec, amp) { if (reduceMotion) return; FX.shakeUntil = performance.now() / 1000 + sec; FX.shakeAmp = amp; }
-function stageHit() { const w = $('stageWrap'); w.classList.remove('hit'); void w.offsetWidth; w.classList.add('hit'); setTimeout(() => w.classList.remove('hit'), 950); }
+function fxShake(sec, amp) { if (reduceMotion) return; FX.shakeUntil = performance.now() / 1000 + sec / FX.speed; FX.shakeAmp = amp; }
+function stageHit() { const w = $('stageWrap'); w.classList.remove('hit'); void w.offsetWidth; w.classList.add('hit'); setTimeout(() => w.classList.remove('hit'), 1850); }
 const _fxSphere = new THREE.SphereGeometry(1, 14, 10);
 // 粒をたくさん飛ばす共通部品：v（初速）, g（重力）, 色の変化, 大きさの変化
 function fxParticles(pos, n, opt) {
@@ -1110,7 +1116,7 @@ function fxParticles(pos, n, opt) {
       m.material.opacity = (opt.op || 0.9) * (1 - Math.pow(kk, opt.fade || 2));
       m.material.color.set(opt.color(kk, i));
     });
-  });
+  }, null, opt.amb);
 }
 const fireColor = k => new THREE.Color().setHSL(0.13 - k * 0.11, 1, 0.62 - k * 0.32);
 // 爆発：まぶしい光 → 火の玉 → 衝撃の輪 → 黒いけむり
@@ -1168,16 +1174,30 @@ function fxShatter(pos, size, hide) {
   });
   fxShake(0.25, 0.05); stageHit();
 }
+// 破裂する前ぶれ：器具がふるえて少しふくらみ、中が赤く光る → そのあと then() で破裂させる
+function fxWarn(obj, sec, then, glowAt) {
+  const base = obj.position.clone(), s0 = obj.scale.clone();
+  const holder = new THREE.Group();
+  let glow = null;
+  if (glowAt) { glow = new THREE.Mesh(_fxSphere, fxMat(0xff8a3c, 0, true)); glow.position.copy(glowAt); holder.add(glow); }
+  fxAdd(holder, sec, k => {
+    const a = reduceMotion ? 0 : 0.05 * k;
+    obj.position.set(base.x + (Math.random() - 0.5) * a, base.y + (Math.random() - 0.5) * a * 0.5, base.z + (Math.random() - 0.5) * a);
+    obj.scale.copy(s0).multiplyScalar(1 + 0.06 * k * k);
+    if (glow) { glow.scale.setScalar(0.15 + k * 0.7); glow.material.opacity = 0.95 * k; glow.material.color.setHSL(0.08 - 0.05 * k, 1, 0.6); }
+  }, () => { obj.position.copy(base); obj.scale.copy(s0); if (obj.parent) then(); });
+}
 // ガスもれ：目に見えないガスを、うすい雲で見えるようにする
 function fxLeak(pos, color, n) {
-  fxParticles(pos, n || 3, { life: 2.4, size: 0.18, op: 0.22, g: -0.25, vel: () => new THREE.Vector3((Math.random() - 0.5) * 0.5, 0.25 + Math.random() * 0.3, (Math.random() - 0.5) * 0.5), grow: k => 1 + k * 5, color: () => new THREE.Color(color || 0xc9e7b0), fade: 1 });
+  fxParticles(pos, n || 3, { amb: true, life: 2.4, size: 0.18, op: 0.22, g: -0.25, vel: () => new THREE.Vector3((Math.random() - 0.5) * 0.5, 0.25 + Math.random() * 0.3, (Math.random() - 0.5) * 0.5), grow: k => 1 + k * 5, color: () => new THREE.Color(color || 0xc9e7b0), fade: 1 });
 }
 // 机の上で燃えるアルコール（こぼれて燃え広がる）
 function fxPoolFire(pos, r, sec) {
   const grp = new THREE.Group(); grp.position.copy(pos);
   const fl = [];
-  for (let i = 0; i < 18; i++) { const m = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.6, 8), fxMat(0xff9a3c, 0.8, true)); const a = Math.random() * 6.28, rr = Math.sqrt(Math.random()) * r; m.position.set(Math.cos(a) * rr, 0.25, Math.sin(a) * rr); m.userData.ph = Math.random() * 6; grp.add(m); fl.push(m); }
-  fxAdd(grp, sec || 5, (k, t) => fl.forEach(m => { const s = (1 - k) * (0.7 + 0.4 * Math.sin(t * 14 + m.userData.ph)); m.scale.set(s, s * (1 + 0.3 * Math.sin(t * 9 + m.userData.ph)), s); m.material.color.set(fireColor(0.15 + 0.3 * Math.abs(Math.sin(t * 5 + m.userData.ph)))); }));
+  // 炎は、たてに長いやわらかい光の玉で表す
+  for (let i = 0; i < 22; i++) { const m = new THREE.Mesh(_fxSphere, fxMat(0xff9a3c, 0.55, true)); const a = Math.random() * 6.28, rr = Math.sqrt(Math.random()) * r; m.position.set(Math.cos(a) * rr, 0.18, Math.sin(a) * rr); m.userData.ph = Math.random() * 6; grp.add(m); fl.push(m); }
+  fxAdd(grp, sec || 5, (k, t) => fl.forEach(m => { const s = (1 - k) * (0.7 + 0.4 * Math.sin(t * 14 + m.userData.ph)) * 0.13; m.scale.set(s, s * (2.6 + 0.8 * Math.sin(t * 9 + m.userData.ph)), s); m.material.color.set(fireColor(0.15 + 0.3 * Math.abs(Math.sin(t * 5 + m.userData.ph)))); }));
 }
 // 赤い警告パネル：何が起こる・なぜ・正しくは（3Dにかぶらないよう、説明パネルのいちばん上に出す）
 function dangerHTML(o) {
@@ -1357,12 +1377,15 @@ PR['p-lamp'] = {
       s.lit = false; s.matchOn = false; s.broken = true;
       if (kind === 'add') {
         fxFlare(new THREE.Vector3(0, 1.8, 0), 0.7); fxFlare(new THREE.Vector3(1.3, 1.6, 0.4), 0.5, new THREE.Vector3(0.3, 1, 0));
-        fxPoolFire(new THREE.Vector3(0.8, 0, 0.6), 1.3, 6);
+        fxPoolFire(new THREE.Vector3(0.8, 0, 0.6), 1.3, 2.5);
         danger({ title: '火がついたまま、アルコールを足した', what: '注いでいるアルコールに火がうつり、<b>炎がアルコールのびんや手までさかのぼる</b>。こぼれたアルコールが机の上で燃え広がり、大やけどや火事になる。', why: 'アルコールはとても燃えやすく、気化した蒸気にも火がつく。火の近くで注ぐと、蒸気から液体へ一気に燃えうつる。', fix: '<b>必ずふたをして火を消し、ランプが冷めてから</b>アルコールを足す。8分目くらいまで。', retry: true });
       } else {
-        fxBoom(new THREE.Vector3(0, 1.0, 0), 0.6); fxShatter(new THREE.Vector3(0, 0.8, 0), 0.9, m.g);
-        R.labels.forEach(L => { if (L.part) L.el.hidden = true; }); // こわれた器具の名前は消す
-        fxPoolFire(new THREE.Vector3(0, 0, 0), 1.6, 7);
+        // ① 中で蒸気に火がつき、ランプがふるえる → ② 破裂 → ③ こぼれたアルコールが燃える
+        fxWarn(m.g, 0.55, () => {
+          fxBoom(new THREE.Vector3(0, 1.0, 0), 0.6); fxShatter(new THREE.Vector3(0, 0.8, 0), 0.9, m.g);
+          R.labels.forEach(L => { if (L.part) L.el.hidden = true; }); // こわれた器具の名前は消す
+          fxPoolFire(new THREE.Vector3(0, 0, 0), 1.6, 3);
+        }, new THREE.Vector3(0, 0.9, 0));
         danger(kind === 'blow'
           ? { title: '火を息で吹き消した', what: '炎が芯をつたって<b>ランプの中に入り、中にたまったアルコールの蒸気に引火</b>。ランプが破裂して、燃えるアルコールが飛び散る。', why: '息を吹きかけると、炎がゆれて芯のすき間から中へ押しこまれることがある。ランプの中には、気化したアルコールと空気がまざっている。', fix: '<b>ふたを横からそっとかぶせて</b>消す（酸素をさえぎる）。一度ふたをとって冷まし、もう一度ふたをする。', retry: true }
           : { title: 'アルコールが少ないまま、火をつけた', what: 'ランプの中のすき間に、気化したアルコールと空気がまざってたまっている。そこに火が入り、<b>ランプの中で爆発して破裂</b>する。', why: 'アルコールが少ないほど、中の空間が広くなり、燃えやすい蒸気がたくさんたまる。', fix: 'アルコールは<b>8分目くらい</b>まで入れてから火をつける。少なくなったら、火を消して冷ましてから足す。', retry: true });
@@ -2245,7 +2268,7 @@ PR['p-distill'] = {
         if (state.pr !== me) return;
         if (hz === 'seal') {
           const p = me.rcG.position.clone().add(new THREE.Vector3(0, 0.8, 0));
-          fxBoom(p, 0.55); fxShatter(p, 0.7, me.rcG); me.sealM.visible = false;
+          fxWarn(me.rcG, 0.6, () => { fxBoom(p, 0.55); fxShatter(p, 0.7, me.rcG); me.sealM.visible = false; });
           danger({ title: '受け器をゴム栓で密閉したまま、加熱した', what: '出口のない装置の中で、蒸気と熱くなった空気がふくらみ、圧力がどんどん上がる。<b>いちばん弱い所（受け器やつなぎ目）が破裂</b>して、ガラスの破片と熱い液が飛び散る。', why: '気体は温度が上がると体積がふえる。閉じこめると、その分だけ圧力が上がる。', fix: '受け器は<b>密閉しない</b>（アルミはくをかぶせる・脱脂綿をつめるなど、空気が出入りできるようにする）。', retry: true });
         } else {
           fxBump(me.neckPos.clone().add(new THREE.Vector3(0, 0.15, 0)), 0xb39ddb, new THREE.Vector3(0.1, 1, 0), 0.6);
@@ -3447,7 +3470,7 @@ function containerPlay(cfg) {
         if (cfg.heat === 'none') return;
         if (!P.heat && P.mL === 0 && cfg.heat !== 'dish') {
           const mm = R.group.children[0], at = mm.localToWorld(new THREE.Vector3(0, 0.5, 0));
-          setTimeout(() => { if (R.group.children[0] !== mm || !state.play || !state.play.heat || state.play.mL > 0) return; fxShatter(at, 0.8, mm); state.play.heat = false; R.labels.forEach(L => { if (L.part) L.el.hidden = true; });
+          setTimeout(() => { if (R.group.children[0] !== mm || !state.play || !state.play.heat || state.play.mL > 0) return; fxWarn(mm, 0.45, () => fxShatter(at, 0.8, mm)); state.play.heat = false; R.labels.forEach(L => { if (L.part) L.el.hidden = true; });
             danger({ title: 'からっぽのガラス器具を、加熱した', what: '中に液がないので、ガラスの一部だけがどんどん熱くなり、<b>「ピシッ」とひびが入って割れる</b>。', why: '液があれば熱が液に逃げて温度が上がりすぎない。空だと、熱いところと冷たいところの差でガラスがゆがみ、割れる。', fix: '<b>中に液を入れてから</b>加熱する（加熱できる器具だけ）。ビーカーやフラスコは金網をしく。', retry: true }); }, reduceMotion ? 50 : 1600);
         }
         if (!P.heat && cfg.heatWarn) toast(cfg.heatWarn, 'info');
@@ -3542,8 +3565,8 @@ PLAY.lamp = {
       if (!P.lit) toast('火はついていない。でも、吹き消すのはいつでもだめ。', 'ng');
       else {
         P.lit = false; const mm = R.group.children[0];
-        fxBoom(mm.localToWorld(new THREE.Vector3(0, 1.0, 0)), 0.6); fxShatter(mm.localToWorld(new THREE.Vector3(0, 0.8, 0)), 0.9, mm); fxPoolFire(mm.localToWorld(new THREE.Vector3(0, 0, 0)), 1.6, 7);
-        R.labels.forEach(L => { if (L.part) L.el.hidden = true; });
+        const c1 = mm.localToWorld(new THREE.Vector3(0, 1.0, 0)), c2 = mm.localToWorld(new THREE.Vector3(0, 0.8, 0)), c0 = mm.localToWorld(new THREE.Vector3(0, 0, 0));
+        fxWarn(mm, 0.55, () => { fxBoom(c1, 0.6); fxShatter(c2, 0.9, mm); fxPoolFire(c0, 1.6, 3); R.labels.forEach(L => { if (L.part) L.el.hidden = true; }); }, c2);
         danger({ title: '火を息で吹き消した', what: '炎が芯をつたって<b>ランプの中に入り、中にたまったアルコールの蒸気に引火</b>。ランプが破裂して、燃えるアルコールが飛び散る。', why: '息を吹きかけると、炎がゆれて芯のすき間から中へ押しこまれることがある。ランプの中には、気化したアルコールと空気がまざっている。', fix: '<b>ふたを横からそっとかぶせて</b>消す（酸素をさえぎる）。', retry: true });
       }
     }
