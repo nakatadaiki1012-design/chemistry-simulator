@@ -286,6 +286,7 @@ h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display)
 @media (prefers-reduced-motion: reduce) { .dgpanel { animation: none; } .stage-wrap.hit::after { animation-duration: .01s; } }
 .slowbadge { position: absolute; z-index: 6; left: 50%; top: 12px; transform: translateX(-50%); background: #24282b; color: #fbf9f4; font-weight: 800; font-size: 13px; letter-spacing: .1em; padding: 3px 12px; border-radius: 3px; pointer-events: none; }
 .slowbadge::before { content: "● "; color: #e74c3c; }
+#btnSound .x { display: none; } #btnSound[aria-pressed="false"] .x { display: inline; } #btnSound[aria-pressed="false"] .w { display: none; } #btnSound[aria-pressed="false"] { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -307,6 +308,7 @@ h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display)
     <div class="ov ov-tl"><button type="button" class="tgl" id="btnParts" aria-pressed="true">部分の名前</button></div>
     <div class="ov ov-tr">
       <button type="button" class="ibtn" id="btnPan" aria-pressed="false" title="移動モード：ドラッグで画面を平行に動かす（右ドラッグ・Shift＋ドラッグ・2本指でもできる）" aria-label="移動モード"><svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M12 2l-3 3M12 2l3 3M12 22l-3-3M12 22l3-3M2 12l3-3M2 12l3 3M22 12l-3-3M22 12l-3 3"/></svg></button>
+      <button type="button" class="ibtn" id="btnSound" aria-pressed="true" title="効果音（オン／オフ）" aria-label="効果音"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path class="w" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/><path class="x" d="M16 9l5 6M21 9l-5 6"/></svg></button>
       <button type="button" class="ibtn" id="btnReset" title="向きと位置をもどす" aria-label="向きと位置をもどす"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
       <button type="button" class="ibtn" id="btnFull" title="全画面" aria-label="全画面"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </div>
@@ -1119,6 +1121,42 @@ function fxParticles(pos, n, opt) {
   }, null, opt.amb);
 }
 const fireColor = k => new THREE.Color().setHSL(0.13 - k * 0.11, 1, 0.62 - k * 0.32);
+// ===== 効果音（WebAudio でその場で合成する。音のファイルは使わない） =====
+const SFX = { on: true, ctx: null };
+try { SFX.on = localStorage.getItem('lab3d:sound') !== 'off'; } catch (e) { /* 保存できなくても動く */ }
+function sfxCtx() {
+  if (!SFX.on) return null;
+  try { if (!SFX.ctx) SFX.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (SFX.ctx.state === 'suspended') SFX.ctx.resume(); return SFX.ctx; } catch (e) { return null; }
+}
+function sfxNoise(dur, o) {
+  const ac = sfxCtx(); if (!ac) return;
+  const t = ac.currentTime + (o.delay || 0), n = Math.floor(ac.sampleRate * dur), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+  const src = ac.createBufferSource(); src.buffer = buf;
+  const fl = ac.createBiquadFilter(); fl.type = o.type || 'lowpass'; fl.Q.value = o.q || 0.7;
+  fl.frequency.setValueAtTime(o.f0 || 800, t); fl.frequency.exponentialRampToValueAtTime(Math.max(20, o.f1 || 100), t + dur);
+  const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(o.gain || 0.5, t + (o.attack || 0.006)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  src.connect(fl); fl.connect(g); g.connect(ac.destination); src.start(t); src.stop(t + dur + 0.05);
+}
+function sfxTone(f0, dur, o) {
+  const ac = sfxCtx(); if (!ac) return; o = o || {};
+  const t = ac.currentTime + (o.delay || 0), osc = ac.createOscillator(), g = ac.createGain();
+  osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(f0, t); if (o.f1) osc.frequency.exponentialRampToValueAtTime(o.f1, t + dur);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(o.gain || 0.2, t + (o.attack || 0.005)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(g); g.connect(ac.destination); osc.start(t); osc.stop(t + dur + 0.05);
+}
+// スローモーションに合わせて、低く・長めの音にしている
+const sfx = {
+  boom() { sfxNoise(3.2, { f0: 1200, f1: 50, gain: 0.9, attack: 0.01 }); sfxTone(70, 2.6, { f1: 28, gain: 0.55 }); sfxNoise(0.25, { type: 'highpass', f0: 2500, f1: 1200, gain: 0.25 }); },
+  flare() { sfxNoise(2.2, { type: 'bandpass', f0: 250, f1: 1600, q: 1.2, gain: 0.55, attack: 0.15 }); sfxNoise(2.2, { f0: 400, f1: 80, gain: 0.3, attack: 0.2 }); },
+  bump() { sfxTone(110, 0.35, { f1: 45, gain: 0.5 }); sfxNoise(1.6, { type: 'bandpass', f0: 2500, f1: 1200, q: 0.8, gain: 0.25, delay: 0.05 }); },
+  crack() {
+    for (let i = 0; i < 5; i++) sfxNoise(0.07, { type: 'highpass', f0: 3500, f1: 2000, gain: 0.45, delay: i * 0.04 * Math.random() });
+    for (let i = 0; i < 12; i++) sfxTone(2200 + Math.random() * 3800, 0.5, { type: 'triangle', gain: 0.06, delay: 0.25 + i * 0.13 + Math.random() * 0.08 });
+  },
+  creak(sec) { for (let i = 0; i < 6; i++) sfxNoise(0.05, { type: 'bandpass', f0: 1400 + Math.random() * 900, f1: 900, q: 3, gain: 0.22, delay: (i / 6) * sec * 0.9 + Math.random() * 0.1 }); sfxTone(60, sec, { type: 'sawtooth', gain: 0.04, attack: sec * 0.8 }); },
+  pop() { sfxTone(700, 0.12, { f1: 140, gain: 0.45 }); sfxNoise(0.1, { f0: 3000, f1: 400, gain: 0.35 }); },
+};
 // 爆発：まぶしい光 → 火の玉 → 衝撃の輪 → 黒いけむり
 function fxBoom(pos, size) {
   size = size || 1;
@@ -1128,7 +1166,7 @@ function fxBoom(pos, size) {
   fxAdd(ring, 0.6, k => { ring.scale.setScalar(size * (0.2 + k * 3.2)); ring.material.opacity = 0.9 * (1 - k); });
   fxParticles(pos, 46, { life: 1.3, size: 0.2 * size, add: true, g: -1.2, vel: () => new THREE.Vector3((Math.random() - 0.5) * 6, Math.random() * 4.5 + 0.5, (Math.random() - 0.5) * 6).multiplyScalar(size * 0.7), grow: k => 1 + k * 2.2, color: fireColor, fade: 1.6 });
   fxParticles(pos, 22, { life: 2.8, size: 0.2 * size, op: 0.5, g: -0.9, delay: 0.25, vel: () => new THREE.Vector3((Math.random() - 0.5) * 1.6, 0.6 + Math.random() * 1.2, (Math.random() - 0.5) * 1.6).multiplyScalar(size), grow: k => 1 + k * 2.2, color: k => new THREE.Color(0x4a4a4a).lerp(new THREE.Color(0x9a9a9a), k), fade: 1.2 });
-  fxShake(0.7, 0.12 * size); stageHit();
+  fxShake(0.7, 0.12 * size); stageHit(); sfx.boom();
 }
 // 引火：炎がいっきに大きくふき上がる
 function fxFlare(pos, size, dir) {
@@ -1136,14 +1174,14 @@ function fxFlare(pos, size, dir) {
   fxParticles(pos, 60, { life: 1.6, size: 0.16 * size, add: true, delay: 0.7, vel: () => d.clone().multiplyScalar(2.6 + Math.random() * 2.2).add(new THREE.Vector3((Math.random() - 0.5) * 1.2, 0, (Math.random() - 0.5) * 1.2)).multiplyScalar(size), grow: k => 1 + k * 2.5, color: fireColor, fade: 1.5 });
   const glow = new THREE.Mesh(_fxSphere, fxMat(0xffb347, 0.7, true)); glow.position.copy(pos);
   fxAdd(glow, 1.2, k => { glow.scale.setScalar(size * (0.4 + Math.sin(k * Math.PI) * 1.4)); glow.material.opacity = 0.7 * (1 - k); });
-  fxShake(0.35, 0.05 * size); stageHit();
+  fxShake(0.35, 0.05 * size); stageHit(); sfx.flare();
 }
 // 突沸：熱い液が急に沸きたって飛び散る
 function fxBump(pos, color, dir, size) {
   size = size || 1; const d = (dir || new THREE.Vector3(0, 1, 0)).clone().normalize();
   fxParticles(pos, 55, { life: 1.6, size: 0.06 * size, op: 0.85, g: 9, floor: 0.02, vel: () => d.clone().multiplyScalar(3.5 + Math.random() * 3).add(new THREE.Vector3((Math.random() - 0.5) * 2, Math.random() * 1.5, (Math.random() - 0.5) * 2)).multiplyScalar(size), grow: () => 1, color: () => new THREE.Color(color || 0xbfe2f5), fade: 4 });
   fxParticles(pos, 12, { life: 1.8, size: 0.18 * size, op: 0.45, g: -0.8, vel: () => d.clone().multiplyScalar(0.8).add(new THREE.Vector3((Math.random() - 0.5) * 0.6, 0.5, (Math.random() - 0.5) * 0.6)), grow: k => 1 + k * 3, color: () => new THREE.Color(0xf4f6f8), fade: 1.3 });
-  fxShake(0.3, 0.04); stageHit();
+  fxShake(0.3, 0.04); stageHit(); sfx.bump();
 }
 // ガラスが割れる：破片が飛び散って机に落ちる
 function fxShatter(pos, size, hide) {
@@ -1172,10 +1210,11 @@ function fxShatter(pos, size, hide) {
       m.material.opacity = k < 0.8 ? 0.75 : 0.75 * (1 - (k - 0.8) / 0.2);
     });
   });
-  fxShake(0.25, 0.05); stageHit();
+  fxShake(0.25, 0.05); stageHit(); sfx.crack();
 }
 // 破裂する前ぶれ：器具がふるえて少しふくらみ、中が赤く光る → そのあと then() で破裂させる
 function fxWarn(obj, sec, then, glowAt) {
+  sfx.creak(sec / FX.speed);
   const base = obj.position.clone(), s0 = obj.scale.clone();
   const holder = new THREE.Group();
   let glow = null;
@@ -1205,9 +1244,14 @@ function dangerHTML(o) {
     <h3 id="dangerTitle">${esc(o.title)}</h3>
     <dl><dt class="what">起こること</dt><dd>${o.what}</dd>${o.why ? `<dt class="why">なぜ？</dt><dd>${o.why}</dd>` : ''}<dt class="fix">正しくは</dt><dd>${o.fix}</dd></dl>
     ${o.real ? `<p class="dg-real">${o.real}</p>` : ''}
-    <div class="dg-row"><button type="button" class="btn main" data-a="dangerok">わかった</button>${o.retry ? '<button type="button" class="btn" data-a="dgretry">はじめからやり直す</button>' : ''}</div></div>`;
+    <div class="dg-row"><button type="button" class="btn main" data-a="dangerok">わかった</button>${o.replay !== undefined && o.replay !== null ? `<button type="button" class="btn" data-demo="${o.replay}">▶ もう一度スローで見る</button>` : ''}${o.retry ? '<button type="button" class="btn" data-a="dgretry">はじめからやり直す</button>' : ''}</div></div>`;
 }
 function danger(o) {
+  // 同じ場面を「注意」タブのデモで再生できるなら、もう一度見るボタンを出す
+  const ds = state.mode === 'practice' && DEMOS[state.id];
+  if (ds && (state.replayDemo === undefined || state.replayDemo === null)) { const k = ds.findIndex(d => d[2] && d[2].test(o.title)); if (k >= 0) state.replayDemo = k; }
+  o.replay = state.replayDemo;
+  state.replayDemo = null;
   state.danger = o;
   $('toast').hidden = true;
   renderCard();
@@ -1882,6 +1926,15 @@ PR['p-gas'] = {
         r = { level: 'mid', msg: `一応集まるが、${gas.name}は水に溶けにくいので、<b>水上置換</b>がいちばんよい。上方・下方置換では空気がまざりやすく、どれだけたまったかも見えない。` };
       }
       s.result = r; s.running = true; s.t0 = performance.now();
+      // 有毒な気体がもれる・水が逆流する → 少しして、本物なら何が起こるかを出す
+      const TOX = {
+        cl2: ['塩素がびんからもれて、部屋に広がった', '黄緑色の<b>有毒な気体</b>が広がる。目・鼻・のどをいため、せきが止まらなくなる。多く吸いこむと呼吸が苦しくなり、命にかかわる。', '塩素は空気より重い（分子量71）。上方置換では、びんからこぼれ落ちる。'],
+        hcl: ['塩化水素がびんからもれて、部屋に広がった', '<b>鼻をさすにおい</b>の気体が広がる。目やのどの水分に溶けて塩酸になり、粘膜をいためる。', '塩化水素は空気より重い（分子量36.5）。上方置換では、びんからこぼれ落ちる。'],
+        nh3: ['アンモニアがびんからもれて、部屋に広がった', '<b>鼻をさすにおい</b>の気体が広がる。目に入ると、涙が止まらず、いためる。', 'アンモニアは空気より軽い（分子量17）。下方置換では、上へにげていく。'],
+      };
+      const me = s;
+      if (r.leak && TOX[gas.id]) setTimeout(() => { if (state.pr !== me) return; const [t, w, y] = TOX[gas.id]; stageHit(); danger({ title: t, what: w, why: y, fix: `${gas.name}は<b>${gas.ok.map(k => ({ water: '水上置換', up: '上方置換', down: '下方置換' })[k]).join('・')}</b>で集める。においを調べるときは、手であおいで少しだけかぐ。実験は<b>換気</b>をしながら（ドラフトの中で）行う。` }); }, reduceMotion ? 50 : 2200);
+      if (r.suck) setTimeout(() => { if (state.pr !== me) return; stageHit(); danger({ title: `水によく溶ける${gas.name}を、水上置換で集めようとした`, what: '出てきた気体が水に溶けて、管の中の圧力が下がり、<b>水が管を逆流してフラスコに流れこむ</b>。加熱しているフラスコなら、冷たい水で<b>急に冷えて割れる</b>。', why: `${gas.name}は${SOL_TXT[gas.sol]}。気体が水に溶けると、その分だけ管の中の気体が減って、水が吸い上げられる。`, fix: `${gas.name}は<b>${gas.ok.map(k => ({ water: '水上置換', up: '上方置換', down: '下方置換' })[k]).join('・')}</b>で集める。水上置換で加熱をやめるときは、<b>先に管を水から出してから</b>火を消す。` }); }, reduceMotion ? 50 : 2200);
     }
     if (a === 'gtest') toast(GASES.find(x => x.id === s.gas).test, 'ok');
     renderCard();
@@ -1968,7 +2021,7 @@ PR['p-elec'] = {
     }
     if (a === 'volt') s.volt = v;
     if (a === 'ereset') { s.h = 0; s.on = false; }
-    if (a === 'testH') { if (s.h < 0.4) toast('まだ気体が少ない。もう少し集めてから。', 'info'); else { toast('ポンッ！と音を立てて燃えた → 陰極から出たのは水素。', 'ok'); markDone('p-elec'); } }
+    if (a === 'testH') { if (s.h < 0.4) toast('まだ気体が少ない。もう少し集めてから。', 'info'); else { toast('ポンッ！と音を立てて燃えた → 陰極から出たのは水素。', 'ok'); sfx.pop(); markDone('p-elec'); } }
     if (a === 'testO') { if (s.h < 0.8) toast('まだ気体が少ない。もう少し集めてから。', 'info'); else toast('線香が炎を上げて激しく燃えた → 陽極から出たのは酸素。', 'ok'); }
     renderCard();
   },
@@ -2973,20 +3026,21 @@ function seqPractice(id) {
 
 // 「注意」タブから、まちがえたときに起こることを直接見る（場面を作り直してから再生）
 const DEMOS = {
-  'p-burner': [['ガスを出してから火をつける', s => { Object.assign(s, { checked: true, open: true, gas: 0.5, leak: 4, leakWarned: true, matchOn: false }); PR['p-burner'].act('match'); }]],
+  'p-burner': [['ガスを出してから火をつける', s => { Object.assign(s, { checked: true, open: true, gas: 0.5, leak: 4, leakWarned: true, matchOn: false }); PR['p-burner'].act('match'); }, /ガスを出してから/]],
   'p-lamp': [
-    ['アルコールが少ないまま点火', s => { Object.assign(s, { capOn: false, capT: 0, matchOn: true, amount: 0.3 }); s.rebuildAlc(); PR['p-lamp'].act('side'); }],
-    ['息で吹き消す', s => { Object.assign(s, { capOn: false, capT: 0, lit: true }); PR['p-lamp'].act('blow'); }],
-    ['火をつけたまま足す', s => { Object.assign(s, { capOn: false, capT: 0, lit: true }); PR['p-lamp'].act('add'); }]],
-  'p-tube': [['口を人に向けて加熱', s => { s.dir = 'person'; PR['p-tube'].act('heat'); }], ['ふらずに1か所だけ加熱', s => { s.shake = false; PR['p-tube'].act('heat'); }]],
-  'p-distill': [['受け器を密閉して加熱', s => { s.seal = true; PR['p-distill'].act('dheat'); }], ['沸騰石なしで加熱', s => { Object.assign(s, { seal: false, stone: false }); PR['p-distill'].act('dheat'); }]],
-  'p-nahco3': [['火を先に消す（逆流）', s => { const st = SEQ['p-nahco3'].steps.find(x => x.wrong.some(w => /逆流/.test(w[1]))), w = st.wrong.find(x => /逆流/.test(x[1])); s.k = SEQ['p-nahco3'].steps.indexOf(st); s.opts = seqOptions(SEQ['p-nahco3'], s.k); renderCard(); seqHazard(s, { text: w[0], why: w[1] }, st); }],
-    ['口を上げて加熱', s => { const st = SEQ['p-nahco3'].steps.find(x => x.wrong.some(w => /口を少し上げ/.test(w[0]))), w = st.wrong.find(x => /口を少し上げ/.test(x[0])); seqHazard(s, { text: w[0], why: w[1] }, st); }]],
+    ['アルコールが少ないまま点火', s => { Object.assign(s, { capOn: false, capT: 0, matchOn: true, amount: 0.3 }); s.rebuildAlc(); PR['p-lamp'].act('side'); }, /少ないまま/],
+    ['息で吹き消す', s => { Object.assign(s, { capOn: false, capT: 0, lit: true }); PR['p-lamp'].act('blow'); }, /吹き消/],
+    ['火をつけたまま足す', s => { Object.assign(s, { capOn: false, capT: 0, lit: true }); PR['p-lamp'].act('add'); }, /足した/]],
+  'p-tube': [['口を人に向けて加熱', s => { s.dir = 'person'; PR['p-tube'].act('heat'); }, /人の方/], ['ふらずに1か所だけ加熱', s => { s.shake = false; PR['p-tube'].act('heat'); }, /1か所|入れすぎ/]],
+  'p-distill': [['受け器を密閉して加熱', s => { s.seal = true; PR['p-distill'].act('dheat'); }, /密閉/], ['沸騰石なしで加熱', s => { Object.assign(s, { seal: false, stone: false }); PR['p-distill'].act('dheat'); }, /沸騰石|半分より多く/]],
+  'p-nahco3': [['火を先に消す（逆流）', s => { const st = SEQ['p-nahco3'].steps.find(x => x.wrong.some(w => /逆流/.test(w[1]))), w = st.wrong.find(x => /逆流/.test(x[1])); s.k = SEQ['p-nahco3'].steps.indexOf(st); s.opts = seqOptions(SEQ['p-nahco3'], s.k); renderCard(); seqHazard(s, { text: w[0], why: w[1] }, st); }, /逆流|先に火を消/],
+    ['口を上げて加熱', s => { const st = SEQ['p-nahco3'].steps.find(x => x.wrong.some(w => /口を少し上げ/.test(w[0]))), w = st.wrong.find(x => /口を少し上げ/.test(x[0])); seqHazard(s, { text: w[0], why: w[1] }, st); }, /口を少し上げ/]],
 };
 function runDemo(i) {
   const d = DEMOS[state.id] && DEMOS[state.id][i];
   if (!d) return;
   clearScene(); PR[state.id].init(); state.ptab = 'op'; renderCard();
+  state.replayDemo = i;
   d[1](state.pr);
 }
 
@@ -3834,6 +3888,8 @@ $('btnParts').addEventListener('click', () => {
   if (R) R.labels.forEach(L => { if (L.part) L.el.hidden = !state.parts; });
 });
 // 向きと位置だけをもどす（実験の進み具合はそのまま）
+$('btnSound').setAttribute('aria-pressed', String(SFX.on));
+$('btnSound').addEventListener('click', () => { SFX.on = !SFX.on; $('btnSound').setAttribute('aria-pressed', String(SFX.on)); try { localStorage.setItem('lab3d:sound', SFX.on ? 'on' : 'off'); } catch (e) { /* 無視 */ } if (SFX.on) sfx.pop(); });
 $('btnReset').addEventListener('click', () => { if (!R) return; if (state.mode === 'practice' && state.id === 'p-cylinder') PR['p-cylinder'].view(); else if (R.lastFrame) frame(...R.lastFrame); });
 $('btnPan').addEventListener('click', () => {
   if (!R) return;
