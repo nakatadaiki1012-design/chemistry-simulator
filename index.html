@@ -2345,6 +2345,7 @@ function buildReactionView() {
     const rad = Math.max(...tpl.atoms.map(a => (EL[a.el].rc * 0.42 + 0.13) * s * 1.35));
     const w = Math.max(...xs) - Math.min(...xs) + 2 * rad + 0.3, h = Math.max(...ys) - Math.min(...ys) + 2 * rad + 0.2;
     const c = st.coef[i];
+    const g0 = g.children.length, a0 = sides[spc.side].atoms.length;
     if (i > 0) x += (sp[i - 1].side !== spc.side) ? 2.6 : 1.3;
     const cx = x + w / 2;
     for (let k = 0; k < c; k++) {
@@ -2368,25 +2369,45 @@ function buildReactionView() {
       });
     }
     maxH = Math.max(maxH, c * (h + 0.35));
-    cols.push({ cx, w, i, spc });
+    cols.push({ cx, w, i, spc, objs: g.children.slice(g0), atoms: sides[spc.side].atoms.slice(a0), y: 0 });
     x += w;
   });
-  const shift = -x / 2;
-  g.children.forEach(o => { o.position.x += shift; });
-  sides.L.atoms.concat(sides.R.atoms).forEach(a => { a.home.x += shift; });
-  const bottom = -Math.max(maxH / 2, 0.8) - 0.6;
+  // 列ごとに動かす（atoms の home も、アニメーションのためにいっしょに動かす）
+  const moveCol = (c, dx, dy) => { c.objs.forEach(o => { o.position.x += dx; o.position.y += dy; }); c.atoms.forEach(a => { a.home.x += dx; a.home.y += dy; }); c.cx += dx; c.y += dy; };
+  // スマホのように横がせまい画面では、反応前を上の段、反応後を下の段に分けて、分子を大きく見せる
+  const twoRows = isNarrow() && x > 7;
+  let width = x, height = maxH;
+  if (twoRows) {
+    const rowY = maxH / 2 + 1.1;
+    let wMax = 0;
+    ['L', 'R'].forEach(side => {
+      const cs = cols.filter(c => c.spc.side === side);
+      const left = cs[0].cx - cs[0].w / 2, right = cs[cs.length - 1].cx + cs[cs.length - 1].w / 2;
+      wMax = Math.max(wMax, right - left);
+      cs.forEach(c => moveCol(c, -(left + right) / 2, side === 'L' ? rowY : -rowY));
+    });
+    width = wMax; height = maxH * 2 + 2.2;
+  } else {
+    cols.forEach(c => moveCol(c, -x / 2, 0));
+  }
+  const bottomOf = c => c.y - Math.max(maxH / 2, 0.8) - 0.6;
   cols.forEach((c, k) => {
     const coef = st.coef[c.i];
-    addLabel('lbl-rx', `<b class="cf">${coef === 1 ? '' : coef}</b>${formulaHTML(c.spc.f)}`, () => new THREE.Vector3(c.cx + shift, bottom, 0));
+    addLabel('lbl-rx', `<b class="cf">${coef === 1 ? '' : coef}</b>${formulaHTML(c.spc.f)}`, () => new THREE.Vector3(c.cx, bottomOf(c), 0));
     const next = cols[k + 1];
     if (next) {
-      const mx = (c.cx + c.w / 2 + next.cx - next.w / 2) / 2 + shift;
-      addLabel(next.spc.side !== c.spc.side ? 'lbl-arrow' : 'lbl-plus', next.spc.side !== c.spc.side ? '→' : '+', () => new THREE.Vector3(mx, 0, 0));
+      const turn = next.spc.side !== c.spc.side;
+      if (turn && twoRows) addLabel('lbl-arrow', '↓', () => new THREE.Vector3(width / 2 + 0.7, 0, 0));
+      else {
+        const mx = (c.cx + c.w / 2 + next.cx - next.w / 2) / 2;
+        addLabel(turn ? 'lbl-arrow' : 'lbl-plus', turn ? '→' : '+', () => new THREE.Vector3(mx, c.y, 0));
+      }
     }
   });
   view.rxSides = sides;
-  view.rxWidth = x;
-  view.rxHeight = maxH;
+  view.rxTwo = twoRows;
+  view.rxWidth = width + (twoRows ? 1.6 : 0);
+  view.rxHeight = height;
   // 反応のアニメーション：左の原子が、同じ元素の右の位置へ移動する
   const pairs = [];
   if (rxStatus(r, st.coef).ok) {
@@ -3234,7 +3255,7 @@ function lessonGo() {
     view.bohr.setCounts(ionShells(el, ionOf(el)), { now: performance.now() / 1000, t: performance.now() / 1000 });
   }
   if (st.phaseT !== undefined) state.phaseT = st.phaseT;
-  if (st.solve && state.rx && state.entry.rx) { state.rx.coef = state.entry.rx.ans.slice(); clearView(); buildReactionView(); }
+  if (st.solve && state.rx && state.entry.rx) { state.rx.coef = state.entry.rx.ans.slice(); clearView(); buildReactionView(); fitCamera(); }
   if (!state.lesson.keepTab) state.lesson.tab = st.drill ? 'calc' : 'learn';
   state.lesson.keepTab = false;
   renderCard();
@@ -6127,7 +6148,7 @@ function sceneRadius() {
   if (view.kind === 'ph') return 4.1;
   if (view.kind === 'sep') return view.sepR;
   if (view.kind === 'compare') return view.cmpR;
-  if (view.kind === 'reaction') return Math.max(view.rxWidth / 2 + 0.8, view.rxHeight / 2 + 1.8, 3);
+  if (view.kind === 'reaction') return view.rxTwo ? Math.max(view.rxWidth / 2 + 0.5, view.rxHeight / 2 + 0.5, 2.2) : Math.max(view.rxWidth / 2 + 0.8, view.rxHeight / 2 + 1.8, 3);
   if (view.kind === 'mole') return e.phase === 'gas' ? view.moleExtent * 0.9 + 1.5 : view.moleExtent;
   const m = e.model;
   let r = 0;
@@ -6148,6 +6169,7 @@ function fitCamera() {
   const tanV = Math.tan(cam.fov * Math.PI / 360);
   const halfV = Math.atan(tanV * hEff / h), halfH = Math.atan(tanV * wEff / h);
   const r = sceneRadius();
+  view.fitR = r;
   const dist = r / Math.sin(Math.min(halfV, halfH)) * 1.05;
   const e = state.entry;
   let dir;
@@ -6899,7 +6921,10 @@ function bindUI() {
       const i = +cf.dataset.coef, st = state.rx;
       st.coef[i] = Math.max(1, Math.min(12, st.coef[i] + +cf.dataset.d));
       st.hint = '';
+      const r0 = view.fitR;
       clearView(); buildReactionView(); renderCard();
+      // 係数で分子がふえて画面からはみ出しそうなら、映す範囲を合わせ直す
+      if (!r0 || Math.abs(sceneRadius() - r0) / r0 > 0.1) fitCamera();
       return;
     }
     const add = ev.target.closest('[data-add]');

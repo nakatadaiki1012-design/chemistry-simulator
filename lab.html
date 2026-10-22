@@ -287,6 +287,54 @@ h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display)
 .slowbadge { position: absolute; z-index: 6; left: 50%; top: 12px; transform: translateX(-50%); background: #24282b; color: #fbf9f4; font-weight: 800; font-size: 13px; letter-spacing: .1em; padding: 3px 12px; border-radius: 3px; pointer-events: none; }
 .slowbadge::before { content: "● "; color: #e74c3c; }
 #btnSound .x { display: none; } #btnSound[aria-pressed="false"] .x { display: inline; } #btnSound[aria-pressed="false"] .w { display: none; } #btnSound[aria-pressed="false"] { color: var(--muted); }
+.slowbadge.super { background: #c0392b; font-size: 14px; padding: 4px 14px; animation: superPulse .8s ease-in-out infinite alternate; }
+@keyframes superPulse { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.06); } }
+.stage-wrap::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: 0; transition: opacity .5s; box-shadow: inset 0 0 120px 30px rgba(10, 12, 16, .55); }
+.stage-wrap.bullet::before { opacity: 1; }
+.stage-wrap.bullet #stage { filter: saturate(.75) contrast(1.08); transition: filter .4s; }
+
+/* 記録タブ */
+.recbar { position: relative; display: flex; justify-content: space-between; align-items: baseline; padding: 8px 10px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font-size: 14px; font-weight: 700; }
+.recbar b { font-family: var(--font-data); font-size: 13px; }
+.recbar i { position: absolute; left: 10px; right: 10px; bottom: 5px; height: 3px; background: linear-gradient(90deg, var(--accent) var(--p), var(--line) var(--p)); }
+.recsum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 4px 0 10px; }
+.recsum div { border: 1.5px solid var(--ink); border-radius: 3px; padding: 6px 8px; background: var(--panel); }
+.recsum span { display: block; font-size: 11.5px; color: var(--muted); font-weight: 700; }
+.recsum b { font-family: var(--font-data); font-size: 24px; } .recsum small { font-size: 12px; color: var(--muted); margin-left: 2px; }
+.rectab { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.rectab th, .rectab td { padding: 4px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+.rectab thead th { font-size: 12px; color: var(--muted); }
+.rectab td:nth-child(n+2), .rectab thead th:nth-child(n+2) { text-align: center; width: 4.8em; }
+.rectab .rcat th { background: var(--chip, #ebe6da); font-size: 12.5px; padding-top: 6px; }
+.rectab .ok { color: var(--ok); } .rectab .no { color: var(--muted); }
+.rectab .linkbtn { border: 0; background: none; padding: 0; font: inherit; color: var(--ink); text-align: left; text-decoration: underline dotted; cursor: pointer; }
+.recq { list-style: none; margin: 0; padding: 0; } .recq li { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 14px; } .recq b { font-family: var(--font-data); }
+@media print {
+  header, .lib, .stage-wrap, .toast, .card .row, .card .note { display: none !important; }
+  body, .app { display: block !important; height: auto !important; overflow: visible !important; background: #fff !important; }
+  .card { border: 0 !important; max-height: none !important; overflow: visible !important; position: static !important; width: auto !important; }
+  .card .body { overflow: visible !important; max-height: none !important; }
+}
+
+/* 危険を見つけろ：3Dの上の番号 */
+.hzspots { position: absolute; inset: 0; pointer-events: none; z-index: 4; overflow: hidden; }
+.hzspot { position: absolute; left: 0; top: 0; pointer-events: auto; border: 0; background: none; padding: 0; margin: -20px 0 0 -20px; width: 40px; height: 40px; cursor: pointer; }
+.hzspot b { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: #f6c445; color: #24282b; font: 800 18px var(--font-data); border: 2.5px solid #24282b; box-shadow: 0 0 0 4px rgba(246,196,69,.35); animation: hzPulse 1.2s ease-in-out infinite; }
+.hzspot span { display: none; position: absolute; left: 44px; top: 8px; white-space: nowrap; background: var(--panel); border: 1px solid var(--line); padding: 1px 8px; font-size: 12.5px; font-weight: 700; border-radius: 3px; }
+.hzspot.shown span { display: block; }
+.hzspot.right b { background: #c0392b; color: #fff; animation: none; box-shadow: 0 0 0 6px rgba(192,57,43,.35); }
+.hzspot.wrong b { background: #9aa0a6; animation: none; }
+.hzspot.dim b { opacity: .45; animation: none; } .hzspot.dim span { opacity: .6; }
+@keyframes hzPulse { 50% { transform: scale(1.12); } }
+@media (prefers-reduced-motion: reduce) { .hzspot b { animation: none; } }
+.hzchoices { display: grid; gap: 6px; margin: 6px 0; }
+.hzchoices .qc { text-align: left; display: flex; align-items: center; gap: 8px; }
+.hzn { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #f6c445; color: #24282b; font-family: var(--font-data); flex: none; }
+.hzbtn { background: #c0392b !important; border-color: #c0392b !important; }
+.rectab thead th { white-space: nowrap; }
+.slowbadge { white-space: nowrap; }
+.recbar { flex: none; min-width: 120px; white-space: nowrap; }
+@media (max-width: 760px) { .slowbadge { top: 56px; font-size: 12px; } .slowbadge.super { font-size: 12.5px; } }
 </style>
 </head>
 <body>
@@ -297,6 +345,7 @@ h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display)
     <button type="button" data-mode="see" aria-current="true" title="器具を見る">器具</button>
     <button type="button" data-mode="practice" aria-current="false" title="操作の練習・実験">操作</button>
     <button type="button" data-mode="quiz" aria-current="false" title="クイズ">クイズ</button>
+    <button type="button" data-mode="record" aria-current="false" title="自分の記録（授業の提出用）">記録</button>
   </nav>
   <a class="back" id="backLink" href="index.html" target="_blank" rel="noopener" title="分子ラボ3D を開く（新しいタブ）">分子3D<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
 </header>
@@ -314,6 +363,7 @@ h2, h3, .mol-name, .ls-title, .name, .ls-part { font-family: var(--font-display)
     </div>
     <div class="toast" id="toast" hidden></div>
     <div class="slowbadge" id="slowBadge" hidden>スロー再生</div>
+    <div class="hzspots" id="hzSpots"></div>
   </section>
   <aside class="card" id="card" aria-live="polite"></aside>
 </main>
@@ -330,6 +380,12 @@ const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i-
 const DONE_KEY = 'lab-3d:done';
 let done = new Set();
 try { done = new Set(JSON.parse(localStorage.getItem(DONE_KEY) || '[]')); } catch (e) { /* 保存できない環境でも動く */ }
+// クイズの最高点と、見た危険な場面も覚えておく（記録タブで一覧にする）
+const BEST_KEY = 'lab-3d:quizbest', HAZ_KEY = 'lab-3d:hazards';
+let quizBest = {}, hazSeen = new Set();
+try { quizBest = JSON.parse(localStorage.getItem(BEST_KEY) || '{}'); hazSeen = new Set(JSON.parse(localStorage.getItem(HAZ_KEY) || '[]')); } catch (e) { /* 保存できない環境でも動く */ }
+function saveBest(kind, score) { if ((quizBest[kind] || 0) >= score) return; quizBest[kind] = score; try { localStorage.setItem(BEST_KEY, JSON.stringify(quizBest)); } catch (e) { /* 無視 */ } }
+function saveHaz(title) { if (hazSeen.has(title)) return; hazSeen.add(title); try { localStorage.setItem(HAZ_KEY, JSON.stringify([...hazSeen])); } catch (e) { /* 無視 */ } }
 function markDone(id) { done.add(id); try { localStorage.setItem(DONE_KEY, JSON.stringify([...done])); } catch (e) { /* 無視 */ } renderLib(); }
 
 // ===== 3Dの部品づくり =====
@@ -1080,22 +1136,47 @@ function layoutLabels() {
 // ===== 危険の演出（爆発・引火・突沸・ガラスが割れる・ガスもれ） =====
 // 本物ではできない「まちがえたらどうなるか」を、目で見てわかるようにする
 // speed：演出をスローモーションで見せる（1 = ふつうの速さ）
-const FX = { list: [], shakeUntil: 0, shakeAmp: 0, speed: 0.35 };
+// base：ふだんの演出の速さ。ramp：割れる・火がつく「その瞬間」だけ超スローにする
+const FX = { list: [], shakeUntil: 0, shakeAmp: 0, base: 0.55, speed: 0.55, ramp: null, last: 0 };
+// その瞬間を超スローに：peak（いちばん遅い速さ）を hold 秒見せてから、rec 秒かけて元の速さにもどす
+function fxRamp(label, peak, hold, rec) {
+  if (reduceMotion) return;
+  const now = performance.now() / 1000;
+  if (FX.ramp && now - FX.ramp.t0 < FX.ramp.hold) return; // すでに超スロー中なら続ける
+  FX.ramp = { t0: now, peak: peak || 0.08, hold: hold || 1.6, rec: rec || 1.8, label };
+}
+function fxSpeedNow(now) {
+  const r = FX.ramp;
+  if (!r) return FX.base;
+  const e = now - r.t0;
+  if (e < r.hold) return r.peak;
+  if (e < r.hold + r.rec) { const k = (e - r.hold) / r.rec; return r.peak + (FX.base - r.peak) * k * k; }
+  FX.ramp = null; return FX.base;
+}
 function fxMat(color, opacity, add) { return new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending }); }
 function fxAdd(obj, life, update, done, amb) { R.fx.add(obj); FX.list.push({ obj, t0: performance.now() / 1000, life, update, done, amb }); }
 function fxClear() { FX.list.forEach(f => { R.fx.remove(f.obj); f.obj.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) x.material.dispose(); }); }); FX.list = []; }
 function fxTick(t) {
-  const now = performance.now() / 1000;
+  const now = performance.now() / 1000, dt = Math.min(0.1, Math.max(0, now - (FX.last || now)));
+  FX.last = now;
+  FX.speed = fxSpeedNow(now);
   FX.list = FX.list.filter(f => {
-    const sec = (now - f.t0) * (f.amb ? 1 : FX.speed), k = sec / f.life; // amb：ガスもれの雲など、ふだんの速さで動くもの
+    // 速さが途中で変わるので、経過時間は1コマずつ足していく（amb：ガスもれの雲など、ふだんの速さで動くもの）
+    f.sec = (f.sec || 0) + dt * (f.amb ? 1 : FX.speed);
+    const sec = f.sec, k = sec / f.life;
     if (k >= 1) { R.fx.remove(f.obj); f.obj.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) x.material.dispose(); }); if (f.done) setTimeout(f.done, 0); return false; }
     f.update(k, sec);
     return true;
   });
   const slow = FX.speed < 1 && FX.list.some(f => !f.amb), b = $('slowBadge');
-  if (b && b.hidden === slow) b.hidden = !slow;
+  if (b) {
+    if (b.hidden === slow) b.hidden = !slow;
+    const txt = FX.ramp && now - FX.ramp.t0 < FX.ramp.hold + FX.ramp.rec * 0.5 ? `超スロー：${FX.ramp.label}` : 'スロー再生';
+    if (b.textContent !== txt) { b.textContent = txt; b.classList.toggle('super', txt !== 'スロー再生'); }
+  }
+  $('stageWrap').classList.toggle('bullet', !!FX.ramp && now - FX.ramp.t0 < FX.ramp.hold);
 }
-function fxShake(sec, amp) { if (reduceMotion) return; FX.shakeUntil = performance.now() / 1000 + sec / FX.speed; FX.shakeAmp = amp; }
+function fxShake(sec, amp) { if (reduceMotion) return; FX.shakeUntil = performance.now() / 1000 + sec * 2.5; FX.shakeAmp = amp; }
 function stageHit() { const w = $('stageWrap'); w.classList.remove('hit'); void w.offsetWidth; w.classList.add('hit'); setTimeout(() => w.classList.remove('hit'), 1850); }
 const _fxSphere = new THREE.SphereGeometry(1, 14, 10);
 // 粒をたくさん飛ばす共通部品：v（初速）, g（重力）, 色の変化, 大きさの変化
@@ -1155,11 +1236,13 @@ const sfx = {
     for (let i = 0; i < 12; i++) sfxTone(2200 + Math.random() * 3800, 0.5, { type: 'triangle', gain: 0.06, delay: 0.25 + i * 0.13 + Math.random() * 0.08 });
   },
   creak(sec) { for (let i = 0; i < 6; i++) sfxNoise(0.05, { type: 'bandpass', f0: 1400 + Math.random() * 900, f1: 900, q: 3, gain: 0.22, delay: (i / 6) * sec * 0.9 + Math.random() * 0.1 }); sfxTone(60, sec, { type: 'sawtooth', gain: 0.04, attack: sec * 0.8 }); },
+  tick() { sfxNoise(0.04, { type: 'highpass', f0: 4200, f1: 3000, gain: 0.5 }); sfxNoise(0.06, { type: 'bandpass', f0: 2600, f1: 1800, q: 4, gain: 0.3, delay: 0.12 }); },
   pop() { sfxTone(700, 0.12, { f1: 140, gain: 0.45 }); sfxNoise(0.1, { f0: 3000, f1: 400, gain: 0.35 }); },
 };
 // 爆発：まぶしい光 → 火の玉 → 衝撃の輪 → 黒いけむり
 function fxBoom(pos, size) {
   size = size || 1;
+  fxRamp('爆発の瞬間');
   const flash = new THREE.Mesh(_fxSphere, fxMat(0xfff4c8, 1, true)); flash.position.copy(pos);
   fxAdd(flash, 0.45, k => { flash.scale.setScalar(size * (0.3 + k * 2.2)); flash.material.opacity = 1 - k; });
   const ring = new THREE.Mesh(new THREE.TorusGeometry(1, 0.04, 6, 48), fxMat(0xffd27a, 0.9, true)); ring.rotation.x = Math.PI / 2; ring.position.copy(pos);
@@ -1170,7 +1253,8 @@ function fxBoom(pos, size) {
 }
 // 引火：炎がいっきに大きくふき上がる
 function fxFlare(pos, size, dir) {
-  size = size || 1; const d = dir || new THREE.Vector3(0, 1, 0);
+  size = size || 1;
+  fxRamp('火がつく瞬間', 0.12, 1.2, 1.5); const d = dir || new THREE.Vector3(0, 1, 0);
   fxParticles(pos, 60, { life: 1.6, size: 0.16 * size, add: true, delay: 0.7, vel: () => d.clone().multiplyScalar(2.6 + Math.random() * 2.2).add(new THREE.Vector3((Math.random() - 0.5) * 1.2, 0, (Math.random() - 0.5) * 1.2)).multiplyScalar(size), grow: k => 1 + k * 2.5, color: fireColor, fade: 1.5 });
   const glow = new THREE.Mesh(_fxSphere, fxMat(0xffb347, 0.7, true)); glow.position.copy(pos);
   fxAdd(glow, 1.2, k => { glow.scale.setScalar(size * (0.4 + Math.sin(k * Math.PI) * 1.4)); glow.material.opacity = 0.7 * (1 - k); });
@@ -1178,39 +1262,73 @@ function fxFlare(pos, size, dir) {
 }
 // 突沸：熱い液が急に沸きたって飛び散る
 function fxBump(pos, color, dir, size) {
-  size = size || 1; const d = (dir || new THREE.Vector3(0, 1, 0)).clone().normalize();
+  size = size || 1;
+  fxRamp('突沸の瞬間', 0.1, 1.4, 1.6); const d = (dir || new THREE.Vector3(0, 1, 0)).clone().normalize();
   fxParticles(pos, 55, { life: 1.6, size: 0.06 * size, op: 0.85, g: 9, floor: 0.02, vel: () => d.clone().multiplyScalar(3.5 + Math.random() * 3).add(new THREE.Vector3((Math.random() - 0.5) * 2, Math.random() * 1.5, (Math.random() - 0.5) * 2)).multiplyScalar(size), grow: () => 1, color: () => new THREE.Color(color || 0xbfe2f5), fade: 4 });
   fxParticles(pos, 12, { life: 1.8, size: 0.18 * size, op: 0.45, g: -0.8, vel: () => d.clone().multiplyScalar(0.8).add(new THREE.Vector3((Math.random() - 0.5) * 0.6, 0.5, (Math.random() - 0.5) * 0.6)), grow: k => 1 + k * 3, color: () => new THREE.Color(0xf4f6f8), fade: 1.3 });
   fxShake(0.3, 0.04); stageHit(); sfx.bump();
 }
 // ガラスが割れる：破片が飛び散って机に落ちる
-function fxShatter(pos, size, hide) {
+// ガラスが割れる：① ひびが走る（超スロー）→ ② 破片が飛び散って机に落ちる。onBreak は割れた瞬間に呼ぶ
+function fxShatter(pos, size, hide, onBreak) {
   size = size || 1;
-  if (hide) hide.visible = false;
-  const grp = new THREE.Group(); grp.position.copy(pos);
-  const shards = [];
-  for (let i = 0; i < 34; i++) {
-    const g = new THREE.BufferGeometry();
-    const a = 0.08 + Math.random() * 0.22;
-    g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, a, Math.random() * a, 0, Math.random() * a * 0.6, a * (0.6 + Math.random()), 0.01], 3));
-    g.computeVertexNormals();
-    const m = new THREE.Mesh(g, new THREE.MeshPhongMaterial({ color: 0xdfeef8, transparent: true, opacity: 0.75, side: THREE.DoubleSide, shininess: 120, specular: 0xffffff }));
-    m.scale.setScalar(size);
-    m.userData = { v: new THREE.Vector3((Math.random() - 0.5) * 5, 1 + Math.random() * 3.5, (Math.random() - 0.5) * 5).multiplyScalar(size * 0.8), r: new THREE.Vector3(Math.random() * 12, Math.random() * 12, Math.random() * 12) };
-    grp.add(m); shards.push(m);
-  }
-  fxAdd(grp, 4.5, (k, t) => {
-    shards.forEach(m => {
-      const u = m.userData, tt = Math.min(t, 1.6);
-      let y = u.v.y * tt - 4.9 * tt * tt;
-      const landed = pos.y + y <= 0.02;
-      if (landed) y = 0.02 - pos.y;
-      m.position.set(u.v.x * tt * (landed ? 0.9 : 1), y, u.v.z * tt * (landed ? 0.9 : 1));
-      if (!landed) m.rotation.set(u.r.x * tt, u.r.y * tt, u.r.z * tt); else m.rotation.x = -Math.PI / 2;
-      m.material.opacity = k < 0.8 ? 0.75 : 0.75 * (1 - (k - 0.8) / 0.2);
+  fxRamp('ひびが走る・割れる瞬間');
+  sfx.tick();
+  // ひび：カメラの方を向いた面に、まん中から枝分かれしながら広がる線
+  const cr = new THREE.Group(); cr.position.copy(pos); cr.quaternion.copy(R.camera.quaternion);
+  const segs = [], grow = (x, y, a, len, depth) => {
+    const n = 4 + Math.floor(Math.random() * 3); let px = x, py = y;
+    for (let i = 0; i < n; i++) {
+      a += (Math.random() - 0.5) * 0.9; const l = len / n * (0.7 + Math.random() * 0.6);
+      const nx = px + Math.cos(a) * l, ny = py + Math.sin(a) * l;
+      segs.push({ p: [px, py, nx, ny], d: (depth * 4 + i) });
+      if (depth < 2 && Math.random() < 0.35) grow(nx, ny, a + (Math.random() < 0.5 ? 0.9 : -0.9), len * 0.45, depth + 1);
+      px = nx; py = ny;
+    }
+  };
+  for (let i = 0; i < 7; i++) grow(0, 0, i / 7 * Math.PI * 2 + Math.random() * 0.5, 0.9 * size, 0);
+  const maxD = Math.max(...segs.map(q => q.d)) + 1;
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(new Array(segs.length * 6).fill(0), 3));
+  const lines = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, depthTest: false }));
+  lines.renderOrder = 9; cr.add(lines);
+  const spark = new THREE.Mesh(_fxSphere, fxMat(0xffffff, 0.9, true)); spark.scale.setScalar(0.06 * size); cr.add(spark);
+  fxAdd(cr, 0.14, k => {
+    const arr = geo.attributes.position.array;
+    segs.forEach((q, i) => {
+      const f = Math.max(0, Math.min(1, k * maxD * 1.15 - q.d));
+      const [x0, y0, x1, y1] = q.p;
+      arr.set([x0, y0, 0.02, x0 + (x1 - x0) * f, y0 + (y1 - y0) * f, 0.02], i * 6);
     });
+    geo.attributes.position.needsUpdate = true;
+    spark.material.opacity = 0.9 * (1 - k);
+  }, () => {
+    if (hide) hide.visible = false;
+    if (onBreak) onBreak();
+    const grp = new THREE.Group(); grp.position.copy(pos);
+    const shards = [];
+    for (let i = 0; i < 34; i++) {
+      const g = new THREE.BufferGeometry();
+      const a = 0.08 + Math.random() * 0.22;
+      g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, a, Math.random() * a, 0, Math.random() * a * 0.6, a * (0.6 + Math.random()), 0.01], 3));
+      g.computeVertexNormals();
+      const m = new THREE.Mesh(g, new THREE.MeshPhongMaterial({ color: 0xdfeef8, transparent: true, opacity: 0.8, side: THREE.DoubleSide, shininess: 120, specular: 0xffffff }));
+      m.scale.setScalar(size);
+      m.userData = { v: new THREE.Vector3((Math.random() - 0.5) * 5, 1 + Math.random() * 3.5, (Math.random() - 0.5) * 5).multiplyScalar(size * 0.8), r: new THREE.Vector3(Math.random() * 12, Math.random() * 12, Math.random() * 12) };
+      grp.add(m); shards.push(m);
+    }
+    fxAdd(grp, 3.2, (k, t) => {
+      shards.forEach(m => {
+        const u = m.userData, tt = Math.min(t, 1.6);
+        let y = u.v.y * tt - 4.9 * tt * tt;
+        const landed = pos.y + y <= 0.02;
+        if (landed) y = 0.02 - pos.y;
+        m.position.set(u.v.x * tt * (landed ? 0.9 : 1), y, u.v.z * tt * (landed ? 0.9 : 1));
+        if (!landed) m.rotation.set(u.r.x * tt, u.r.y * tt, u.r.z * tt); else m.rotation.x = -Math.PI / 2;
+        m.material.opacity = k < 0.75 ? 0.8 : 0.8 * (1 - (k - 0.75) / 0.25);
+      });
+    });
+    fxShake(0.25, 0.05); stageHit(); sfx.crack();
   });
-  fxShake(0.25, 0.05); stageHit(); sfx.crack();
 }
 // 破裂する前ぶれ：器具がふるえて少しふくらみ、中が赤く光る → そのあと then() で破裂させる
 function fxWarn(obj, sec, then, glowAt) {
@@ -1247,9 +1365,11 @@ function dangerHTML(o) {
     <div class="dg-row"><button type="button" class="btn main" data-a="dangerok">わかった</button>${o.replay !== undefined && o.replay !== null ? `<button type="button" class="btn" data-demo="${o.replay}">▶ もう一度スローで見る</button>` : ''}${o.retry ? '<button type="button" class="btn" data-a="dgretry">はじめからやり直す</button>' : ''}</div></div>`;
 }
 function danger(o) {
+  if (state.hzq) { saveHaz(o.title); return; } // クイズ中は、クイズの説明だけにする（3Dの演出は見せる）
   // 同じ場面を「注意」タブのデモで再生できるなら、もう一度見るボタンを出す
   const ds = state.mode === 'practice' && DEMOS[state.id];
   if (ds && (state.replayDemo === undefined || state.replayDemo === null)) { const k = ds.findIndex(d => d[2] && d[2].test(o.title)); if (k >= 0) state.replayDemo = k; }
+  saveHaz(o.title);
   o.replay = state.replayDemo;
   state.replayDemo = null;
   state.danger = o;
@@ -1272,6 +1392,7 @@ function loop(now) {
   R.renderer.render(R.scene, R.camera);
   R.camera.position.sub(off);
   layoutLabels();
+  hzqLayout();
   if (state.quiz && state.quiz.timer) state.quiz.timer();
 }
 let toastTimer = 0;
@@ -1337,7 +1458,7 @@ PR['p-burner'] = {
       m.gasScrew.rotation.y = s.gas * 6; m.airScrew.rotation.y = s.air * 6;
       m.handle.rotation.y = s.open ? Math.PI / 2 : 0;
       match.g.visible = s.matchOn; match.fl.update(t);
-      s.warn.el.hidden = !(s.open && s.gas > 0 && !s.lit);
+      s.warn.el.hidden = !!state.hzq || !(s.open && s.gas > 0 && !s.lit); // クイズ中は答えが出てしまうので出さない
       s.warn.el.textContent = 'ガスがもれている！';
       // 火のないままガスを出すと、ガスがたまっていく（うすい雲で見せる）
       const dt = Math.min(0.1, t - (s.lastT || t)); s.lastT = t;
@@ -1426,9 +1547,11 @@ PR['p-lamp'] = {
       } else {
         // ① 中で蒸気に火がつき、ランプがふるえる → ② 破裂 → ③ こぼれたアルコールが燃える
         fxWarn(m.g, 0.55, () => {
-          fxBoom(new THREE.Vector3(0, 1.0, 0), 0.6); fxShatter(new THREE.Vector3(0, 0.8, 0), 0.9, m.g);
-          R.labels.forEach(L => { if (L.part) L.el.hidden = true; }); // こわれた器具の名前は消す
-          fxPoolFire(new THREE.Vector3(0, 0, 0), 1.6, 3);
+          fxShatter(new THREE.Vector3(0, 0.8, 0), 0.9, m.g, () => {
+            fxBoom(new THREE.Vector3(0, 1.0, 0), 0.6);
+            R.labels.forEach(L => { if (L.part) L.el.hidden = true; }); // こわれた器具の名前は消す
+            fxPoolFire(new THREE.Vector3(0, 0, 0), 1.6, 3);
+          });
         }, new THREE.Vector3(0, 0.9, 0));
         danger(kind === 'blow'
           ? { title: '火を息で吹き消した', what: '炎が芯をつたって<b>ランプの中に入り、中にたまったアルコールの蒸気に引火</b>。ランプが破裂して、燃えるアルコールが飛び散る。', why: '息を吹きかけると、炎がゆれて芯のすき間から中へ押しこまれることがある。ランプの中には、気化したアルコールと空気がまざっている。', fix: '<b>ふたを横からそっとかぶせて</b>消す（酸素をさえぎる）。一度ふたをとって冷まし、もう一度ふたをする。', retry: true }
@@ -2321,7 +2444,7 @@ PR['p-distill'] = {
         if (state.pr !== me) return;
         if (hz === 'seal') {
           const p = me.rcG.position.clone().add(new THREE.Vector3(0, 0.8, 0));
-          fxWarn(me.rcG, 0.6, () => { fxBoom(p, 0.55); fxShatter(p, 0.7, me.rcG); me.sealM.visible = false; });
+          fxWarn(me.rcG, 0.6, () => fxShatter(p, 0.7, me.rcG, () => { fxBoom(p, 0.55); me.sealM.visible = false; }));
           danger({ title: '受け器をゴム栓で密閉したまま、加熱した', what: '出口のない装置の中で、蒸気と熱くなった空気がふくらみ、圧力がどんどん上がる。<b>いちばん弱い所（受け器やつなぎ目）が破裂</b>して、ガラスの破片と熱い液が飛び散る。', why: '気体は温度が上がると体積がふえる。閉じこめると、その分だけ圧力が上がる。', fix: '受け器は<b>密閉しない</b>（アルミはくをかぶせる・脱脂綿をつめるなど、空気が出入りできるようにする）。', retry: true });
         } else {
           fxBump(me.neckPos.clone().add(new THREE.Vector3(0, 0.15, 0)), 0xb39ddb, new THREE.Vector3(0.1, 1, 0), 0.6);
@@ -3116,11 +3239,12 @@ SEQ['p-nahco3'] = {
     const L1 = addLabel('炭酸水素ナトリウム', () => pw.localToWorld(new THREE.Vector3(-0.16, 0.5, 0))); L1.part = true;
     const L2 = addLabel('石灰水', () => lwG.position.clone().add(new THREE.Vector3(0.3, 1.2, 0))); L2.part = true;
     s.hzAt = () => tube.localToWorld(new THREE.Vector3(0, 0.6, 0)); // 割れるのは、熱い試験管の底のあたり
+    s.hzTube = tube; s.hzBurner = bm;
     [L1, L2].forEach(L => { L.el.hidden = !state.parts; });
     return {
       tick(t, k, e) {
         // 口の向き：最初は上向き（まちがい）、固定後は少し下向き
-        tube.rotation.z = Math.PI / 2 + (k >= 1 ? 0.12 : -0.12);
+        tube.rotation.z = Math.PI / 2 + (k >= 1 ? 0.12 : -(s.quizTilt || 0.12)); // quizTilt：クイズでは上向きをはっきり見せる
         tube.position.set(1.0, k >= 1 ? 1.9 : 1.5, 0);
         st.visible = pipe.visible = k >= 2;
         lwG.visible = k >= 1;
@@ -3182,7 +3306,7 @@ SEQ['p-volflask'] = {
     const kom = MODELS.komagome(); kom.g.scale.setScalar(0.55); kom.g.position.set(0.5, 4.45, 0.0); g.add(kom.g);
     const L = addLabel('標線', () => body.localToWorld(new THREE.Vector3(0.21, 3.3, 0))); L.part = true; L.el.hidden = !state.parts;
     const L2 = addLabel('メスフラスコ', () => body.localToWorld(new THREE.Vector3(0.18, 2.6, 0))); L2.part = true; L2.el.hidden = !state.parts;
-    const L3 = addLabel('洗浄びん（純粋な水）', () => new THREE.Vector3(2.65, 1.55, 0.5)); L3.part = true; L3.el.hidden = !state.parts;
+    const L3 = addLabel(matchMedia('(max-width: 760px)').matches ? '洗浄びん' : '洗浄びん（純粋な水）', () => new THREE.Vector3(2.65, 1.55, 0.5)) // スマホでは短くして、びんに重ならないようにする; L3.part = true; L3.el.hidden = !state.parts;
     return {
       tick(t, k, e) {
         pile.visible = k === 2;
@@ -3620,7 +3744,7 @@ PLAY.lamp = {
       else {
         P.lit = false; const mm = R.group.children[0];
         const c1 = mm.localToWorld(new THREE.Vector3(0, 1.0, 0)), c2 = mm.localToWorld(new THREE.Vector3(0, 0.8, 0)), c0 = mm.localToWorld(new THREE.Vector3(0, 0, 0));
-        fxWarn(mm, 0.55, () => { fxBoom(c1, 0.6); fxShatter(c2, 0.9, mm); fxPoolFire(c0, 1.6, 3); R.labels.forEach(L => { if (L.part) L.el.hidden = true; }); }, c2);
+        fxWarn(mm, 0.55, () => fxShatter(c2, 0.9, mm, () => { fxBoom(c1, 0.6); fxPoolFire(c0, 1.6, 3); R.labels.forEach(L => { if (L.part) L.el.hidden = true; }); }), c2);
         danger({ title: '火を息で吹き消した', what: '炎が芯をつたって<b>ランプの中に入り、中にたまったアルコールの蒸気に引火</b>。ランプが破裂して、燃えるアルコールが飛び散る。', why: '息を吹きかけると、炎がゆれて芯のすき間から中へ押しこまれることがある。ランプの中には、気化したアルコールと空気がまざっている。', fix: '<b>ふたを横からそっとかぶせて</b>消す（酸素をさえぎる）。', retry: true });
       }
     }
@@ -3710,10 +3834,24 @@ setInterval(() => { if (state.mode === 'see' && state.id === 'burette' && state.
 PLAY.funnel = {
   init(m, P) {
     Object.assign(P, { t0: 0 });
-    const drops = bubbleSet(6, 0x9fd3f2, 0.04); drops.forEach(d => m.g.add(d));
+    // ろうと台（スタンドとリング）にのせ、足の先をビーカーの中に入れる。落ちた液はビーカーにたまる
+    const Y = 3.15, g = R.group;
+    m.g.position.y = Y;
+    g.add(makeStand(4.6, Y + 0.66, 1.35 - 0.62));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.04, 10, 40), metal(0x8f969f, 0.35)); ring.rotation.x = Math.PI / 2; ring.position.y = Y + 0.66; g.add(ring);
+    const bk = MODELS.beaker().g; bk.scale.setScalar(0.55); bk.position.set(0.12, 0.16, 0); g.add(bk); // スタンドの台の上に置く
+    bk.children.forEach(c => { if (c.renderOrder === 1) c.visible = false; });
+    const filt = liquid([[0, 0.1], [1.0, 0.1], [1.08, 0.17], [1.1, 0.3], [1.1, 2.8]], 0.25, 0x9fd3f2); filt.scale.setScalar(0.55); filt.position.set(0.12, 0.16, 0); g.add(filt);
+    const drops = bubbleSet(6, 0x9fd3f2, 0.04); drops.forEach(d => g.add(d));
+    const tipY = Y - 1.72;
+    m.focus = [2.4, 2.9];
     R.tick = t => {
-      const e = (performance.now() - P.t0) / 1000, on = P.t0 && e < 4;
-      drops.forEach((d, i) => { d.visible = on; const k = (t * 1.2 + i / 6) % 1; d.position.set(0.06, -1.8 - k * 1.2, 0); });
+      const e = P.t0 ? (performance.now() - P.t0) / 1000 : 0, on = P.t0 && e < 4;
+      const fill = P.t0 ? Math.min(1, e / 4) : (P.filled || 0);
+      if (P.t0 && e >= 4) P.filled = 1;
+      filt.scale.set(0.55, 0.55 * (1 + fill * 1.6), 0.55);
+      const surf = 0.16 + 0.55 * 0.25 * (1 + fill * 1.6);
+      drops.forEach((d, i) => { d.visible = !!on; const k = (t * 1.2 + i / 6) % 1; d.position.set(0.06, tipY - k * (tipY - surf), 0); });
     };
   },
   html() {
@@ -3748,9 +3886,133 @@ function quizShow() {
   renderCard();
   frame(m.focus[0], m.focus[1]);
 }
+// ===== 危険を見つけろクイズ：まちがった装置の3Dで、危ないところの番号をタップする =====
+const V3 = (x, y, z) => new THREE.Vector3(x || 0, y || 0, z || 0);
+const atLabel = name => () => { const L = R.labels.find(L => L.el.textContent.startsWith(name)); return L ? L.get() : V3(); };
+const HZQ = [
+  { id: 'p-tube', q: '試験管で液体を加熱しようとしている。危ないところはどこ？', setup: s => { s.dir = 'person'; },
+    spots: s => [['試験管の口の向き', () => s.tm.g.localToWorld(V3(0, 4.1, 0))], ['液の量', () => s.tm.g.localToWorld(V3(0, 0.5, 0))], ['試験管ばさみの位置', () => s.clamp.getWorldPosition(V3()).add(V3(0, -0.25, 0))], ['ガスバーナー', () => s.bm.g.localToWorld(V3(0.9, 0.25, 0))]],
+    ans: 0, explain: '口が<b>となりの人</b>の方を向いている。突沸すると、熱い液が人の顔にかかる。口は人のいない方へ向ける。', play: () => PR['p-tube'].act('heat') },
+  { id: 'p-tube', q: 'こんどの試験管の加熱。危ないところはどこ？', setup: s => { s.amt = 0.7; },
+    spots: s => [['試験管の口の向き', () => s.tm.g.localToWorld(V3(0, 4.1, 0))], ['液の量', () => s.tm.g.localToWorld(V3(0, 0.9, 0))], ['試験管ばさみの位置', () => s.clamp.getWorldPosition(V3()).add(V3(0, -0.25, 0))], ['ガスバーナー', () => s.bm.g.localToWorld(V3(0.9, 0.25, 0))]],
+    ans: 1, explain: '液が<b>多すぎる</b>（1/4〜1/3 まで）。沸騰した液が口からあふれ、ふき出す。', play: () => PR['p-tube'].act('heat') },
+  { id: 'p-distill', q: '蒸留の装置。このまま加熱すると危ないところはどこ？', setup: s => Object.assign(s, { therm: 'branch', stone: true, water: 'bottom', amount: 'half', seal: true }),
+    spots: s => [['受け器の口', atLabel('受け器')], ['温度計の位置', atLabel('温度計')], ['冷却水の入れ方', atLabel('冷却水')], ['枝付きフラスコの液', () => s.flaskPos.clone()]],
+    ans: 0, explain: '受け器が<b>ゴム栓で密閉</b>されている。出口のない装置を加熱すると、中の圧力が上がって破裂する。', play: () => PR['p-distill'].act('dheat') },
+  { id: 'p-distill', q: 'もう一つの蒸留の装置。危ないところはどこ？', setup: s => Object.assign(s, { therm: 'branch', stone: false, water: 'bottom', amount: 'half', seal: false }),
+    spots: s => [['受け器の口', atLabel('受け器')], ['温度計の位置', atLabel('温度計')], ['冷却水の入れ方', atLabel('冷却水')], ['フラスコの中（沸騰石）', () => s.flaskPos.clone()]],
+    ans: 3, explain: '<b>沸騰石が入っていない</b>。急に激しく沸騰（突沸）して、液がふき上がる。', play: () => PR['p-distill'].act('dheat') },
+  { id: 'p-lamp', q: 'アルコールランプにこれから火をつける。危ないところはどこ？', setup: s => { s.amount = 0.3; s.rebuildAlc(); },
+    spots: () => [['アルコールの量', atLabel('アルコール')], ['ふた（芯）', atLabel('ふた')], ['マッチ', () => V3(-1.0, 2.25, 0.2)], ['ランプを置く場所', () => V3(1.0, 0.1, 0.8)]],
+    ans: 0, explain: '<b>アルコールが少なすぎる</b>（8分目くらいまで）。中のすき間に気化したアルコールがたまり、引火して破裂する。', play: () => { const s = state.pr; Object.assign(s, { capOn: false, capT: 0, matchOn: true }); PR['p-lamp'].act('side'); } },
+  { id: 'p-burner', q: 'ガスバーナー。まだ火はついていない。危ないところはどこ？', setup: s => Object.assign(s, { checked: true, open: true, gas: 0.5, leakWarned: true }),
+    spots: () => [['ガス調節ねじ', atLabel('ガス調節ねじ')], ['空気調節ねじ', atLabel('空気調節ねじ')], ['コック', atLabel('コック')], ['ゴム管', atLabel('ゴム管')]],
+    ans: 0, explain: '火がないのに<b>ガス調節ねじが開いて</b>、ガスがもれている。ここに火を近づけると、たまったガスに一気に火がつく。', play: () => { const s = state.pr; s.leak = 4; s.matchOn = false; PR['p-burner'].act('match'); } },
+  { id: 'p-nahco3', q: '炭酸水素ナトリウムを加熱する装置。危ないところはどこ？', setup: s => { s.quizTilt = 0.32; },
+    spots: s => [['試験管の口の向き', () => s.hzTube.localToWorld(V3(0, 3.1, 0))], ['炭酸水素ナトリウムの量', () => s.hzAt().add(V3(0, 0.35, 0))], ['スタンド', () => V3(-1.4, 0.6, -0.4)], ['ガスバーナー', () => s.hzBurner.g.localToWorld(V3(0, 0.9, 0))]],
+    ans: 0, explain: '試験管の<b>口が上を向いている</b>。出てきた水が熱い底に流れて、試験管が割れる。固体を加熱するときは口を少し下げる。',
+    play: () => { const st = SEQ['p-nahco3'].steps.find(x => x.wrong.some(w => /口を少し上げ/.test(w[0]))), w = st.wrong.find(x => /口を少し上げ/.test(x[0])); seqHazard(state.pr, { text: w[0], why: w[1] }, st); } },
+  { id: 'p-gas', q: '塩素（分子量71）を集めようとしている。まちがっているところはどこ？', setup: s => { s.gas = 'cl2'; s.method = 'up'; s.result = null; },
+    spots: () => [['集気びんの向き（集め方）', atLabel('集気びん')], ['気体をつくるフラスコ', atLabel('気体をつくる')], ['誘導管', () => V3(-1.6, 2.9, 0)], ['フラスコの中の薬品', () => V3(-3.4, 0.7, 0)]],
+    ans: 0, explain: '塩素は<b>空気より重い</b>（71 > 29）のに、上方置換になっている。塩素がこぼれて部屋に広がる。<b>下方置換</b>で集める。', play: () => PR['p-gas'].act('collect') },
+];
+function hzqStart() {
+  state.quiz = null;
+  state.hzq = { qs: shuffle(HZQ), i: 0, picked: null, score: 0 };
+  hzqShow();
+}
+function hzqShow() {
+  const z = state.hzq, q = z.qs[z.i];
+  clearScene(); PR[q.id].init(); q.setup(state.pr);
+  if (PR[q.id].act && q.id === 'p-gas') { R.tick && R.tick(performance.now() / 1000); }
+  R.labels.forEach(L => { if (L.part) L.el.hidden = true; }); // 名前は出さない（答えのヒントになる）
+  // 番号の順はばらばらにする（いつも①が正解にならないように）
+  const raw = q.spots(state.pr), order = shuffle(raw.map((_, k) => k));
+  z.spots = order.map(k => raw[k]); z.ans = order.indexOf(q.ans);
+  z.picked = null;
+  $('hzSpots').innerHTML = z.spots.map((sp, k) => `<button type="button" class="hzspot" data-hzpick="${k}" aria-label="${k + 1}：${esc(sp[0])}"><b>${k + 1}</b><span>${esc(sp[0])}</span></button>`).join('');
+  renderCard();
+}
+function hzqPick(k) {
+  const z = state.hzq; if (!z || z.picked !== null) return;
+  const q = z.qs[z.i];
+  z.picked = k; if (k === z.ans) z.score++;
+  $('hzSpots').querySelectorAll('.hzspot').forEach((b, i) => b.classList.add(i === z.ans ? 'right' : i === k ? 'wrong' : 'dim', 'shown'));
+  renderCard();
+  setTimeout(() => { if (state.hzq === z && z.picked !== null) q.play(); }, 600); // 答えたあと、本物ならどうなるかを超スローで見せる
+}
+function hzqLayout() {
+  const z = state.hzq; if (!z || !z.spots) return;
+  const stage = $('stage'), w = stage.clientWidth, h = stage.clientHeight, v = new THREE.Vector3();
+  $('hzSpots').querySelectorAll('.hzspot').forEach((b, i) => {
+    v.copy(z.spots[i][1]()).project(R.camera);
+    b.style.transform = `translate(${((v.x + 1) / 2 * w).toFixed(1)}px, ${((1 - v.y) / 2 * h).toFixed(1)}px)`;
+  });
+}
+function hzqCardHTML() {
+  const z = state.hzq;
+  if (z.i >= z.qs.length) {
+    saveBest('hazard', Math.round(z.score / z.qs.length * 10));
+    return `<div class="card-head"><div><div class="eyebrow">危険を見つけろ</div><h2 class="name">結果 ${z.score} / ${z.qs.length}</h2></div></div><div class="body">
+      <div class="verdict ${z.score >= z.qs.length - 1 ? 'ok' : ''}">${z.score === z.qs.length ? '全問正解！ 危険を見ぬく目はばっちり。' : z.score >= z.qs.length - 2 ? 'よくできました！ まちがえた所は「操作」の注意タブで見直そう。' : '「操作」の注意タブで「まちがえるとどうなる？」を見てから、もう一度。'}</div>
+      <p style="margin-top:10px" class="row"><button type="button" class="btn main" data-quiz="hazard">もう一度</button><button type="button" class="btn" data-quizmenu="1">クイズの一覧へ</button></p></div>`;
+  }
+  const q = z.qs[z.i];
+  let h = `<div class="card-head"><div><div class="eyebrow">危険を見つけろ ${z.i + 1} / ${z.qs.length} ・ 正解 ${z.score}</div><div class="qprog"><i style="width:${z.i / z.qs.length * 100}%"></i></div></div></div><div class="body">
+    <p class="qtext">${esc(q.q)}</p><p class="note">3Dの番号をタップ（下のボタンでもよい）。</p><div class="hzchoices">${z.spots.map((sp, k) => {
+    const cls = z.picked === null ? '' : k === z.ans ? 'right' : k === z.picked ? 'wrong' : 'dim';
+    return `<button type="button" class="qc ${cls}" data-hzpick="${k}" ${z.picked !== null ? 'disabled' : ''}><b class="hzn">${k + 1}</b> ${esc(sp[0])}</button>`;
+  }).join('')}</div>`;
+  if (z.picked !== null) {
+    h += `<div class="verdict ${z.picked === z.ans ? 'ok' : 'ng'}" style="margin-top:8px">${z.picked === z.ans ? '正解！' : `正解は ${z.ans + 1}「${esc(z.spots[z.ans][0])}」`}</div><p class="use" style="margin-top:6px">${q.explain}</p>
+      <button type="button" class="btn main" data-hznext="1">${z.i === z.qs.length - 1 ? '結果を見る' : '次の問題'}</button>`;
+  }
+  return h + '</div>';
+}
+// ===== 記録（授業で使う一覧：クリア・手順ならべかえ・クイズの最高点・見た危険な場面） =====
+const QUIZ_NAMES = { name: '器具の名前あて', safety: '安全な使い方 ○×', mix: 'ミックス', hazard: '危険を見つけろ' };
+function recordText() {
+  const d = new Date(), ds = `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+  const L = [`実験ラボ3D の記録（${ds}）`, `実験クリア ${PRACTICES.filter(p => done.has(p.id)).length}/${PRACTICES.length}　手順ならべかえ ${PRACTICES.filter(p => done.has(p.id + ':order')).length}/${PRACTICES.length}`];
+  CATS.forEach(([c, ids]) => { L.push(`【${c}】`); ids.forEach(id => { const p = PRACTICES.find(x => x.id === id); L.push(`${done.has(id) ? '✓' : '・'} ${p.name}${done.has(id + ':order') ? '（手順 ✓）' : ''}`); }); });
+  L.push('【クイズの最高点】' + Object.entries(QUIZ_NAMES).map(([k, n]) => `${n} ${quizBest[k] !== undefined ? quizBest[k] + '/10' : '—'}`).join('　'));
+  L.push(`【見た危険な場面】${hazSeen.size} 種類`);
+  return L.join('\n');
+}
+function recordCardHTML() {
+  const nDone = PRACTICES.filter(p => done.has(p.id)).length, nOrd = PRACTICES.filter(p => done.has(p.id + ':order')).length;
+  let h = `<div class="card-head"><div><div class="eyebrow">記録</div><h2 class="name">自分の学習の記録</h2></div></div><div class="body">
+    <div class="recsum"><div><span>実験クリア</span><b>${nDone}<small>/${PRACTICES.length}</small></b></div><div><span>手順ならべかえ</span><b>${nOrd}<small>/${PRACTICES.length}</small></b></div><div><span>見た危険な場面</span><b>${hazSeen.size}<small>種類</small></b></div></div>
+    <table class="rectab"><thead><tr><th>実験</th><th>やってみる</th><th>手順</th></tr></thead><tbody>`;
+  CATS.forEach(([c, ids]) => {
+    h += `<tr class="rcat"><th colspan="3">${esc(c)}</th></tr>`;
+    ids.forEach(id => { const p = PRACTICES.find(x => x.id === id); h += `<tr><td><button type="button" class="linkbtn" data-goto="${id}">${esc(p.name)}</button></td><td>${done.has(id) ? '<b class="ok">✓</b>' : '<span class="no">—</span>'}</td><td>${done.has(id + ':order') ? '<b class="ok">✓</b>' : '<span class="no">—</span>'}</td></tr>`; });
+  });
+  h += `</tbody></table><h3 class="sub">クイズの最高点</h3><ul class="recq">${Object.entries(QUIZ_NAMES).map(([k, n]) => `<li><span>${n}</span><b>${quizBest[k] !== undefined ? quizBest[k] + ' / 10' : '—'}</b></li>`).join('')}</ul>
+    <div class="row" style="margin-top:12px"><button type="button" class="btn main" data-a="rcopy">先生に出す：結果をコピー</button><button type="button" class="btn" data-a="rprint">印刷する</button></div>
+    <p class="note">「結果をコピー」したら、Google Classroom などの提出欄にはりつけよう。記録はこのブラウザだけに保存される。</p>
+    <div class="row"><button type="button" class="btn bad" data-a="rclear">記録をすべて消す</button></div></div>`;
+  return h;
+}
+function recordAct(a) {
+  if (a === 'rcopy') {
+    const txt = recordText();
+    const ok = () => toast('結果をコピーした。提出欄にはりつけよう。', 'ok');
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, () => fallback());
+    else fallback();
+    function fallback() { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); ok(); } catch (e) { toast('コピーできなかった。', 'ng'); } ta.remove(); }
+  }
+  if (a === 'rprint') window.print();
+  if (a === 'rclear' && confirm('この端末の記録（クリア・手順・クイズの最高点・見た危険な場面）をすべて消しますか？')) {
+    done = new Set(); quizBest = {}; hazSeen = new Set();
+    try { [DONE_KEY, BEST_KEY, HAZ_KEY].forEach(k => localStorage.removeItem(k)); } catch (e) { /* 無視 */ }
+    renderLib(); renderCard();
+  }
+}
 function quizCardHTML() {
   const qz = state.quiz;
   if (qz.i >= qz.qs.length) {
+    saveBest(qz.kind, qz.score);
     return `<div class="card-head"><div class="eyebrow">クイズ</div><h2 class="name">結果 ${qz.score} / 10</h2></div><div class="body">
       <div class="verdict ${qz.score >= 7 ? 'ok' : ''}">${qz.score === 10 ? '全問正解！ 実験の準備はばっちり。' : qz.score >= 7 ? 'よくできました！' : '「器具を見る」の注意を読んでから、もう一度。'}</div>
       <p style="margin-top:10px" class="row"><button type="button" class="btn main" data-quiz="${qz.kind}">もう一度</button></p></div>`;
@@ -3773,6 +4035,7 @@ function quizMenuHTML() {
     <button type="button" class="btn main" data-quiz="name">器具の名前あて（10問）</button>
     <button type="button" class="btn main" data-quiz="safety">安全な使い方 ○×（10問）</button>
     <button type="button" class="btn main" data-quiz="mix">ミックス（10問）</button>
+    <button type="button" class="btn main hzbtn" data-quiz="hazard">⚠ 危険を見つけろ（8問・3D）</button>
     <p class="note">3Dの器具を回してよく見てから答えよう。</p></div></div>`;
 }
 
@@ -3792,8 +4055,10 @@ function renderLib() {
     lib.innerHTML = `<div class="cats">${CATS.map(([c, l]) => `<button type="button" class="cat" data-cat="${esc(c)}" aria-pressed="${c === cur}">${esc(c)}<small>${l.filter(i => done.has(i)).length}/${l.length}</small></button>`).join('')}</div>`
       + `<div class="items">${ids.map(id => { const p = PRACTICES.find(x => x.id === id); return item('data-goto', id, p.icon, p.name, done.has(id) ? '<span class="done">✓</span>' : ''); }).join('')}</div>`
       + `<p class="libfoot">クリア ${PRACTICES.filter(p => done.has(p.id)).length} / ${PRACTICES.length}</p>`;
+  } else if (state.mode === 'record') {
+    lib.innerHTML = `<div class="items">${CATS.map(([c, l]) => { const n = l.filter(i => done.has(i)).length; return `<div class="recbar"><span>${esc(c)}</span><b>${n}/${l.length}</b><i style="--p:${n / l.length * 100}%"></i></div>`; }).join('')}</div><p class="libfoot">記録はこの端末（ブラウザ）に保存されている。</p>`;
   } else {
-    lib.innerHTML = '<div class="items">' + [['name', '器具の名前あて'], ['safety', '安全な使い方 ○×'], ['mix', 'ミックス']].map(([k, n]) => `<button type="button" class="item" data-quiz="${k}" aria-current="${!!(state.quiz && state.quiz.kind === k)}"><span class="ic">Q</span>${n}</button>`).join('') + '</div>';
+    lib.innerHTML = '<div class="items">' + [['name', '器具の名前あて'], ['safety', '安全な使い方 ○×'], ['mix', 'ミックス'], ['hazard', '危険を見つけろ']].map(([k, n]) => `<button type="button" class="item" data-quiz="${k}" aria-current="${!!(state.quiz && state.quiz.kind === k)}"><span class="ic">Q</span>${n}</button>`).join('') + '</div>';
   }
 }
 function renderCard() {
@@ -3801,22 +4066,25 @@ function renderCard() {
   let h;
   if (state.mode === 'see') h = seeCardHTML(ITEMS.find(x => x.id === state.id));
   else if (state.mode === 'practice') h = practiceCardHTML(PRACTICES.find(x => x.id === state.id));
-  else h = state.quiz ? quizCardHTML() : quizMenuHTML();
+  else if (state.mode === 'record') h = recordCardHTML();
+  else h = state.hzq ? hzqCardHTML() : state.quiz ? quizCardHTML() : quizMenuHTML();
   const body = card.querySelector('.body'), y = body ? body.scrollTop : 0;
   card.innerHTML = h;
   if (state.danger) card.insertAdjacentHTML('afterbegin', dangerHTML(state.danger));
   const nb = card.querySelector('.body');
   if (nb) nb.scrollTop = y;
-  $('btnParts').hidden = state.mode === 'quiz';
+  $('btnParts').hidden = state.mode === 'quiz' || state.mode === 'record';
 }
 function setMode(mode) {
-  state.mode = mode;
+  state.mode = mode; state.hzq = null; $('hzSpots').innerHTML = '';
   document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === mode)));
   if (mode === 'see') go('see', ITEMS.some(x => x.id === state.id) ? state.id : 'beaker');
   else if (mode === 'practice') go('practice', PRACTICES.some(x => x.id === state.id) ? state.id : 'p-burner');
   else { state.quiz = null; state.id = null; renderLib(); if (R) { clearScene(); const m = MODELS.burner(); R.group.add(m.g); frame(m.focus[0], m.focus[1]); } renderCard(); }
+  try { history.replaceState(null, '', mode === 'record' ? '#record' : location.pathname + location.search); } catch (e) { /* 無視 */ }
 }
 function go(mode, id) {
+  state.hzq = null; $('hzSpots').innerHTML = '';
   state.mode = mode; state.id = id; state.tab = mode === 'see' && PLAY[id] ? 'play' : 'use'; state.ptab = 'op'; state.quiz = null; state.order = null; state.stepOpen = 0; state.libCat = null;
   document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === mode)));
   renderLib();
@@ -3835,7 +4103,12 @@ document.addEventListener('click', ev => {
   const gt = t.closest('[data-goto]');
   if (gt) { go('practice', gt.dataset.goto); return; }
   const qz = t.closest('[data-quiz]');
-  if (qz) { state.mode = 'quiz'; document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === 'quiz'))); quizStart(qz.dataset.quiz); renderLib(); return; }
+  if (qz) { state.mode = 'quiz'; document.querySelectorAll('#modes [data-mode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.mode === 'quiz'))); if (qz.dataset.quiz === 'hazard') hzqStart(); else { state.hzq = null; $('hzSpots').innerHTML = ''; quizStart(qz.dataset.quiz); } renderLib(); return; }
+  if (t.closest('[data-quizmenu]')) { setMode('quiz'); return; }
+  const hp = t.closest('[data-hzpick]');
+  if (hp && state.hzq) { hzqPick(+hp.dataset.hzpick); return; }
+  const hn = t.closest('[data-hznext]');
+  if (hn && state.hzq) { dangerClose(); state.hzq.i++; if (state.hzq.i >= state.hzq.qs.length) { $('hzSpots').innerHTML = ''; clearScene(); const m = MODELS.burner(); R.group.add(m.g); frame(m.focus[0], m.focus[1]); renderCard(); } else hzqShow(); return; }
   const pl = t.closest('[data-p]');
   if (pl && state.play && PLAY[state.id]) { PLAY[state.id].act(pl.dataset.p, pl.dataset.pv); return; }
   const cat = t.closest('[data-cat]');
@@ -3854,8 +4127,9 @@ document.addEventListener('click', ev => {
   if (pk && state.quiz) { const q = state.quiz.qs[state.quiz.i]; state.quiz.picked = q.choices[+pk.dataset.pick]; if (state.quiz.picked === q.answer) state.quiz.score++; renderCard(); return; }
   const a = t.closest('[data-a]');
   if (a && a.dataset.a === 'dangerok') { dangerClose(); return; }
-  if (a && a.dataset.a === 'dgretry') { dangerClose(); if (state.mode === 'practice' && PR[state.id]) { clearScene(); PR[state.id].init(); renderCard(); } else go('see', state.id); return; }
+  if (a && a.dataset.a === 'dgretry') { dangerClose(); if (state.hzq) { hzqShow(); return; } if (state.mode === 'practice' && PR[state.id]) { clearScene(); PR[state.id].init(); renderCard(); } else go('see', state.id); return; }
   if (a) {
+    if (state.mode === 'record') { recordAct(a.dataset.a); return; }
     if (a.dataset.a === 'qnext') { state.quiz.i++; state.quiz.picked = null; if (state.quiz.i >= 10) renderCard(); else quizShow(); return; }
     PR[state.id].act(a.dataset.a); return;
   }
@@ -3915,6 +4189,7 @@ $('btnFull').addEventListener('click', () => {
   try { h = decodeURIComponent(location.hash.slice(1)); } catch (e) { /* 無視 */ }
   if (PRACTICES.some(p => p.id === h)) go('practice', h);
   else if (ITEMS.some(x => x.id === h)) go('see', h);
+  else if (h === 'record') { go('see', 'beaker'); setMode('record'); }
   else go('see', 'beaker');
   // リンク（#p-filter など）を開き直したときも、その器具・実験に切りかえる
   window.addEventListener('hashchange', () => {
