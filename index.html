@@ -830,6 +830,15 @@ body.gm-on { overflow: hidden; }
 .gchk button:disabled { opacity: .6; cursor: default; }
 .gnow { font-size: 13px; margin: 4px 0; } .gnow b { color: var(--warm); }
 .ghostL { max-height: calc(100vh - 90px); }
+.gfigs { display: flex; gap: 10px; justify-content: center; margin: -4px 0 12px; flex-wrap: wrap; }
+.gfig { margin: 0; display: flex; gap: 8px; align-items: center; flex-direction: row; flex-wrap: wrap; justify-content: center; }
+.gfig figcaption { width: 100%; text-align: center; font-size: 13px; font-weight: 700; color: var(--muted); }
+.gfig2 { width: 210px; height: 150px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
+.gsvg { width: 100%; height: 100%; display: block; }
+.gfig3 { width: 210px; height: 150px; border: 1px solid var(--line); border-radius: 6px; background: radial-gradient(circle at 40% 35%, var(--stage-1), var(--stage-2)); overflow: hidden; }
+.gfig3 canvas { display: block; width: 100% !important; height: 100% !important; }
+.gvnote { margin-top: -4px; }
+@media (max-width: 760px) { .gfig2, .gfig3 { width: 150px; height: 112px; } .gfigs { gap: 6px; } }
 </style>
 </head>
 <body>
@@ -2749,17 +2758,20 @@ function choicesWith(answer, pool, n = 4) {
   return shuffle([answer, ...wrong]);
 }
 const SHAPE_NORMAL = { '正三角形': '平面三角形', '四面体形': '正四面体形' };
+// 問題文に化学式を出すか（ゲームで先生が「式」をオフにすると、名前だけになる）
+const QF = { fx: true };
+const fq = e => (QF.fx ? formulaHTML(displayFormula(e)) : '');
 function makeQuestion(type) {
   const L = id => getModel(LIB.find(e => e.id === id));
   if (type === 'shape') {
     const e = L(pick(['water', 'ammonia', 'methane', 'co2', 'h2s', 'so2', 'formaldehyde', 'ccl4', 'nh4', 'h3o', 'co3', 'hcl', 'nitrogen', 'ethylene', 'acetylene', 'benzene', 'hf']));
     const sh = e.shape || e.an.shape, ans = SHAPE_NORMAL[sh] || sh;
-    return { subject: e.id, q: `「${e.name}」${formulaHTML(displayFormula(e))} の形は？`, choices: choicesWith(ans, ['直線形', '折れ線形', '三角錐形', '正四面体形', '平面三角形', '平面形']), answer: ans,
+    return { subject: e.id, q: `「${e.name}」${fq(e)} の形は？`, choices: choicesWith(ans, ['直線形', '折れ線形', '三角錐形', '正四面体形', '平面三角形', '平面形']), answer: ans,
       explain: `${e.name}は${ans}。${e.point || ''}` };
   }
   if (type === 'polar') {
     const e = L(pick(['water', 'ammonia', 'methane', 'co2', 'hcl', 'h2s', 'ccl4', 'chcl3', 'nitrogen', 'oxygen', 'ethanol', 'benzene', 'so2', 'formaldehyde', 'acetone', 'octane']));
-    return { subject: e.id, q: `「${e.name}」${formulaHTML(displayFormula(e))} は極性分子？ 無極性分子？`, choices: ['極性分子', '無極性分子'], answer: e.an.polarity,
+    return { subject: e.id, q: `「${e.name}」${fq(e)} は極性分子？ 無極性分子？`, choices: ['極性分子', '無極性分子'], answer: e.an.polarity,
       explain: `${e.name}は${e.an.polarity}。${e.an.polarNote}`, after: { polar: true } };
   }
   if (type === 'formula' || type === 'name') {
@@ -2777,7 +2789,7 @@ function makeQuestion(type) {
     const e = L(pick(['water', 'ammonia', 'methane', 'co2', 'hcl', 'ethanol', 'oxygen', 'nitrogen', 'h2o2', 'acetic', 'glucose', 'h2so4', 'so2', 'propane']));
     const M = e.an.mass.total;
     const pool = [M + 2, M - 2, M + 16, M - 12, M + 1, M + 14, Math.round(M * 2)].filter(v => v > 0 && v !== M).map(fmtMass);
-    return { subject: e.id, q: `${formulaHTML(displayFormula(e))}（${e.name}）の分子量は？（H=1.0, C=12, N=14, O=16, S=32, Cl=35.5）`, choices: choicesWith(fmtMass(M), [...new Set(pool)]), answer: fmtMass(M),
+    return { subject: e.id, q: `${QF.fx ? `${fq(e)}（${e.name}）` : e.name}の分子量は？（H=1.0, C=12, N=14, O=16, S=32, Cl=35.5）`, choices: choicesWith(fmtMass(M), [...new Set(pool)]), answer: fmtMass(M),
       explain: e.an.mass.parts.map(p => `${p.e} ${fmtMass(p.m)}×${p.n}`).join(' + ') + ` = ${fmtMass(M)}` };
   }
   if (type === 'config' || type === 'element' || type === 'valence' || type === 'ion') {
@@ -2815,34 +2827,34 @@ function makeQuestion(type) {
   if (type === 'state') {
     const e = pick(LIB.filter(x => x.st && x.kind === 'mol' && x.cat !== 'crystal'));
     getModel(e);
-    return { subject: e.id, q: `「${e.name}」は、常温（25 ℃）・1気圧で何の状態？`, choices: ['気体', '液体', '固体'], answer: e.st,
+    return { subject: e.id, q: `「${e.name}」${fq(e)} は、常温（25 ℃）・1気圧で何の状態？`, choices: ['気体', '液体', '固体'], answer: e.st,
       explain: `${e.name}は常温で${e.st}。${(e.props || []).filter(p => /沸点|融点|昇華/.test(p[0])).map(p => p[0] + ' ' + p[1]).join('、')}` };
   }
   if (type === 'hbond') {
     const hid = pick(['water', 'ammonia', 'methane', 'hf', 'hcl', 'ethanol', 'dme', 'methanol', 'acetic', 'h2s', 'acetone', 'glucose', 'formaldehyde', 'octane']);
     const e = getModel(LIB.find(x => x.id === hid));
     const ans = e.hb ? 'つくる' : 'つくらない';
-    return { subject: e.id, q: `「${e.name}」の分子どうしは、水素結合をつくる？`, choices: ['つくる', 'つくらない'], answer: ans,
+    return { subject: e.id, q: `「${e.name}」${fq(e)} の分子どうしは、水素結合をつくる？`, choices: ['つくる', 'つくらない'], answer: ans,
       explain: e.hb ? 'O・N・F に結合した H をもつので、となりの分子の O・N・F と水素結合をつくる。' : 'O・N・F に結合した H がないので、水素結合はつくらない。' };
   }
   if (type === 'boil') {
     const pairs = [['water', 'h2s', 'water'], ['ethanol', 'dme', 'ethanol'], ['ammonia', 'methane', 'ammonia'], ['butane', 'isobutane', 'butane'], ['octane', 'propane', 'octane'], ['hf', 'hcl', 'hf']];
     const [a, b, ans] = pick(pairs), ea = LIB.find(x => x.id === a), eb = LIB.find(x => x.id === b);
     const cmp = COMPARE_LIST.find(c => (c.a === a && c.b === b) || (c.a === b && c.b === a));
-    return { subject: ans, q: `「${ea.name}」と「${eb.name}」、沸点が高いのはどっち？`, choices: shuffle([ea.name, eb.name]), answer: LIB.find(x => x.id === ans).name,
+    return { subject: ans, subjects: [a, b], q: `「${ea.name}」${QF.fx ? fq(getModel(ea)) : ''}と「${eb.name}」${QF.fx ? fq(getModel(eb)) : ''}、沸点が高いのはどっち？`, choices: shuffle([ea.name, eb.name]), answer: LIB.find(x => x.id === ans).name,
       explain: cmp ? cmp.diff : `${LIB.find(x => x.id === ans).name}の沸点が高い。${LIB.find(x => x.id === ans).point || ''}` };
   }
   if (type === 'bondtype') {
     const list = [['nacl', 'イオン結合'], ['naoh', 'イオン結合'], ['caco3', 'イオン結合'], ['copper', '金属結合'], ['iron', '金属結合'], ['diamond', '共有結合'], ['water', '共有結合'], ['co2', '共有結合'], ['methane', '共有結合'], ['graphite', '共有結合']];
     const [id, ans] = pick(list), e = L(id);
-    return { subject: id, q: `「${e.name}」をつくっている結合（主なもの）は？`, choices: ['共有結合', 'イオン結合', '金属結合'], answer: ans,
+    return { subject: id, q: `「${e.name}」${fq(e)} をつくっている結合（主なもの）は？`, choices: ['共有結合', 'イオン結合', '金属結合'], answer: ans,
       explain: { 'イオン結合': '金属元素と非金属元素 → 陽イオンと陰イオンがクーロン力で引き合うイオン結合。', '金属結合': '金属元素だけ → 自由電子による金属結合。', '共有結合': '非金属元素どうし → 電子対を共有する共有結合。' }[ans] };
   }
   if (type === 'mol') {
     const m = pick(MOLE_LIST.filter(x => x.phase === 'gas').concat(MOLE_LIST.filter(x => x.id === 'mole-water')));
     const M = massOf(parseBody(m.f)).total, n = pick([0.5, 1, 1.5, 2, 3]);
     const kind = pick(m.phase === 'gas' ? ['g2mol', 'mol2g', 'mol2L', 'L2mol', 'count'] : ['g2mol', 'mol2g', 'count']);
-    const fm = formulaHTML(m.f);
+    const fm = QF.fx ? formulaHTML(m.f) : m.name;
     const opt = (ans, alts, unit) => ({ choices: choicesWith(fmtNum(ans) + unit, [...new Set(alts.filter(a => a > 0 && fmtNum(a) !== fmtNum(ans)).map(a => fmtNum(a) + unit))]), answer: fmtNum(ans) + unit });
     if (kind === 'g2mol') return Object.assign({ subject: m.model, q: `${fm}（分子量${fmtMass(M)}）${fmtNum(n * M)} g は何 mol？`, explain: `${fmtNum(n * M)} g ÷ ${fmtMass(M)} g/mol = ${fmtNum(n)} mol` }, opt(n, [n * 2, n / 2, n + 1, n * M / 10], ' mol'));
     if (kind === 'mol2g') return Object.assign({ subject: m.model, q: `${fm}（分子量${fmtMass(M)}）${fmtNum(n)} mol は何 g？`, explain: `${fmtNum(n)} mol × ${fmtMass(M)} g/mol = ${fmtNum(n * M)} g` }, opt(n * M, [M, n * M * 2, n * M / 2, n * M + 2], ' g'));
@@ -7349,7 +7361,111 @@ const GAME = (() => {
     const p = DRILLS[t].gen(), lab = v => (p.sci ? sig(v, 2) : sig(v)) + (p.unit ? ' ' + p.unit : '');
     const ans = lab(p.a), seen = new Set([ans]), wrong = [];
     shuffle([2, 0.5, 10, 0.1, 3, 1 / 3, 1.5, 4, 0.25]).forEach(f => { const w = lab(p.a * f); if (wrong.length < 3 && !seen.has(w)) { seen.add(w); wrong.push(w); } });
-    return { q: String(p.q).replace(/\s*答えは「[^」]*」の前の数で入れよう/, ''), choices: shuffle([ans].concat(wrong)).map(v => ({ v, html: v })), answer: ans, explain: (p.sol || []).join('　') };
+    let qt = String(p.q).replace(/\s*答えは「[^」]*」の前の数で入れよう/, '');
+    if (!QF.fx) qt = qt.replace(/([\u3040-\u30ff\u4e00-\u9fff])\s+[A-Z][A-Za-z0-9₀-₉()]*/g, '$1'); // 「式」がオフなら、物質名のあとの化学式をとる
+    return { q: qt, choices: shuffle([ans].concat(wrong)).map(v => ({ v, html: v })), answer: ans, explain: (p.sol || []).join('　') };
+  }
+
+  /* ---------- 問題といっしょに出す「図」「3D」（先生がえらぶ） ---------- */
+  const subjectsOf = q => (q.subjects || (q.subject ? [q.subject] : [])).filter(id => id && (/^atom-/.test(id) || LIB.some(e => e.id === id && e.kind === 'mol')));
+  const atomEl = id => (/^atom-/.test(id) ? id.slice(5) : null);
+  // 分子・結晶の図：いちばん原子どうしが重ならない向きから見た、平面の構造図（SVG）
+  function fig2D(id) {
+    const el = atomEl(id);
+    if (el) {
+      const Z = EL[el].z, sh = shellCounts(Z).filter(Boolean), R0 = 16, gap = 15, W = 2 * (R0 + gap * sh.length) + 8;
+      let h = `<svg viewBox="${-W / 2} ${-W / 2} ${W} ${W}" class="gsvg" role="img" aria-label="${esc(EL[el].n)}の電子配置の図"><circle r="${R0 - 4}" fill="#d9534f"/><text y="4" text-anchor="middle" font-size="10" fill="#fff" font-weight="700">+${Z}</text>`;
+      sh.forEach((n, i) => {
+        const r = R0 + gap * (i + 1);
+        h += `<circle r="${r}" fill="none" stroke="#9aa0a6" stroke-width="1"/>`;
+        for (let k = 0; k < n; k++) { const a = -Math.PI / 2 + k / n * Math.PI * 2; h += `<circle cx="${(Math.cos(a) * r).toFixed(1)}" cy="${(Math.sin(a) * r).toFixed(1)}" r="3.2" fill="#f1b31c" stroke="#24282b" stroke-width=".6"/>`; }
+      });
+      return h + '</svg>';
+    }
+    const e = getModel(LIB.find(x => x.id === id)), m = e && e.model; if (!m) return '';
+    const P = m.pos.map(p => [p[0], p[1], p[2]]);
+    let best = null;
+    for (let i = 0; i < 12; i++) for (const tilt of [0, 0.45, -0.45]) {
+      const ay = i / 12 * Math.PI, ca = Math.cos(ay), sa = Math.sin(ay), ct = Math.cos(tilt), st = Math.sin(tilt);
+      const pr = P.map(([x, y, z]) => { const x1 = x * ca + z * sa, z1 = -x * sa + z * ca; return [x1, y * ct - z1 * st, y * st + z1 * ct]; });
+      let dmin = 1e9; for (let a = 0; a < pr.length; a++) for (let b = a + 1; b < pr.length; b++) dmin = Math.min(dmin, Math.hypot(pr[a][0] - pr[b][0], pr[a][1] - pr[b][1]));
+      if (!best || dmin > best.d + 1e-6) best = { d: dmin, pr };
+    }
+    const pr = best.pr, xs = pr.map(p => p[0]), ys = pr.map(p => p[1]);
+    const pad = 0.8, x0 = Math.min(...xs) - pad, x1 = Math.max(...xs) + pad, y0 = Math.min(...ys) - pad, y1 = Math.max(...ys) + pad;
+    const many = pr.length > 30, rad = a => (many ? 0.22 : 0.3 + EL[a.el].rc * 0.32);
+    let h = `<svg viewBox="${x0.toFixed(2)} ${(-y1).toFixed(2)} ${(x1 - x0).toFixed(2)} ${(y1 - y0).toFixed(2)}" class="gsvg" role="img" aria-label="${esc(e.name)}の構造の図">`;
+    m.bonds.forEach(b => {
+      const [ax, ay] = pr[b.a], [bx, by] = pr[b.b], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1, nx = -dy / L * 0.09, ny = dx / L * 0.09;
+      const offs = b.o === 2 ? [-1, 1] : b.o === 3 ? [-1.6, 0, 1.6] : [0];
+      offs.forEach(o => { h += `<line x1="${(ax + nx * o).toFixed(2)}" y1="${(-(ay + ny * o)).toFixed(2)}" x2="${(bx + nx * o).toFixed(2)}" y2="${(-(by + ny * o)).toFixed(2)}" stroke="${b.style === 'contact' ? '#c45aa0' : '#6b7280'}" stroke-width="0.08"${b.style === 'contact' ? ' stroke-dasharray=".15 .12"' : ''}/>`; });
+    });
+    pr.map((p, i) => [p, i]).sort((a, b) => a[0][2] - b[0][2]).forEach(([p, i]) => {
+      const a = m.atoms[i], r = rad(a), dark = /^(C|S|Fe|Cu)$/.test(a.el);
+      h += `<circle cx="${p[0].toFixed(2)}" cy="${(-p[1]).toFixed(2)}" r="${r.toFixed(2)}" fill="${EL[a.el].c}" stroke="#24282b" stroke-width="0.04"/>`;
+      if (!many) h += `<text x="${p[0].toFixed(2)}" y="${(-p[1] + r * 0.36).toFixed(2)}" font-size="${(r * 0.95).toFixed(2)}" text-anchor="middle" font-weight="700" fill="${dark ? '#fff' : '#24282b'}">${esc(a.el)}${a.charge ? (a.charge > 0 ? '+' : '−') : ''}</text>`;
+    });
+    return h + '</svg>';
+  }
+  // 3D：小さな模型をくるくる回して見せる（球と棒。原子は電子殻の輪）
+  let R3 = null;
+  function fig3D(id, host) {
+    if (!window.THREE) { host.innerHTML = '<p class="note">3D を表示できません</p>'; return; }
+    if (!R3) {
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(35, 1, 0.1, 200), grp = new THREE.Group();
+      scene.add(grp, new THREE.HemisphereLight(0xffffff, 0x8a96a8, 0.75));
+      const key = new THREE.DirectionalLight(0xffffff, 0.7); key.position.set(3, 5, 6); scene.add(key);
+      R3 = { renderer, scene, camera, grp, id: null, els: [] };
+      const loop = () => {
+        requestAnimationFrame(loop);
+        const c = R3.renderer.domElement;
+        if (!c.isConnected || root.hidden) return;
+        R3.grp.rotation.y += 0.012;
+        R3.els.forEach(o => { o.userData.a += o.userData.w; o.position.set(Math.cos(o.userData.a) * o.userData.r, 0, Math.sin(o.userData.a) * o.userData.r); });
+        R3.renderer.render(R3.scene, R3.camera);
+      };
+      loop();
+    }
+    const w = host.clientWidth || 200, h = host.clientHeight || 160;
+    R3.renderer.setSize(w, h); R3.camera.aspect = w / h; R3.camera.updateProjectionMatrix();
+    if (R3.id !== id) {
+      const g = R3.grp; while (g.children.length) { const o = g.children.pop(); o.traverse(x => { if (x.geometry) x.geometry.dispose(); if (x.material) x.material.dispose(); }); }
+      R3.els = []; g.rotation.set(0.35, 0, 0);
+      const sph = new THREE.SphereGeometry(1, 20, 14);
+      const mat = c => new THREE.MeshPhongMaterial({ color: c, shininess: 60 });
+      let rad = 2;
+      const el = atomEl(id);
+      if (el) {
+        const sh = shellCounts(EL[el].z).filter(Boolean);
+        const nuc = new THREE.Mesh(sph, mat('#d9534f')); nuc.scale.setScalar(0.45); g.add(nuc);
+        sh.forEach((n, i) => {
+          const r = 1 + i * 0.75, ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.015, 6, 64), new THREE.MeshBasicMaterial({ color: 0x9aa0a6 })); ring.rotation.x = Math.PI / 2; g.add(ring);
+          for (let k = 0; k < n; k++) { const ee = new THREE.Mesh(sph, mat('#f1b31c')); ee.scale.setScalar(0.09); ee.userData = { a: k / n * Math.PI * 2, r, w: 0.012 / (i + 1) }; g.add(ee); R3.els.push(ee); }
+          rad = r + 0.3;
+        });
+      } else {
+        const e = getModel(LIB.find(x => x.id === id)), m = e.model;
+        const c0 = [0, 1, 2].map(k => m.pos.reduce((s, p) => s + p[k], 0) / m.pos.length);
+        const P = m.pos.map(p => new THREE.Vector3(p[0] - c0[0], p[1] - c0[1], p[2] - c0[2]));
+        rad = Math.max(...P.map(p => p.length())) + 0.9;
+        m.atoms.forEach((a, i) => { const s1 = new THREE.Mesh(sph, mat(EL[a.el].c)); s1.scale.setScalar(m.atoms.length > 30 ? 0.22 : 0.18 + EL[a.el].rc * 0.32); s1.position.copy(P[i]); g.add(s1); });
+        const cyl = new THREE.CylinderGeometry(1, 1, 1, 10), bm = new THREE.MeshPhongMaterial({ color: 0x8e9ab0 });
+        m.bonds.forEach(b => { const A = P[b.a], Bv = P[b.b], d = Bv.clone().sub(A), L = d.length(); const c = new THREE.Mesh(cyl, bm); c.scale.set(0.06, L, 0.06); c.position.copy(A).addScaledVector(d, 0.5); c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); g.add(c); });
+      }
+      R3.camera.position.set(0, 0, rad / Math.sin(Math.PI * 35 / 360) * 1.05); R3.camera.lookAt(0, 0, 0);
+      R3.id = id;
+    }
+    host.appendChild(R3.renderer.domElement);
+  }
+  function figHTML(q, cfg) {
+    const ids = subjectsOf(q);
+    if (!ids.length || !(cfg.fig || cfg.d3) || q.hideShells) return ''; // 電子配置を問う問題は、図を出すと答えになるので出さない
+    return `<div class="gfigs">${ids.map(id => {
+      const name = atomEl(id) ? EL[atomEl(id)].n : LIB.find(e => e.id === id).name;
+      return `<figure class="gfig">${cfg.fig ? `<div class="gfig2">${fig2D(id)}</div>` : ''}${cfg.d3 && ids.length === 1 ? '<div class="gfig3" id="gFig3"></div>' : ''}${ids.length > 1 ? `<figcaption>${esc(name)}</figcaption>` : ''}</figure>`;
+    }).join('')}</div>`;
   }
   function fromSource(src) {
     if (src.k === 'quiz') { const [q, a, w, ex] = src.x; return { q: esc(q), choices: shuffle([a].concat(w)), answer: a, explain: ex }; }
@@ -7380,7 +7496,7 @@ const GAME = (() => {
   // 同じ seed なら、クラス全員に同じ順番・同じ問題が出る（問題づくりの乱数を一時的に seed のものにする）
   function seededQuestion(R, cfg) {
     const keep = Math.random;
-    Math.random = R;
+    Math.random = R; QF.fx = cfg.fx !== 0;
     try {
       if (unitMode(cfg)) {
         if (!G.deck || G.di >= G.deck.length) { G.deck = unitDeck(cfg, R); G.di = 0; } // 1周したら、まぜ直してもう1周
@@ -7388,7 +7504,7 @@ const GAME = (() => {
       }
       const types = TYPES[cfg.m] || TYPES.mix;
       return makeQuestion(types[Math.floor(R() * types.length)]);
-    } finally { Math.random = keep; }
+    } finally { Math.random = keep; QF.fx = true; }
   }
   let G = null, OFF = 0;
   const now = () => Date.now() + OFF;
@@ -7436,12 +7552,14 @@ const GAME = (() => {
       drawHud(); return;
     }
     const q = G.q, ansI = q.choices.findIndex(c => (typeof c === 'string' ? c : c.v) === q.answer);
-    el.innerHTML = `<div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span></div><h2 class="gqt">${q.q}</h2>
+    if (q.figH === undefined) q.figH = figHTML(q, G.cfg); // 図は問題ごとに1回だけつくる
+    el.innerHTML = `<div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span></div><h2 class="gqt">${q.q}</h2>${q.figH}
       <div class="gch">${q.choices.map((c, i) => {
         const label = typeof c === 'string' ? esc(c) : c.html;
         const cls = q.pick < 0 ? '' : i === ansI ? ' ok' : i === q.pick ? ' ng' : ' dim';
         return `<button type="button" class="gbtn${cls}" data-gp="${i}"><span class="kb">${i + 1}</span>${label}</button>`;
       }).join('')}</div>`;
+    const f3 = $('gFig3'); if (f3) fig3D(subjectsOf(q)[0], f3);
     drawHud();
   }
   function runClock(onEnd) {
@@ -7466,7 +7584,7 @@ const GAME = (() => {
   function startSolo() {
     const c = taCfg();
     if (c.r === 'unit' && !unitList(c).length) { toast('単元をえらんでください'); renderHub(); return; }
-    newGame({ r: c.r, m: c.m, u: c.u, t: +c.t }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
+    newGame({ r: c.r, m: c.m, u: c.u, t: +c.t, fig: c.fig ? 1 : 0, d3: c.d3 ? 1 : 0, fx: c.fx === 0 ? 0 : 1 }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
     playShell('スコア');
     runClock(endSolo);
   }
@@ -7503,6 +7621,9 @@ const GAME = (() => {
         <div class="gchk">${list.map(l => `<button type="button" data-${attr}="ut:${l.id}" aria-pressed="${sel.has(l.id)}"${dis}><b>${esc(l.no)}</b>${esc(l.name)}</button>`).join('')}</div></div>`;
     }
     h += `<div class="gfld"><span class="gfl">時間</span>${seg('t', TIMES.map(t => [t, tLabel(t)]), cfg.t)}</div>`;
+    const tg = (k, label, on) => `<button type="button" data-${attr}="vf:${k}" aria-pressed="${on}"${dis}>${on ? '✓ ' : ''}${label}</button>`;
+    h += `<div class="gfld"><span class="gfl">表示</span><div class="seg wrap gvis">${tg('fig', '図', !!cfg.fig)}${tg('d3', '3D', !!cfg.d3)}${tg('fx', '式', cfg.fx !== 0)}</div></div>
+      <p class="note gvnote">図：分子の構造図・原子の電子殻の図　3D：くるくる回る模型　式：問題文に化学式を出す（オフにすると名前だけ）</p>`;
     return h;
   }
   // えらんだものを cfg の変更にする（uc は画面だけの状態）
@@ -7515,6 +7636,7 @@ const GAME = (() => {
     if (key === 'ut') { if (sel.has(val)) sel.delete(val); else sel.add(val); return { r: 'unit', u: join() }; }
     if (key === 'ua') { LESSONS.filter(l => l.course === val).forEach(l => sel.add(l.id)); return { r: 'unit', u: join() }; }
     if (key === 'un') return { u: '' };
+    if (key === 'vf') { const o = {}; o[val] = (val === 'fx' ? cfg.fx !== 0 : !!cfg[val]) ? 0 : 1; return o; }
     if (key === 'upto') { const l = LESSONS.find(x => x.id === val); if (!l) return null; const list = LESSONS.filter(x => x.course === l.course); return { r: 'unit', u: list.slice(0, list.indexOf(l) + 1).map(x => x.id).join(',') }; }
     return null;
   }
@@ -7591,7 +7713,7 @@ const GAME = (() => {
   /* 先生：部屋 */
   let H = null;
   function makeRoom() {
-    const cfg = { r: 'fld', m: 'mix', u: '', t: 60 };
+    const cfg = { r: 'fld', m: 'mix', u: '', t: 60, fig: 0, d3: 0, fx: 1 };
     const tryOne = n => {
       const code = String(1000 + Math.floor(Math.random() * 9000));
       return api('GET', ROOM(code)).then(v => {
