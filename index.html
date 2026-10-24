@@ -790,7 +790,7 @@ body.gm-on { overflow: hidden; }
 .gwait input#jName { font: 600 17px var(--font-body); padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 6px; width: min(320px, 90%); }
 .gwh { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between; }
 .gchips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; } .gchipn { border: 1.5px solid var(--line); background: var(--panel); border-radius: 999px; padding: 2px 10px; font-weight: 700; } .gchipn.me { border-color: var(--warm); color: var(--warm); }
-.ghost-host { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 14px; height: 100%; }
+.ghost-host { display: grid; grid-template-columns: 350px minmax(0, 1fr); gap: 14px; height: 100%; }
 .ghostL { overflow: auto; } .groom { text-align: center; } .groom small { color: var(--muted); font-weight: 700; } .gcode { font: 800 64px/1.1 var(--font-data); letter-spacing: .1em; color: var(--warm); }
 .gqr { width: 180px; margin: 6px auto; } .gqr svg { width: 100%; height: auto; display: block; }
 .gppl { font-weight: 700; } .gppl b { font-family: var(--font-data); font-size: 20px; }
@@ -819,6 +819,17 @@ body.gm-on { overflow: hidden; }
   .ghost-host { grid-template-columns: 1fr; height: auto; } .gboard { min-height: 70vh; } .gcode { font-size: 48px; }
   .gscore { font-size: 52px; } .gcount b { font-size: 72px; }
 }
+.gunits { border: 1px solid var(--line); border-radius: 6px; padding: 2px 10px 8px; background: var(--bg); }
+.gsel { font-size: 12.5px; color: var(--muted); margin-left: auto; } .gsel b { font-family: var(--font-data); font-size: 16px; color: var(--warm); }
+.gunits select { flex: 1 1 12em; min-width: 0; font: 600 14px var(--font-body); padding: 6px 8px; border: 1.5px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); }
+.gchk { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 5px; max-height: 210px; overflow: auto; padding: 2px; }
+.gchk button { display: flex; gap: 6px; align-items: baseline; text-align: left; border: 1.5px solid var(--line); background: var(--panel); border-radius: 5px; padding: 5px 8px; font-size: 13px; font-weight: 700; color: var(--ink); cursor: pointer; line-height: 1.35; }
+.gchk button b { font-family: var(--font-data); font-size: 11.5px; color: var(--muted); flex: none; }
+.gchk button[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--panel)); }
+.gchk button[aria-pressed="true"]::before { content: "✓"; color: var(--accent); font-weight: 800; }
+.gchk button:disabled { opacity: .6; cursor: default; }
+.gnow { font-size: 13px; margin: 4px 0; } .gnow b { color: var(--warm); }
+.ghostL { max-height: calc(100vh - 90px); }
 </style>
 </head>
 <body>
@@ -7281,7 +7292,11 @@ const GAME = (() => {
     dlg.addEventListener('click', e => { if (e.target === dlg || e.target.closest('[data-x]')) dlg.close(); });
     root.addEventListener('click', onClick);
     root.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target.id === 'jName' || e.target.id === 'jCode')) join(); });
-    root.addEventListener('change', e => { if (e.target.id === 'dbUrl') { S.db = e.target.value.trim().replace(/\/+$/, ''); save(); } });
+    root.addEventListener('change', e => {
+      if (e.target.id === 'dbUrl') { S.db = e.target.value.trim().replace(/\/+$/, ''); save(); }
+      if (e.target.dataset.tasel && e.target.value) soloRange('upto', e.target.value);
+      if (e.target.dataset.hcsel && e.target.value && H) hostCfg('upto:' + e.target.value);
+    });
     document.addEventListener('keydown', e => {
       if (root.hidden || !G || G.over || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName || '')) return;
       if (/^[1-4]$/.test(e.key) && now() >= G.startAt) pick(+e.key - 1);
@@ -7303,7 +7318,44 @@ const GAME = (() => {
     shape: ['shape', 'polar', 'bondtype', 'hbond'], atom: ['config', 'valence', 'ion'], calc: ['mass', 'mol', 'coef'], feat: ['state', 'hbond', 'boil', 'polar'],
   };
   const modeName = m => (MODES.find(x => x[0] === m) || MODES[0])[1];
-  const cfgName = cfg => `${modeName(cfg.m)}・${cfg.t}秒`;
+  const tLabel = t => (t < 60 ? `${t}秒` : t % 60 ? `${Math.floor(t / 60)}分${t % 60}秒` : `${t / 60}分`);
+  const TIMES = [30, 60, 90, 120, 180, 300];
+  // 単元（授業モードの単元）。cfg.u は「ls-mol,ls-rx」のような文字列（先生と生徒で同じ順にするため、授業の順にならべる）
+  const unitList = cfg => { const set = new Set(String(cfg.u || '').split(',').filter(Boolean)); return LESSONS.filter(l => set.has(l.id)); };
+  const unitMode = cfg => cfg.r === 'unit' && unitList(cfg).length > 0;
+  function cfgName(cfg) {
+    if (cfg.r === 'unit') {
+      const us = unitList(cfg);
+      return (us.length ? `単元：${us[0].no} ${us[0].name}${us.length > 1 ? ` ほか${us.length - 1}` : ''}` : '単元：（未選択）') + '・' + tLabel(cfg.t);
+    }
+    return `${modeName(cfg.m)}・${tLabel(cfg.t)}`;
+  }
+  // 単元ごとに、生成できる問題の種類（クイズの自動問題）
+  const UNIT_TYPES = { 'ls-state': ['state'], 'ls-shell': ['config', 'valence'], 'ls-ion': ['ion'], 'ls-ionic': ['bondtype'], 'ls-cov': ['bondtype', 'shape'], 'ls-shape': ['shape'], 'ls-polar': ['polar'],
+    'ls-hbond': ['hbond', 'boil'], 'ls-cryst': ['bondtype'], 'ls-metal': ['bondtype'], 'ls-amass': ['mass'], 'ls-mol': ['mol'], 'ls-rx': ['coef'], 'ls-qty': ['coef'] };
+  // 出題のもと：確認テストの問題（1つずつ）＋ 自動でつくる問題・計算ドリル（数字が毎回かわるので多めに）
+  function unitDeck(cfg, R) {
+    const out = [];
+    unitList(cfg).forEach(l => {
+      (LESSON_QUIZ[l.id] || []).forEach(x => out.push({ k: 'quiz', x }));
+      (UNIT_TYPES[l.id] || []).forEach(t => out.push({ k: 'gen', t }, { k: 'gen', t }));
+      ((typeof DRILL_OF !== 'undefined' && DRILL_OF[l.id]) || []).forEach(t => { if (DRILLS[t]) out.push({ k: 'drill', t }, { k: 'drill', t }); });
+    });
+    for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+    return out;
+  }
+  // 計算ドリル（数字を入れる問題）を、4つからえらぶ問題にする
+  function drillChoice(t) {
+    const p = DRILLS[t].gen(), lab = v => (p.sci ? sig(v, 2) : sig(v)) + (p.unit ? ' ' + p.unit : '');
+    const ans = lab(p.a), seen = new Set([ans]), wrong = [];
+    shuffle([2, 0.5, 10, 0.1, 3, 1 / 3, 1.5, 4, 0.25]).forEach(f => { const w = lab(p.a * f); if (wrong.length < 3 && !seen.has(w)) { seen.add(w); wrong.push(w); } });
+    return { q: String(p.q).replace(/\s*答えは「[^」]*」の前の数で入れよう/, ''), choices: shuffle([ans].concat(wrong)).map(v => ({ v, html: v })), answer: ans, explain: (p.sol || []).join('　') };
+  }
+  function fromSource(src) {
+    if (src.k === 'quiz') { const [q, a, w, ex] = src.x; return { q: esc(q), choices: shuffle([a].concat(w)), answer: a, explain: ex }; }
+    if (src.k === 'drill') return drillChoice(src.t);
+    return makeQuestion(src.t);
+  }
   function openRewards() {
     shell();
     const r = rw(), lv = levelOf(r.coins), pc = lv.next ? (r.coins - lv.from) / (lv.next - lv.from) * 100 : 100;
@@ -7326,10 +7378,17 @@ const GAME = (() => {
     };
   }
   // 同じ seed なら、クラス全員に同じ順番・同じ問題が出る（問題づくりの乱数を一時的に seed のものにする）
-  function seededQuestion(R, types) {
+  function seededQuestion(R, cfg) {
     const keep = Math.random;
     Math.random = R;
-    try { return makeQuestion(types[Math.floor(R() * types.length)]); } finally { Math.random = keep; }
+    try {
+      if (unitMode(cfg)) {
+        if (!G.deck || G.di >= G.deck.length) { G.deck = unitDeck(cfg, R); G.di = 0; } // 1周したら、まぜ直してもう1周
+        return fromSource(G.deck[G.di++]);
+      }
+      const types = TYPES[cfg.m] || TYPES.mix;
+      return makeQuestion(types[Math.floor(R() * types.length)]);
+    } finally { Math.random = keep; }
   }
   let G = null, OFF = 0;
   const now = () => Date.now() + OFF;
@@ -7340,7 +7399,7 @@ const GAME = (() => {
     nextQ();
     return G;
   }
-  function nextQ() { G.q = seededQuestion(G.R, TYPES[G.cfg.m] || TYPES.mix); G.q.pick = -1; G.lock = false; }
+  function nextQ() { G.q = seededQuestion(G.R, G.cfg); G.q.pick = -1; G.lock = false; }
   function pick(i) {
     const q = G.q; if (!G || G.lock || q.pick >= 0 || now() < G.startAt) return;
     q.pick = i;
@@ -7402,14 +7461,17 @@ const GAME = (() => {
   function afterGame() { const r = rw(); if (G.maxCombo > r.maxCombo) r.maxCombo = G.maxCombo; if (G.score > r.taBest) r.taBest = G.score; return Math.floor(G.score / 20); }
 
   /* ---------- ひとりで タイムアタック ---------- */
-  const taCfg = () => { if (!S.ta) S.ta = { m: 'mix' }; return S.ta; };
+  const taCfg = () => { if (!S.ta) S.ta = { m: 'mix' }; const c = S.ta; if (!c.r) c.r = 'fld'; if (!c.t) c.t = 60; if (c.u === undefined) c.u = ''; return c; };
+  const bestKey = cfg => (cfg.r === 'unit' ? 'unit' : cfg.m) + (+cfg.t === 60 ? '' : '-' + cfg.t);
   function startSolo() {
-    newGame({ m: taCfg().m, t: 60 }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
+    const c = taCfg();
+    if (c.r === 'unit' && !unitList(c).length) { toast('単元をえらんでください'); renderHub(); return; }
+    newGame({ r: c.r, m: c.m, u: c.u, t: +c.t }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
     playShell('スコア');
     runClock(endSolo);
   }
   function endSolo() {
-    const r = rw(), key = G.cfg.m, prev = r.best[key] || 0, rec = G.score > prev;
+    const r = rw(), key = bestKey(G.cfg), prev = r.best[key] || 0, rec = G.score > prev;
     if (rec) r.best[key] = G.score;
     const coins = afterGame(); save(); earn(coins); checkBadges();
     G.share = `分子ラボ3D ⏱タイムアタック（${cfgName(G.cfg)}）\n${fmt(G.score)}点！ ${G.ok}問正解（≒ ${ruler(G.ok)}）\n最大${G.maxCombo}コンボ・段位「${levelOf(r.coins).name}」\n${PUBLIC_URL}`;
@@ -7417,7 +7479,7 @@ const GAME = (() => {
       <div class="gscore">${fmt(G.score)}<small> 点</small></div>
       <p class="gphrase">⚗️ <b>${G.ok}</b> 問正解 ≒ <b>${esc(ruler(G.ok))}</b></p>
       <p class="note">✅ 正解 ${G.ok}　✕ ミス ${G.miss}　⚡ 最大 ${G.maxCombo} コンボ　🪙 +${coins}</p>
-      <p class="note">${esc(modeName(G.cfg.m))} のベスト：${fmt(Math.max(prev, G.score))} 点</p>
+      <p class="note">${esc(cfgName(G.cfg))} のベスト：${fmt(Math.max(prev, G.score))} 点</p>
       <div class="grow"><button type="button" class="pbtn big" data-g="again">↺ もう一度</button><button type="button" class="pbtn ghost" data-g="brag">📣 自慢する</button><button type="button" class="pbtn ghost" data-g="hub">◀ もどる</button></div></div>`;
     $('gCb').innerHTML = '';
   }
@@ -7427,13 +7489,48 @@ const GAME = (() => {
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => toast(text.split('\n')[1])); else toast(text.split('\n')[1]);
   }
 
+  /* ---------- 出題範囲と時間をえらぶ部品（ひとり・先生の部屋 共通）。attr：ta（ひとり）／hc（先生） ---------- */
+  function rangeHTML(cfg, attr, busy, uc) {
+    const dis = busy ? ' disabled' : '';
+    const seg = (key, opts, cur) => `<div class="seg wrap">${opts.map(o => `<button type="button" data-${attr}="${key}:${o[0]}" aria-pressed="${String(cur) === String(o[0])}"${dis}>${o[1]}</button>`).join('')}</div>`;
+    let h = `<div class="gfld"><span class="gfl">出題</span>${seg('r', [['fld', '分野で選ぶ'], ['unit', '単元で選ぶ']], cfg.r || 'fld')}</div>`;
+    if ((cfg.r || 'fld') === 'fld') h += `<div class="gfld"><span class="gfl">分野</span>${seg('m', MODES, cfg.m)}</div>`;
+    else {
+      const sel = new Set(String(cfg.u || '').split(',').filter(Boolean)), list = LESSONS.filter(l => l.course === uc);
+      h += `<div class="gunits"><div class="gfld"><span class="gfl">単元</span>${seg('uc', [['kiso', '化学基礎'], ['kagaku', '化学']], uc)}<span class="gsel">えらんだ単元 <b>${sel.size}</b></span></div>
+        <div class="gfld"><span class="gfl">まとめて</span><select data-${attr}sel="upto"${dis}><option value="">最初から 〜 まで（習ったところまで）</option>${list.map(l => `<option value="${l.id}">最初 〜 ${esc(l.no)} ${esc(l.name)}</option>`).join('')}</select>
+        <button type="button" class="pbtn ghost" data-${attr}="ua:${uc}"${dis}>全部</button><button type="button" class="pbtn ghost" data-${attr}="un:"${dis}>はずす</button></div>
+        <div class="gchk">${list.map(l => `<button type="button" data-${attr}="ut:${l.id}" aria-pressed="${sel.has(l.id)}"${dis}><b>${esc(l.no)}</b>${esc(l.name)}</button>`).join('')}</div></div>`;
+    }
+    h += `<div class="gfld"><span class="gfl">時間</span>${seg('t', TIMES.map(t => [t, tLabel(t)]), cfg.t)}</div>`;
+    return h;
+  }
+  // えらんだものを cfg の変更にする（uc は画面だけの状態）
+  function rangeChange(cfg, key, val) {
+    const sel = new Set(String(cfg.u || '').split(',').filter(Boolean));
+    const join = () => LESSONS.filter(l => sel.has(l.id)).map(l => l.id).join(',');
+    if (key === 'r') return { r: val };
+    if (key === 'm') return { m: val };
+    if (key === 't') return { t: +val };
+    if (key === 'ut') { if (sel.has(val)) sel.delete(val); else sel.add(val); return { r: 'unit', u: join() }; }
+    if (key === 'ua') { LESSONS.filter(l => l.course === val).forEach(l => sel.add(l.id)); return { r: 'unit', u: join() }; }
+    if (key === 'un') return { u: '' };
+    if (key === 'upto') { const l = LESSONS.find(x => x.id === val); if (!l) return null; const list = LESSONS.filter(x => x.course === l.course); return { r: 'unit', u: list.slice(0, list.indexOf(l) + 1).map(x => x.id).join(',') }; }
+    return null;
+  }
+  function soloRange(key, val) {
+    if (key === 'uc') { S.ucourse = val; save(); renderHub(); return; }
+    const ch = rangeChange(taCfg(), key, val); if (!ch) return;
+    Object.assign(taCfg(), ch); save(); renderHub();
+  }
+
   /* ---------- ゲームのトップ ---------- */
   function renderHub() {
     leave(); leaveBattle();
-    const cfg = taCfg(), r = rw(), best = r.best[cfg.m] || 0, hasDb = !!base();
+    const cfg = taCfg(), r = rw(), best = r.best[bestKey(cfg)] || 0, hasDb = !!base();
     main.innerHTML = `<div class="ghub">
-      <section class="gpanel"><h3>⏱ タイムアタック</h3><p class="note">60 秒で 何点とれる？ 正しい答えを 次々タップ。続けて正解すると コンボで点数アップ（10 コンボごとに ×1.5 → ×2 → … ×3）</p>
-        <div class="gfld"><span class="gfl">種目</span><div class="seg wrap">${MODES.map(m => `<button type="button" data-ta="${m[0]}" aria-pressed="${cfg.m === m[0]}">${m[1]}</button>`).join('')}</div></div>
+      <section class="gpanel"><h3>⏱ タイムアタック</h3><p class="note">時間内に 何点とれる？ 正しい答えを 次々タップ。続けて正解すると コンボで点数アップ（10 コンボごとに ×1.5 → ×2 → … ×3）</p>
+        ${rangeHTML(cfg, 'ta', false, S.ucourse || 'kiso')}
         <div class="gfld"><button type="button" class="pbtn big" data-g="solo">▶ スタート</button><span class="gbestv">ベスト <b>${fmt(best)}</b> 点</span></div>
         <button type="button" class="pbtn ghost" data-g="rewards">🏅 段位・バッジを見る</button></section>
       <section class="gpanel"><h3>🏆 クラス対戦</h3><p class="note">先生の合図で 全員いっせいにスタート。ランキングが リアルタイムで動く</p>
@@ -7494,7 +7591,7 @@ const GAME = (() => {
   /* 先生：部屋 */
   let H = null;
   function makeRoom() {
-    const cfg = { m: 'mix', t: 60 };
+    const cfg = { r: 'fld', m: 'mix', u: '', t: 60 };
     const tryOne = n => {
       const code = String(1000 + Math.floor(Math.random() * 9000));
       return api('GET', ROOM(code)).then(v => {
@@ -7529,12 +7626,14 @@ const GAME = (() => {
     const cfg = r.cfg, busy = r.state === 'play';
     const seg = (key, opts) => `<div class="seg wrap">${opts.map(o => `<button type="button" data-hc="${key}:${o[0]}" aria-pressed="${String(cfg[key]) === String(o[0])}"${busy ? ' disabled' : ''}>${o[1]}</button>`).join('')}</div>`;
     const qrOld = soft && $('gQr') ? $('gQr').innerHTML : '';
+    const sc = el.querySelector('.gunits .gchk'), keepY = sc ? sc.scrollTop : 0, keepL = el.scrollTop;
     el.innerHTML = `<div class="groom"><small>部屋番号</small><div class="gcode">${H.code}</div></div><div class="gqr" id="gQr">${qrOld}</div>
       <p class="note">分子ラボ3D → 🎮 → 🏆 で 番号を入力<br>または QR を読みとる</p>
-      <div class="gfld"><span class="gfl">種目</span>${seg('m', MODES)}</div>
-      <div class="gfld"><span class="gfl">時間</span>${seg('t', [[30, '30秒'], [60, '60秒'], [90, '90秒']])}</div>
+      ${rangeHTML(cfg, 'hc', busy, H.uc || 'kiso')}
+      <p class="gnow">いまの設定：<b>${esc(cfgName(cfg))}</b></p>
       <div class="gfld"><span class="gppl">👥 <b>${playersOf(r).length}</b> 人</span><button type="button" class="pbtn big" data-g="hstart"${busy ? ' disabled' : ''}>${r.round ? `▶ 第${r.round + 1}回戦 スタート` : '▶ スタート'}</button></div>
       <div class="gfld"><button type="button" class="pbtn ghost" data-g="hcopy">🔗 参加リンクをコピー</button><button type="button" class="pbtn ghost" data-g="hclose">部屋を閉じる</button></div>`;
+    const sc2 = el.querySelector('.gunits .gchk'); if (sc2) sc2.scrollTop = keepY; el.scrollTop = keepL;
     if (!qrOld) drawQR(joinUrl(H.code));
   }
   let qrLib = null;
@@ -7554,11 +7653,15 @@ const GAME = (() => {
     qrLib.addEventListener('load', put);
   }
   function hostCfg(v) {
-    const [k, raw] = v.split(':'), o = {}; o[k] = k === 'm' ? raw : +raw;
-    api('PATCH', ROOM(H.code) + '/cfg', o).catch(() => toast('変更できませんでした'));
+    const i = v.indexOf(':'), k = v.slice(0, i), val = v.slice(i + 1);
+    if (k === 'uc') { H.uc = val; drawHostL(true); return; }
+    const ch = rangeChange(H.room.cfg, k, val); if (!ch) return;
+    Object.assign(H.room.cfg, ch); drawHostL(true); // すぐ画面に反映（データベースからの知らせも、あとで来る）
+    api('PATCH', ROOM(H.code) + '/cfg', ch).catch(() => toast('変更できませんでした'));
   }
   function hostStart() {
     const r = H.room; if (!r || r.state === 'play') return;
+    if (r.cfg.r === 'unit' && !unitList(r.cfg).length) { toast('単元をえらんでください'); return; }
     api('PATCH', ROOM(H.code), { state: 'play', round: (r.round || 0) + 1, seed: Math.floor(Math.random() * 1e9), startAt: Math.round(now() + 5000) }).catch(() => toast('スタートできませんでした'));
   }
   // ランキング表：広さを測って、列数・行数・文字の大きさを決める（40人でもスクロールなし）
@@ -7710,7 +7813,7 @@ const GAME = (() => {
     const b = e.target.closest('button'); if (!b || b.disabled) return;
     const d = b.dataset;
     if (d.gp != null && G) { pick(+d.gp); return; }
-    if (d.ta) { taCfg().m = d.ta; save(); renderHub(); return; }
+    if (d.ta) { const i = d.ta.indexOf(':'); soloRange(d.ta.slice(0, i), d.ta.slice(i + 1)); return; }
     if (d.hc) { hostCfg(d.hc); return; }
     const [a, arg] = (d.g || '').split(':');
     switch (a) {
