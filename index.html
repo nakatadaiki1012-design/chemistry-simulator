@@ -736,6 +736,89 @@ body.sec-atom .app { grid-template-columns: 620px minmax(0, 1fr); }
   .lbl-sep { white-space: normal; max-width: 86vw; width: max-content; text-align: center; line-height: 1.45; }
   .lbl-rx { white-space: normal; max-width: 27vw; width: max-content; text-align: center; font-size: 12.5px; line-height: 1.35; padding: 1px 6px; }
 }
+
+/* ===== ゲーム（ごほうび・タイムアタック・クラス対戦） ===== */
+.coinchip, .gchip { display: inline-flex; align-items: baseline; gap: 4px; border: 1.5px solid var(--ink); background: var(--panel); border-radius: 999px; padding: 3px 10px; font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer; color: var(--ink); }
+.coinchip b, .gchip b { font-family: var(--font-data); }
+.coinchip .lv, .gchip .lv { font-size: 11.5px; color: var(--warm); }
+.gamebtn { border: 1.5px solid var(--warm); background: var(--warm); color: #fff; border-radius: 999px; padding: 3px 12px; font-size: 13.5px; font-weight: 800; white-space: nowrap; margin-left: auto; cursor: pointer; }
+.top .coinchip { margin-left: 0; }
+.top .labnav { margin-left: 0; }
+@media (max-width: 900px) { .gamebtn .gb-l { display: none; } .gamebtn { padding: 2px 9px; margin-left: 0; } .coinchip { display: none; } }
+.gplus { position: fixed; z-index: 200; transform: translateX(-50%); color: var(--warm); font: 800 15px var(--font-data); pointer-events: none; animation: gUp .9s ease-out forwards; }
+@keyframes gUp { to { transform: translate(-50%, -26px); opacity: 0; } }
+.gceleb { position: fixed; z-index: 210; left: 50%; top: 22%; transform: translateX(-50%); background: var(--panel); border: 2px solid var(--warm); box-shadow: 4px 4px 0 var(--warm); padding: 14px 26px; text-align: center; border-radius: 6px; animation: gPop .35s cubic-bezier(.2,1.5,.4,1); }
+.gceleb small { display: block; font-weight: 700; color: var(--muted); } .gceleb b { font-family: var(--font-display); font-size: 30px; }
+@keyframes gPop { from { transform: translateX(-50%) scale(.7); opacity: 0; } }
+.gtoast { position: fixed; z-index: 220; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: var(--panel); padding: 8px 16px; border-radius: 6px; font-weight: 700; max-width: 90vw; }
+.gm { position: fixed; inset: 0; z-index: 120; background: var(--bg); display: flex; flex-direction: column; }
+body.gm-on { overflow: hidden; }
+.gm-top { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1.5px solid var(--ink); background: var(--panel); }
+.gm-title { font-family: var(--font-display); font-size: 19px; flex: 1; }
+.gm-main { flex: 1; min-height: 0; overflow: auto; padding: 14px; }
+.ghub { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; max-width: 980px; margin: 0 auto; }
+.gpanel { background: var(--panel); border: 1.5px solid var(--ink); border-radius: 6px; padding: 14px 16px; box-shadow: 3px 3px 0 var(--ink); min-width: 0; }
+.gpanel h3 { font-family: var(--font-display); font-size: 21px; margin: 0 0 4px; }
+.gfld { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0; }
+.gfl { font-size: 13px; font-weight: 700; color: var(--muted); min-width: 3em; }
+.gfld input { flex: 1 1 9em; min-width: 0; font: 600 16px var(--font-body); padding: 7px 10px; border: 1.5px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+.gbestv { font-size: 13px; color: var(--muted); } .gbestv b { font-family: var(--font-data); font-size: 18px; color: var(--ink); }
+.gset { margin-top: 10px; font-size: 13px; } .gset summary { cursor: pointer; color: var(--muted); font-weight: 700; }
+.warnbox { background: var(--chip); border-left: 3px solid var(--warm); padding: 8px 10px; font-size: 13.5px; }
+.gplay { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; height: 100%; }
+.ghud { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px; }
+.gtbar { position: relative; height: 18px; background: var(--chip); border-radius: 999px; overflow: hidden; }
+.gtbar i { position: absolute; inset: 0 auto 0 0; background: var(--accent); transition: width .1s linear; } .gtbar i.hurry { background: var(--warm); }
+.gtbar span { position: absolute; right: 8px; top: 0; font: 700 12px/18px var(--font-data); }
+.gtbar.host { margin: 6px 0; }
+.gcombo { font-weight: 800; color: var(--warm); white-space: nowrap; } .gcombo b { font-family: var(--font-data); font-size: 22px; } .gcombo i { font-style: normal; margin-left: 4px; background: var(--warm); color: #fff; padding: 0 6px; border-radius: 4px; }
+.gsc { text-align: right; } .gsc small { display: block; font-size: 11px; color: var(--muted); } .gsc b { font-family: var(--font-data); font-size: 26px; }
+.gcard { background: var(--panel); border: 1.5px solid var(--ink); border-radius: 6px; padding: 16px; flex: 1; min-height: 0; overflow: auto; }
+.glab { margin-bottom: 6px; } .gqt { font-size: 21px; line-height: 1.55; margin: 4px 0 14px; font-family: var(--font-body); }
+.gch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.gbtn { display: flex; align-items: center; gap: 10px; text-align: left; min-height: 58px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 6px; background: var(--bg); font-size: 18px; font-weight: 700; color: var(--ink); cursor: pointer; }
+.gbtn .kb { display: inline-grid; place-items: center; width: 24px; height: 24px; flex: none; border-radius: 4px; background: var(--chip); font: 700 13px var(--font-data); color: var(--muted); }
+.gbtn.ok { background: var(--ok); border-color: var(--ok); color: #fff; } .gbtn.ng { border-color: var(--warm); color: var(--warm); animation: gShake .3s; } .gbtn.dim { opacity: .45; }
+@keyframes gShake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.gcount { display: grid; place-items: center; text-align: center; gap: 8px; min-height: 260px; } .gcount b { font: 800 90px var(--font-data); color: var(--warm); } .gcount small { color: var(--muted); font-size: 14px; }
+.gres, .gwait { text-align: center; max-width: 620px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.gscore { font: 800 64px var(--font-data); } .gscore small { font-size: 18px; color: var(--muted); }
+.gphrase { font-size: 17px; } .gnew { display: inline-block; border: 3px solid #c0392b; color: #c0392b; font: 800 20px var(--font-display); padding: 2px 14px; transform: rotate(-6deg); border-radius: 4px; } .gnew.wait { border-color: var(--accent); color: var(--accent); }
+.grow { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.gh { font-size: 18px; font-weight: 800; margin: 6px 0; }
+.gbig { font: 800 40px var(--font-data) !important; text-align: center; letter-spacing: .2em; width: 6.2em; padding: 6px; border: 2px solid var(--ink); border-radius: 6px; background: var(--panel); color: var(--ink); }
+.gwait input#jName { font: 600 17px var(--font-body); padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 6px; width: min(320px, 90%); }
+.gwh { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between; }
+.gchips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; } .gchipn { border: 1.5px solid var(--line); background: var(--panel); border-radius: 999px; padding: 2px 10px; font-weight: 700; } .gchipn.me { border-color: var(--warm); color: var(--warm); }
+.ghost-host { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 14px; height: 100%; }
+.ghostL { overflow: auto; } .groom { text-align: center; } .groom small { color: var(--muted); font-weight: 700; } .gcode { font: 800 64px/1.1 var(--font-data); letter-spacing: .1em; color: var(--warm); }
+.gqr { width: 180px; margin: 6px auto; } .gqr svg { width: 100%; height: auto; display: block; }
+.gppl { font-weight: 700; } .gppl b { font-family: var(--font-data); font-size: 20px; }
+.gboard { display: flex; flex-direction: column; min-height: 0; } .gbh { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; } .gbh b { font-family: var(--font-display); font-size: 22px; flex: 1; }
+.gtabs { display: flex; gap: 4px; } .gtabs button { border: 1px solid var(--line); background: var(--bg); border-radius: 4px; padding: 3px 10px; font-weight: 700; cursor: pointer; color: var(--ink); } .gtabs button[aria-selected="true"] { background: var(--ink); color: var(--panel); }
+.gchamp { font: 800 26px var(--font-display); text-align: center; color: var(--warm); margin: 4px 0; }
+.gbb { flex: 1; min-height: 0; overflow: hidden; margin-top: 8px; }
+.grk { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px 14px; height: 100%; }
+.grk li { display: grid; grid-template-columns: 2.2em minmax(0, 8em) minmax(0, 1fr) 4.5em; align-items: center; gap: 8px; padding: 2px 8px; border-radius: 4px; background: var(--bg); }
+.grk li.me { outline: 2px solid var(--warm); } .grk li.top { background: color-mix(in srgb, var(--warm) 14%, var(--bg)); }
+.grk .rn { font-weight: 800; text-align: center; } .grk .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .grk .fire { font-style: normal; color: var(--warm); font-size: .8em; }
+.grk .bar { height: .6em; background: var(--chip); border-radius: 999px; overflow: hidden; } .grk .bar i { display: block; height: 100%; background: var(--accent); transition: width .4s; }
+.grk .sc { font-family: var(--font-data); font-weight: 700; text-align: right; } .grk .more { grid-template-columns: 1fr; color: var(--muted); }
+.gdlg { border: 2px solid var(--ink); border-radius: 8px; padding: 0; max-width: min(720px, 94vw); width: 94vw; background: var(--panel); color: var(--ink); }
+.gdlg::backdrop { background: rgba(20, 24, 28, .45); }
+.gd-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1.5px solid var(--ink); } .gd-head h2 { margin: 0; font-family: var(--font-display); }
+.gd-body { padding: 12px 14px; max-height: 76vh; overflow: auto; }
+.glv { text-align: center; } .glv b { display: block; font: 800 40px var(--font-display); color: var(--warm); } .glv small { color: var(--muted); }
+.gbar { height: 10px; background: var(--chip); border-radius: 999px; overflow: hidden; margin: 6px 0; } .gbar i { display: block; height: 100%; background: var(--warm); }
+.gstats { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin: 8px 0; } .gstats b { font-family: var(--font-data); font-size: 18px; }
+.gbest { margin: 6px auto; border-collapse: collapse; font-size: 13px; } .gbest th, .gbest td { padding: 3px 8px; border-bottom: 1px solid var(--line); } .gbest td { font-family: var(--font-data); text-align: center; }
+.gbadges { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin: 12px 0; }
+.gbd { border: 1.5px solid var(--ink); border-radius: 6px; padding: 8px; text-align: center; } .gbd i { display: block; font-style: normal; font-size: 26px; } .gbd b { display: block; font-size: 13.5px; } .gbd small { font-size: 11px; color: var(--muted); } .gbd.off { opacity: .5; border-style: dashed; }
+@media (max-width: 760px) {
+  .gm-main { padding: 10px; } .gqt { font-size: 18px; } .gch { grid-template-columns: 1fr; gap: 8px; } .gbtn { min-height: 50px; font-size: 16.5px; }
+  .ghost-host { grid-template-columns: 1fr; height: auto; } .gboard { min-height: 70vh; } .gcode { font-size: 48px; }
+  .gscore { font-size: 52px; } .gcount b { font-size: 72px; }
+}
 </style>
 </head>
 <body>
@@ -744,7 +827,9 @@ body.sec-atom .app { grid-template-columns: 620px minmax(0, 1fr); }
   <h1 class="brand">分子ラボ<b>3D</b></h1>
   <nav class="secnav" id="secnav" aria-label="分野"></nav>
   <button type="button" class="sbtn" id="searchBtn" aria-expanded="false" aria-controls="searchBox" title="分子式か名前で探す"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg><span>探す</span></button>
-  <a class="labnav" href="lab.html" target="_blank" rel="noopener"><span class="ln-l">実験ラボ（器具）</span><span class="ln-s">実験</span> ↗</a>
+  <button type="button" class="gamebtn" id="gameBtn" title="タイムアタック・クラス対戦">🎮<span class="gb-l">ゲーム</span></button>
+  <button type="button" class="coinchip" id="coinChip" title="段位・バッジ"></button>
+  <a class="labnav" href="lab.html target="_blank" rel="noopener"><span class="ln-l">実験ラボ（器具）</span><span class="ln-s">実験</span> ↗</a>
 </header>
 
 <main class="app">
@@ -1468,6 +1553,8 @@ function valenceElectrons(Z) {
 /*ENGINE-END*/
 </script>
 <script>
+// 最初に開いたときのリンク（#game・#join=1234 など）。3Dの画面が書きかえる前に覚えておく
+window.__hash0 = location.hash;
 // ===== 分子の一覧（授業で使う代表的なもの） =====
 // smiles: 原子のつながり方。結晶は crystal で作り方を指定する。
 const CATS = [
@@ -2782,6 +2869,7 @@ function quizCardHTML() {
     let best = 0;
     try { best = +(localStorage.getItem(BEST_KEY + ':' + qz.set.id) || 0); } catch (e) { /* 無視 */ }
     if (qz.score > best) { best = qz.score; try { localStorage.setItem(BEST_KEY + ':' + qz.set.id, String(best)); } catch (e) { /* 無視 */ } }
+    if (qz.score === 10 && !qz.fullDone) { qz.fullDone = true; GAME.full(); }
     const msg = qz.score === 10 ? '全問正解！ すばらしい！' : qz.score >= 7 ? 'よくできました！' : qz.score >= 4 ? 'もう一息！ まちがえた問題を見直そう。' : '説明を読んでから、もう一度チャレンジしよう。';
     return `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill">クイズ</span><span class="pill strong">${esc(qz.set.name)}</span></div>
       <h2 class="mol-name">結果 ${qz.score} / 10</h2></div></div><div class="card-body"><div class="verdict good">${msg}</div>
@@ -2812,7 +2900,7 @@ function quizPick(k) {
   if (qz.picked !== null) return;
   const c = q.choices[k];
   qz.picked = typeof c === 'string' ? c : c.v;
-  if (qz.picked === q.answer) { qz.score++; qz.streak++; } else qz.streak = 0;
+  if (qz.picked === q.answer) { qz.score++; qz.streak++; GAME.earn(10); } else qz.streak = 0;
   // 答えたあとは、ヒントになる表示を出す
   if (q.after && q.after.polar && view.kind === 'mol') { state.show.polar = true; applyLook(); }
   if ((q.hideNuc || q.hideShells) && view.kind === 'atom') { q.hideNuc = false; q.hideShells = false; selectEntry(state.entry, { quiz: true, keepPick: true }); return; }
@@ -3459,6 +3547,7 @@ function lsQuizHTML() {
   const head = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill strong">確認テスト ${esc(l.no)}</span><span class="pill">${esc(l.name)}</span></div>`;
   if (quiz.i >= n) {
     const ok = quiz.score >= PASS_LINE;
+    if (ok && !quiz.awarded) { quiz.awarded = true; GAME.earn(lessonPass.has(l.id) ? 50 : 150); } // 合格のごほうび（はじめての合格は多め）
     if (ok && !lessonPass.has(l.id)) { lessonPass.add(l.id); try { localStorage.setItem(LESSON_PASS_KEY, JSON.stringify([...lessonPass])); } catch (e) { /* 無視 */ } }
     const next = LESSONS[LESSONS.indexOf(l) + 1];
     return head + `<h2 class="ls-title">${ok ? '合格！' : 'もう少し！'}</h2></div></div>
@@ -3817,7 +3906,7 @@ function drillAnswer(show) {
     const v = parseAns(d.input);
     if (!isFinite(v)) { if (el) { el.focus(); el.classList.add('bad'); } return; }
     const ok = drillCheck(d.p, v);
-    d.res = ok ? 'ok' : 'ng'; st.n++; if (ok) { st.ok++; st.streak++; } else st.streak = 0;
+    d.res = ok ? 'ok' : 'ng'; st.n++; if (ok) { st.ok++; st.streak++; GAME.earn(10); } else st.streak = 0;
   }
   renderCard();
   const nb = document.querySelector('#card [data-act="drillnext"]'); if (nb) nb.focus();
@@ -6341,7 +6430,7 @@ function renderGrid() {
     return;
   }
   if (state.sec === 'quiz') {
-    grid.innerHTML = `<button type="button" class="card-btn wide" data-id="ta-60" aria-current="${!!state.ta}"><span class="f">タイムアタック</span><span class="n">60秒で何問答えられる？</span></button>`
+    grid.innerHTML = `<button type="button" class="card-btn wide" data-id="ta-60" aria-current="${!!state.ta}"><span class="f">🎮 タイムアタック・クラス対戦</span><span class="n">60秒で何点とれる？ コンボで点数アップ</span></button>`
       + DRILL_SETS.map(d => `<button type="button" class="card-btn wide" data-id="${d.id}" aria-current="${!!(state.lesson && state.lesson.l.id === d.id)}"><span class="f">${esc(d.name)}</span><span class="n">計算ドリル</span></button>`).join('')
       + QUIZ_SETS.map(q => `<button type="button" class="card-btn wide" data-id="${q.id}" aria-current="${!state.ta && state.quiz && state.quiz.set.id === q.id}"><span class="f">${esc(q.name)}</span><span class="n">10問</span></button>`).join('');
     return;
@@ -6701,7 +6790,7 @@ function showQuizMenu() {
   if (R) { clearView(); buildMolView(); R.controls.autoRotate = true; fitCamera(); }
   const best = id => { try { return +(localStorage.getItem(BEST_KEY + ':' + id) || 0); } catch (err) { return 0; } };
   $('card').innerHTML = `<div class="card-head"><div class="ch-main"><div class="eyebrow"><span class="pill">クイズ</span></div><h2 class="mol-name">どのクイズにする？</h2></div></div>
-    <div class="card-body"><p class="note">1回10問。答えると、3Dの模型と説明で答えを確かめられる。</p><div class="qsets"><button type="button" class="qset hot" data-go="ta-60"><b>タイムアタック（60秒）</b><span>ベスト ${best('ta')} 問</span></button>${QUIZ_SETS.map(q => `<button type="button" class="qset" data-go="${q.id}"><b>${esc(q.name)}</b><span>最高 ${best(q.id)} / 10</span></button>`).join('')}</div></div>`;
+    <div class="card-body"><p class="note">1回10問。答えると、3Dの模型と説明で答えを確かめられる。</p><div class="qsets"><button type="button" class="qset hot" data-go="ta-60"><b>🎮 タイムアタック・クラス対戦</b><span>コンボで点数アップ</span></button>${QUIZ_SETS.map(q => `<button type="button" class="qset" data-go="${q.id}"><b>${esc(q.name)}</b><span>最高 ${best(q.id)} / 10</span></button>`).join('')}</div></div>`;
   $('card').classList.remove('collapsed');
   state.cardOpen = true;
 }
@@ -6715,7 +6804,7 @@ function setCardOpen(open) {
 function selectEntry(e, opts) {
   opts = opts || {};
   if (e.kind === 'lesson') { lessonExit(); state.sec = 'lesson'; lessonStart(e.lesson); return; }
-  if (e.kind === 'ta') { lessonExit(); state.sec = 'quiz'; taStart(); return; }
+  if (e.kind === 'ta') { GAME.open(); return; } // タイムアタックは、ゲーム画面（クラス対戦もできる）で
   if (e.kind === 'drillset') { lessonExit(); leaveQuiz(); state.sec = 'quiz'; lessonStart({ id: e.id, no: 'ドリル', name: e.name, course: 'kiso', drillOnly: true, drillTypes: e.types, steps: [{ go: e.base || 'mole-water', title: e.name, text: '', drill: e.types }] }); return; }
   if (!opts.lesson) lessonExit();
   if (e.kind === 'quizset') { leaveQuiz(); state.sec = 'quiz'; state.quizActive = true; stashShow(); quizStart(e.quiz); return; }
@@ -6947,7 +7036,7 @@ function bindUI() {
     if (a === 'lsnext') { state.lesson.i++; lessonGo(); return; }
     if (a === 'lsqskip') { const L = state.lesson, nx = LESSONS[LESSONS.indexOf(L.l) + 1]; if (nx) selectEntry(LIB.find(x => x.id === nx.id)); else { lessonExit(); goSection('lesson'); } return; }
     if (a === 'lsquiz' || a === 'lsqretry') { lsQuizStart(); renderCard(); return; }
-    if (a === 'lsqpick') { const qz = state.lesson.quiz, q = qz.qs[qz.i]; qz.picked = q.choices[+act.dataset.k]; if (qz.picked === q.a) qz.score++; renderCard(); return; }
+    if (a === 'lsqpick') { const qz = state.lesson.quiz, q = qz.qs[qz.i]; if (qz.picked !== null && qz.picked !== undefined) return; qz.picked = q.choices[+act.dataset.k]; if (qz.picked === q.a) { qz.score++; GAME.earn(10); } renderCard(); return; }
     if (a === 'lsqnext') { const qz = state.lesson.quiz; qz.i++; qz.picked = null; renderCard(); if (qz.i >= qz.qs.length) renderGrid(); return; }
     if (a === 'lsqback') { state.lesson.quiz = null; state.lesson.i = 0; lessonGo(); return; }
     if (a === 'lsprev') { state.lesson.i--; lessonGo(); return; }
@@ -7082,6 +7171,592 @@ function start() {
   selectEntry(first);
 }
 start();
+// ===== ごほうび（コイン・段位・バッジ）／⏱ タイムアタック／🏆 クラス対戦 =====
+// 論理表現ラボと同じしくみ。クラス対戦は Firebase Realtime Database（無料）の REST とストリームを使う
+const GAME = (() => {
+  const KEY = 'molecule-lab:game';
+  const DEFAULT_DB = 'https://english-logical-default-rtdb.firebaseio.com'; // 論理表現ラボと同じデータベース（部屋は「mol」で区別）
+  const PUBLIC_URL = 'https://nakatadaiki1012-design.github.io/chemistry-simulator/';
+  const ROOM = code => 'rooms/mol' + code;
+  let S = {};
+  try { S = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { S = {}; }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* 保存できなくても動く */ } };
+  const g$ = s => document.querySelector(s);
+  const fmt = n => Math.round(n).toLocaleString('ja-JP');
+  const dayNo = () => Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+  const today = () => { const d = new Date(); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; };
+
+  /* ---------- ごほうび：コイン → 段位、毎日の連続記録、バッジ ---------- */
+  const LEVELS = [
+    [0, '10級'], [100, '9級'], [250, '8級'], [500, '7級'], [800, '6級'], [1200, '5級'], [1700, '4級'], [2300, '3級'],
+    [3000, '2級'], [4000, '1級'], [5500, '初段'], [7500, '二段'], [10000, '三段'], [13000, '四段'], [17000, '五段'], [22000, '名人'],
+  ];
+  const kiso = () => LESSONS.filter(l => l.course === 'kiso');
+  const BADGES = [
+    { id: 'first', ico: '🌱', name: 'はじめの一歩', how: 'はじめてコインを手に入れる', on: r => r.coins > 0 },
+    { id: 'pass1', ico: '💮', name: '初合格', how: '授業の確認テストに 1 つ合格', on: () => lessonPass.size >= 1 },
+    { id: 'pass10', ico: '📘', name: '10 単元合格', how: '授業の確認テストに 10 単元合格', on: () => lessonPass.size >= 10 },
+    { id: 'passKiso', ico: '⚗️', name: '化学基礎 制覇', how: '化学基礎の授業すべてに合格', on: () => kiso().length > 0 && kiso().every(l => lessonPass.has(l.id)) },
+    { id: 'passAll', ico: '👑', name: '全単元制覇', how: '化学基礎・化学の授業すべてに合格', on: () => LESSONS.length > 0 && LESSONS.every(l => l.drillOnly || lessonPass.has(l.id)) },
+    { id: 'day3', ico: '🔥', name: '3日連続', how: '3 日続けて 学習する', on: r => r.streak >= 3 },
+    { id: 'day7', ico: '🌋', name: '7日連続', how: '7 日続けて 学習する', on: r => r.streak >= 7 },
+    { id: 'day30', ico: '🏯', name: '30日連続', how: '30 日続けて 学習する', on: r => r.streak >= 30 },
+    { id: 'quiz10', ico: '💯', name: 'クイズ満点', how: '「挑戦」のクイズで 10 問全問正解', on: r => r.full >= 1 },
+    { id: 'combo10', ico: '⚡', name: '10 コンボ', how: 'タイムアタックで 10 コンボ', on: r => r.maxCombo >= 10 },
+    { id: 'combo30', ico: '🌩', name: '30 コンボ', how: 'タイムアタックで 30 コンボ', on: r => r.maxCombo >= 30 },
+    { id: 'ta1000', ico: '🎯', name: '1,000 点', how: 'タイムアタックで 1,000 点', on: r => r.taBest >= 1000 },
+    { id: 'ta3000', ico: '🚀', name: '3,000 点', how: 'タイムアタックで 3,000 点', on: r => r.taBest >= 3000 },
+    { id: 'battle', ico: '🏆', name: 'クラス対戦デビュー', how: 'クラス対戦に参加する', on: r => r.battles >= 1 },
+    { id: 'top3', ico: '🥇', name: '表彰台', how: 'クラス対戦で 3 位以内', on: r => r.top3 >= 1 },
+    { id: 'coin5000', ico: '💰', name: '5,000 コイン', how: 'コインを 5,000 枚ためる', on: r => r.coins >= 5000 },
+  ];
+  // 正解の数をくらべる「ものさし」（寿司打の「〇円分」のかわり）
+  const RULER = [
+    [0, 'ウォーミングアップ中'], [5, 'ミニテスト 1 回分'], [10, '小テスト（10問）1 回分'], [16, '共通テスト化学基礎 1 回分の問題数'],
+    [25, '定期テストの大問 5 つ分'], [35, '定期テスト 1 回分の問題数'], [50, '問題集 1 章分'],
+  ];
+  function rw() {
+    if (!S.rw) S.rw = { coins: 0, streak: 0, lastDay: 0, badges: {}, best: {}, battles: 0, top3: 0, maxCombo: 0, taBest: 0, full: 0 };
+    return S.rw;
+  }
+  function levelOf(c) {
+    let i = 0; while (i + 1 < LEVELS.length && c >= LEVELS[i + 1][0]) i++;
+    const nx = LEVELS[i + 1];
+    return { i, name: LEVELS[i][1], from: LEVELS[i][0], next: nx ? nx[0] : null, nextName: nx ? nx[1] : null };
+  }
+  const streakNow = () => { const r = rw(); return r.lastDay >= dayNo() - 1 ? r.streak : 0; };
+  function touchDay() { const r = rw(), d = dayNo(); if (r.lastDay === d) return; r.streak = r.lastDay === d - 1 ? r.streak + 1 : 1; r.lastDay = d; }
+  function checkBadges() {
+    const r = rw();
+    BADGES.forEach(b => { if (!r.badges[b.id] && b.on(r)) { r.badges[b.id] = today(); celebrate(b.ico + ' バッジ獲得', b.name); } });
+  }
+  function earn(n) {
+    if (!n) return;
+    const r = rw(), before = levelOf(r.coins).i;
+    r.coins += n; touchDay();
+    const lv = levelOf(r.coins);
+    if (lv.i > before) celebrate('🎉 段位アップ！', lv.name);
+    checkBadges(); save(); chip(); plus(n);
+  }
+  function chip() {
+    topChip();
+    const r = rw(), el = $('coinChip'); if (!el) return;
+    el.innerHTML = `🪙<b>${fmt(r.coins)}</b><span class="lv">${levelOf(r.coins).name}</span>`;
+  }
+  function plus(n) {
+    const el = $('coinChip'); if (!el || !el.offsetParent) return;
+    const rc = el.getBoundingClientRect(), p = document.createElement('div');
+    p.className = 'gplus'; p.textContent = '+' + n; p.style.left = (rc.left + rc.width / 2) + 'px'; p.style.top = rc.bottom + 'px';
+    document.body.appendChild(p); setTimeout(() => p.remove(), 900);
+  }
+  const cq = []; let cbusy = false;
+  function celebrate(t, big) {
+    cq.push([t, big]); if (cbusy) return;
+    (function nextC() {
+      const x = cq.shift(); if (!x) { cbusy = false; return; }
+      cbusy = true;
+      const d = document.createElement('div'); d.className = 'gceleb';
+      d.innerHTML = `<small>${esc(x[0])}</small><b>${esc(x[1])}</b>`;
+      document.body.appendChild(d);
+      setTimeout(() => { d.remove(); nextC(); }, 2000);
+    })();
+  }
+  let toastT = 0;
+  function toast(m) {
+    let el = g$('.gtoast');
+    if (!el) { el = document.createElement('div'); el.className = 'gtoast'; document.body.appendChild(el); }
+    el.textContent = m; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 2600);
+  }
+
+  /* ---------- 画面（3Dの上にかぶせる、ゲーム専用の画面） ---------- */
+  let root, main, dlg;
+  function shell() {
+    if (root) return;
+    root = document.createElement('div'); root.id = 'gm'; root.className = 'gm'; root.hidden = true;
+    root.innerHTML = `<div class="gm-top"><button type="button" class="pbtn ghost" data-g="close">✕ 3Dにもどる</button><b class="gm-title">🎮 ゲーム</b>
+      <button type="button" class="gchip" data-g="rewards" title="段位・バッジ"></button></div><div class="gm-main" id="gmMain"></div>`;
+    document.body.appendChild(root);
+    main = g$('#gmMain');
+    dlg = document.createElement('dialog'); dlg.className = 'gdlg'; document.body.appendChild(dlg);
+    dlg.addEventListener('click', e => { if (e.target === dlg || e.target.closest('[data-x]')) dlg.close(); });
+    root.addEventListener('click', onClick);
+    root.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target.id === 'jName' || e.target.id === 'jCode')) join(); });
+    root.addEventListener('change', e => { if (e.target.id === 'dbUrl') { S.db = e.target.value.trim().replace(/\/+$/, ''); save(); } });
+    document.addEventListener('keydown', e => {
+      if (root.hidden || !G || G.over || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName || '')) return;
+      if (/^[1-4]$/.test(e.key) && now() >= G.startAt) pick(+e.key - 1);
+    });
+  }
+  function topChip() { const c = root && root.querySelector('.gchip'); if (c) { const r = rw(); c.innerHTML = `🪙<b>${fmt(r.coins)}</b><span class="lv">${levelOf(r.coins).name}</span>`; } }
+  function show(on) {
+    shell();
+    root.hidden = !on;
+    document.body.classList.toggle('gm-on', on);
+    if (on) topChip();
+  }
+  function close() { leave(); leaveBattle(); show(false); if (/^#(game|ta|join|host|battle)/.test(location.hash)) try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* 無視 */ } }
+
+  /* ---------- 段位・バッジ ---------- */
+  const MODES = [['mix', 'ミックス'], ['shape', '形・結合'], ['atom', '原子・イオン'], ['calc', '計算'], ['feat', '物質の特徴']];
+  const TYPES = {
+    mix: ['shape', 'polar', 'mass', 'config', 'valence', 'ion', 'bondtype', 'mol', 'coef', 'state', 'hbond', 'boil'],
+    shape: ['shape', 'polar', 'bondtype', 'hbond'], atom: ['config', 'valence', 'ion'], calc: ['mass', 'mol', 'coef'], feat: ['state', 'hbond', 'boil', 'polar'],
+  };
+  const modeName = m => (MODES.find(x => x[0] === m) || MODES[0])[1];
+  const cfgName = cfg => `${modeName(cfg.m)}・${cfg.t}秒`;
+  function openRewards() {
+    shell();
+    const r = rw(), lv = levelOf(r.coins), pc = lv.next ? (r.coins - lv.from) / (lv.next - lv.from) * 100 : 100;
+    dlg.innerHTML = `<div class="gd-head"><h2>🪙 ごほうび</h2><button type="button" class="pbtn ghost" data-x>✕ とじる</button></div><div class="gd-body">
+      <div class="glv"><small>いまの段位</small><b>${lv.name}</b><div class="gbar"><i style="width:${pc.toFixed(1)}%"></i></div>
+      <small>${lv.next ? `次の「${lv.nextName}」まで あと ${fmt(lv.next - r.coins)} コイン` : '最高の段位です！'}</small>
+      <div class="gstats"><span>🪙 <b>${fmt(r.coins)}</b> コイン</span><span>🔥 <b>${streakNow()}</b> 日連続</span><span>🏅 <b>${Object.keys(r.badges).length}</b>/${BADGES.length}</span></div>
+      <table class="gbest"><tr><th>⏱ ベスト</th>${MODES.map(m => `<th>${m[1]}</th>`).join('')}</tr><tr><th>60秒</th>${MODES.map(m => `<td>${r.best[m[0]] ? fmt(r.best[m[0]]) : '－'}</td>`).join('')}</tr></table></div>
+      <div class="gbadges">${BADGES.map(b => { const on = r.badges[b.id]; return `<div class="gbd${on ? '' : ' off'}" title="${esc(b.how)}"><i>${on ? b.ico : '🔒'}</i><b>${esc(b.name)}</b><small>${esc(on || b.how)}</small></div>`; }).join('')}</div>
+      <p class="note">コインのもらい方：クイズ・確認テスト・計算練習の正解 +10、確認テスト合格 +50（はじめての合格は +150）、タイムアタックは 20 点で +1、クラス対戦に参加 +20・3 位以内 +50</p></div>`;
+    if (!dlg.open) dlg.showModal();
+  }
+
+  /* ---------- タイムアタックのしくみ（ひとり・クラス対戦 共通） ---------- */
+  function rng(seed) {
+    return () => {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  // 同じ seed なら、クラス全員に同じ順番・同じ問題が出る（問題づくりの乱数を一時的に seed のものにする）
+  function seededQuestion(R, types) {
+    const keep = Math.random;
+    Math.random = R;
+    try { return makeQuestion(types[Math.floor(R() * types.length)]); } finally { Math.random = keep; }
+  }
+  let G = null, OFF = 0;
+  const now = () => Date.now() + OFF;
+  const mult = () => 1 + Math.min(4, Math.floor(G.combo / 10)) * 0.5;
+  function newGame(cfg, seed, mode, startAt) {
+    if (G) clearInterval(G.timer);
+    G = { cfg, R: rng(seed), score: 0, combo: 0, maxCombo: 0, ok: 0, miss: 0, mode, startAt, endAt: startAt + cfg.t * 1000, q: null, lock: false, over: false, timer: null };
+    nextQ();
+    return G;
+  }
+  function nextQ() { G.q = seededQuestion(G.R, TYPES[G.cfg.m] || TYPES.mix); G.q.pick = -1; G.lock = false; }
+  function pick(i) {
+    const q = G.q; if (!G || G.lock || q.pick >= 0 || now() < G.startAt) return;
+    q.pick = i;
+    const c = q.choices[i], v = typeof c === 'string' ? c : c.v;
+    if (v === q.answer) {
+      G.combo++; if (G.combo > G.maxCombo) G.maxCombo = G.combo;
+      G.score += Math.round(30 * mult()); G.ok++; G.lock = true;
+      drawQ(); pushScore();
+      setTimeout(() => { if (G && !G.over) { nextQ(); drawQ(); } }, 260);
+    } else {
+      G.combo = 0; G.miss++; G.lock = true; drawQ(); pushScore();
+      setTimeout(() => { if (G && !G.over) { nextQ(); drawQ(); } }, 1100); // まちがえたら、正解を少し見せてから次へ
+    }
+  }
+  function playShell(title) {
+    main.innerHTML = `<div class="gplay"><div class="ghud"><button type="button" class="pbtn ghost" data-g="quit" title="やめる">✕</button>
+      <div class="gtbar"><i id="gTf"></i><span id="gTs"></span></div><div class="gcombo" id="gCb"></div><div class="gsc"><small>${esc(title)}</small><b id="gSc">0</b></div></div>
+      <section class="gcard" id="gQ"></section></div>`;
+  }
+  function drawHud() {
+    if (!G) return;
+    const t = now(), left = Math.max(0, G.endAt - t), all = G.cfg.t * 1000, f = $('gTf'), sec = $('gTs'), sc = $('gSc'), cb = $('gCb');
+    if (f) { f.style.width = (t < G.startAt ? 100 : left / all * 100) + '%'; f.className = left < 10000 && t >= G.startAt ? 'hurry' : ''; }
+    if (sec) sec.textContent = t < G.startAt ? G.cfg.t + '秒' : Math.ceil(left / 1000) + '秒';
+    if (sc) sc.textContent = fmt(G.score);
+    if (cb) cb.innerHTML = G.combo >= 2 ? `<b>${G.combo}</b> コンボ${mult() > 1 ? `<i>×${mult()}</i>` : ''}` : '';
+  }
+  function drawQ() {
+    const el = $('gQ'); if (!el || !G) return;
+    const t = now();
+    if (t < G.startAt) {
+      const n = Math.ceil((G.startAt - t) / 1000);
+      el.innerHTML = `<div class="gcount"><small>${esc(cfgName(G.cfg))}</small><b>${n > 3 ? '…' : n}</b><small>正しい答えを どんどんタップ！ ミスするとコンボが切れる</small></div>`;
+      drawHud(); return;
+    }
+    const q = G.q, ansI = q.choices.findIndex(c => (typeof c === 'string' ? c : c.v) === q.answer);
+    el.innerHTML = `<div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span></div><h2 class="gqt">${q.q}</h2>
+      <div class="gch">${q.choices.map((c, i) => {
+        const label = typeof c === 'string' ? esc(c) : c.html;
+        const cls = q.pick < 0 ? '' : i === ansI ? ' ok' : i === q.pick ? ' ng' : ' dim';
+        return `<button type="button" class="gbtn${cls}" data-gp="${i}"><span class="kb">${i + 1}</span>${label}</button>`;
+      }).join('')}</div>`;
+    drawHud();
+  }
+  function runClock(onEnd) {
+    clearInterval(G.timer);
+    let wasCount = now() < G.startAt;
+    G.timer = setInterval(() => {
+      if (!G) return;
+      const t = now();
+      if (t < G.startAt) { drawQ(); return; }
+      if (wasCount) { wasCount = false; drawQ(); }
+      if (t >= G.endAt && !G.over) { G.over = true; clearInterval(G.timer); onEnd(); return; }
+      drawHud();
+    }, 100);
+    drawQ();
+  }
+  const ruler = n => { let r = RULER[0][1]; RULER.forEach(x => { if (n >= x[0]) r = x[1]; }); return r; };
+  function afterGame() { const r = rw(); if (G.maxCombo > r.maxCombo) r.maxCombo = G.maxCombo; if (G.score > r.taBest) r.taBest = G.score; return Math.floor(G.score / 20); }
+
+  /* ---------- ひとりで タイムアタック ---------- */
+  const taCfg = () => { if (!S.ta) S.ta = { m: 'mix' }; return S.ta; };
+  function startSolo() {
+    newGame({ m: taCfg().m, t: 60 }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
+    playShell('スコア');
+    runClock(endSolo);
+  }
+  function endSolo() {
+    const r = rw(), key = G.cfg.m, prev = r.best[key] || 0, rec = G.score > prev;
+    if (rec) r.best[key] = G.score;
+    const coins = afterGame(); save(); earn(coins); checkBadges();
+    G.share = `分子ラボ3D ⏱タイムアタック（${cfgName(G.cfg)}）\n${fmt(G.score)}点！ ${G.ok}問正解（≒ ${ruler(G.ok)}）\n最大${G.maxCombo}コンボ・段位「${levelOf(r.coins).name}」\n${PUBLIC_URL}`;
+    $('gQ').innerHTML = `<div class="gres">${rec && G.score > 0 ? '<div class="gnew">新記録</div>' : ''}
+      <div class="gscore">${fmt(G.score)}<small> 点</small></div>
+      <p class="gphrase">⚗️ <b>${G.ok}</b> 問正解 ≒ <b>${esc(ruler(G.ok))}</b></p>
+      <p class="note">✅ 正解 ${G.ok}　✕ ミス ${G.miss}　⚡ 最大 ${G.maxCombo} コンボ　🪙 +${coins}</p>
+      <p class="note">${esc(modeName(G.cfg.m))} のベスト：${fmt(Math.max(prev, G.score))} 点</p>
+      <div class="grow"><button type="button" class="pbtn big" data-g="again">↺ もう一度</button><button type="button" class="pbtn ghost" data-g="brag">📣 自慢する</button><button type="button" class="pbtn ghost" data-g="hub">◀ もどる</button></div></div>`;
+    $('gCb').innerHTML = '';
+  }
+  function brag(text) {
+    if (navigator.share && /Mobi|Android|iPhone|iPad/.test(navigator.userAgent)) { navigator.share({ text }).catch(() => {}); return; }
+    const done = () => toast('結果の文章をコピーしました。LINE などに はりつけて自慢しよう');
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => toast(text.split('\n')[1])); else toast(text.split('\n')[1]);
+  }
+
+  /* ---------- ゲームのトップ ---------- */
+  function renderHub() {
+    leave(); leaveBattle();
+    const cfg = taCfg(), r = rw(), best = r.best[cfg.m] || 0, hasDb = !!base();
+    main.innerHTML = `<div class="ghub">
+      <section class="gpanel"><h3>⏱ タイムアタック</h3><p class="note">60 秒で 何点とれる？ 正しい答えを 次々タップ。続けて正解すると コンボで点数アップ（10 コンボごとに ×1.5 → ×2 → … ×3）</p>
+        <div class="gfld"><span class="gfl">種目</span><div class="seg wrap">${MODES.map(m => `<button type="button" data-ta="${m[0]}" aria-pressed="${cfg.m === m[0]}">${m[1]}</button>`).join('')}</div></div>
+        <div class="gfld"><button type="button" class="pbtn big" data-g="solo">▶ スタート</button><span class="gbestv">ベスト <b>${fmt(best)}</b> 点</span></div>
+        <button type="button" class="pbtn ghost" data-g="rewards">🏅 段位・バッジを見る</button></section>
+      <section class="gpanel"><h3>🏆 クラス対戦</h3><p class="note">先生の合図で 全員いっせいにスタート。ランキングが リアルタイムで動く</p>
+        ${hasDb ? `<div class="gfld"><input type="text" id="jCode" inputmode="numeric" maxlength="4" placeholder="部屋番号（4けた）"><input type="text" id="jName" maxlength="10" placeholder="ニックネーム" value="${esc(S.nick || '')}"></div>
+        <div class="gfld"><button type="button" class="pbtn big" data-g="join">参加する ▶</button></div>
+        <div class="gfld gteacher"><span class="note">先生</span><button type="button" class="pbtn ghost" data-g="mkroom">🏫 部屋をつくる</button></div>` : '<p class="warnbox">データベースが設定されていません。下の「先生の設定」で登録してください。</p>'}
+        <details class="gset"><summary>先生の設定（データベース）</summary><p class="note">論理表現ラボと同じ Firebase Realtime Database を使います（空なら、はじめから入っているものを使う）。</p>
+        <div class="gfld"><input type="text" id="dbUrl" placeholder="${DEFAULT_DB}" value="${esc(S.db || '')}"><button type="button" class="pbtn ghost" data-g="dbtest">保存して接続テスト</button></div></details></section></div>`;
+  }
+
+  /* ---------- クラス対戦（Firebase Realtime Database の REST ＋ ストリーム）
+     rooms/mol{code} = { cfg, state: lobby|play|end, round, seed, startAt, players: { pid: { n, s, b, k, w, r, d } } } ---------- */
+  function base() {
+    const u = (S.db || DEFAULT_DB || '').trim().replace(/\/+$/, '');
+    return /^https:\/\/[^\s]+$/.test(u) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(u) ? u : '';
+  }
+  function pid() { if (!S.pid) { S.pid = 'p' + Math.random().toString(36).slice(2, 10); save(); } return S.pid; }
+  function api(method, path, body) {
+    const o = { method };
+    if (body !== undefined) o.body = JSON.stringify(body);
+    return fetch(base() + '/' + path + '.json', o).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  }
+  function listen(path, cb) {
+    let tree = null, es = null, poll = null, closed = false;
+    const setAt = (p, val) => {
+      const keys = p.split('/').filter(Boolean);
+      if (!keys.length) { tree = val; return; }
+      if (tree === null || typeof tree !== 'object') tree = {};
+      let o = tree;
+      for (let i = 0; i < keys.length - 1; i++) { if (o[keys[i]] == null || typeof o[keys[i]] !== 'object') o[keys[i]] = {}; o = o[keys[i]]; }
+      if (val === null) delete o[keys[keys.length - 1]]; else o[keys[keys.length - 1]] = val;
+    };
+    const startPoll = () => { if (poll || closed) return; poll = setInterval(() => { api('GET', path).then(v => { tree = v; cb(tree); }, () => {}); }, 1500); };
+    try {
+      es = new EventSource(base() + '/' + path + '.json');
+      es.addEventListener('put', e => { const d = JSON.parse(e.data); setAt(d.path, d.data); cb(tree); });
+      es.addEventListener('patch', e => { const d = JSON.parse(e.data), p = d.path.replace(/\/$/, ''); Object.keys(d.data || {}).forEach(k => setAt(p + '/' + k, d.data[k])); cb(tree); });
+      es.onerror = () => { if (es.readyState === 2) startPoll(); };
+    } catch (e) { startPoll(); }
+    return () => { closed = true; if (es) es.close(); clearInterval(poll); };
+  }
+  function syncClock(code) {
+    const t0 = Date.now(), p = ROOM(code) + '/clock/' + pid();
+    return api('PUT', p, { '.sv': 'timestamp' }).then(ts => { const t1 = Date.now(); if (typeof ts === 'number') OFF = ts - (t0 + t1) / 2; api('DELETE', p).catch(() => {}); }, () => {});
+  }
+  function joinUrl(code) {
+    const here = /^https?:/.test(location.protocol) && /github\.io$|localhost|127\.0\.0\.1/.test(location.hostname) ? location.origin + location.pathname : PUBLIC_URL;
+    let u = here + '#join=' + code;
+    if (S.db && base() !== DEFAULT_DB) u += '&db=' + encodeURIComponent(base());
+    return u;
+  }
+  function playersOf(room, round) {
+    const ps = (room && room.players) || {};
+    return Object.keys(ps).map(k => Object.assign({ id: k }, ps[k])).filter(p => p && p.n && (round == null || p.r === round))
+      .sort((a, b) => (round == null ? (b.b || 0) - (a.b || 0) : (b.s || 0) - (a.s || 0)));
+  }
+
+  /* 先生：部屋 */
+  let H = null;
+  function makeRoom() {
+    const cfg = { m: 'mix', t: 60 };
+    const tryOne = n => {
+      const code = String(1000 + Math.floor(Math.random() * 9000));
+      return api('GET', ROOM(code)).then(v => {
+        if (v && n < 6) return tryOne(n + 1);
+        return api('PUT', ROOM(code), { cfg, state: 'lobby', round: 0, seed: 0, startAt: 0, host: pid(), created: { '.sv': 'timestamp' } })
+          .then(() => { location.hash = '#host/' + code; });
+      });
+    };
+    tryOne(0).catch(e => toast('部屋をつくれませんでした（' + e.message + '）。先生の設定を確認してください'));
+  }
+  function openHost(code) {
+    H = { code, room: null, tab: 'now', ending: false, timer: null, stop: null };
+    main.innerHTML = '<div class="ghost-host"><aside class="gpanel ghostL" id="hostL"></aside><section class="gpanel gboard" id="gBoard"><div class="gcount"><b>…</b></div></section></div>';
+    syncClock(code).then(() => {
+      if (!H || H.code !== code) return;
+      H.stop = listen(ROOM(code), room => {
+        if (!H) return;
+        if (!room) { toast('この部屋は閉じられました'); location.hash = '#game'; return; }
+        const first = !H.room; H.room = room;
+        drawHostL(!first); drawBoard();
+      });
+      H.timer = setInterval(() => {
+        if (!H || !H.room) return;
+        const r = H.room;
+        if (r.state === 'play' && now() > r.startAt + r.cfg.t * 1000 + 2500 && !H.ending) { H.ending = true; api('PATCH', ROOM(code), { state: 'end' }).then(() => { if (H) H.ending = false; }); }
+        if (r.state === 'play') drawBoard();
+      }, 250);
+    });
+  }
+  function drawHostL(soft) {
+    const r = H.room, el = $('hostL'); if (!el) return;
+    const cfg = r.cfg, busy = r.state === 'play';
+    const seg = (key, opts) => `<div class="seg wrap">${opts.map(o => `<button type="button" data-hc="${key}:${o[0]}" aria-pressed="${String(cfg[key]) === String(o[0])}"${busy ? ' disabled' : ''}>${o[1]}</button>`).join('')}</div>`;
+    const qrOld = soft && $('gQr') ? $('gQr').innerHTML : '';
+    el.innerHTML = `<div class="groom"><small>部屋番号</small><div class="gcode">${H.code}</div></div><div class="gqr" id="gQr">${qrOld}</div>
+      <p class="note">分子ラボ3D → 🎮 → 🏆 で 番号を入力<br>または QR を読みとる</p>
+      <div class="gfld"><span class="gfl">種目</span>${seg('m', MODES)}</div>
+      <div class="gfld"><span class="gfl">時間</span>${seg('t', [[30, '30秒'], [60, '60秒'], [90, '90秒']])}</div>
+      <div class="gfld"><span class="gppl">👥 <b>${playersOf(r).length}</b> 人</span><button type="button" class="pbtn big" data-g="hstart"${busy ? ' disabled' : ''}>${r.round ? `▶ 第${r.round + 1}回戦 スタート` : '▶ スタート'}</button></div>
+      <div class="gfld"><button type="button" class="pbtn ghost" data-g="hcopy">🔗 参加リンクをコピー</button><button type="button" class="pbtn ghost" data-g="hclose">部屋を閉じる</button></div>`;
+    if (!qrOld) drawQR(joinUrl(H.code));
+  }
+  let qrLib = null;
+  function drawQR(url) {
+    const put = () => {
+      const el = $('gQr'); if (!el || !window.qrcode) return;
+      const q = window.qrcode(0, 'M'); q.addData(url); q.make();
+      el.innerHTML = q.createSvgTag({ cellSize: 4, margin: 2, scalable: true });
+    };
+    if (window.qrcode) { put(); return; }
+    if (!qrLib) {
+      qrLib = document.createElement('script');
+      qrLib.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'; // qrcode-generator 1.4.4（MIT）
+      qrLib.onerror = () => { const el = $('gQr'); if (el) el.innerHTML = `<p class="note">QR を表示できませんでした。参加リンク：<br>${esc(url)}</p>`; };
+      document.head.appendChild(qrLib);
+    }
+    qrLib.addEventListener('load', put);
+  }
+  function hostCfg(v) {
+    const [k, raw] = v.split(':'), o = {}; o[k] = k === 'm' ? raw : +raw;
+    api('PATCH', ROOM(H.code) + '/cfg', o).catch(() => toast('変更できませんでした'));
+  }
+  function hostStart() {
+    const r = H.room; if (!r || r.state === 'play') return;
+    api('PATCH', ROOM(H.code), { state: 'play', round: (r.round || 0) + 1, seed: Math.floor(Math.random() * 1e9), startAt: Math.round(now() + 5000) }).catch(() => toast('スタートできませんでした'));
+  }
+  // ランキング表：広さを測って、列数・行数・文字の大きさを決める（40人でもスクロールなし）
+  function rows(list, mode, W, Hh) {
+    const top = Math.max(1, list.reduce((m, p) => Math.max(m, mode === 'best' ? p.b || 0 : p.s || 0), 0));
+    let n = list.length, cols = n <= 10 ? 1 : n <= 24 ? 2 : 3, rowsN = n, more = 0, style = '';
+    if (W && Hh) {
+      cols = Math.max(1, Math.min(cols, Math.floor(W / 230)));
+      const maxRows = Math.max(1, Math.floor(Hh / 24));
+      rowsN = Math.ceil(n / cols);
+      if (rowsN > maxRows) { rowsN = maxRows; more = n - (cols * rowsN - 1); list = list.slice(0, cols * rowsN - 1); }
+      rowsN = Math.max(Math.min(8, maxRows), rowsN);
+      const fs = Math.max(11, Math.min(26, Hh / rowsN * 0.55));
+      style = ` style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rowsN},minmax(0,1fr));font-size:${fs.toFixed(1)}px"`;
+    }
+    let rank = 0, last = -1;
+    return `<ol class="grk"${style}>` + list.map((p, i) => {
+      const v = mode === 'best' ? p.b || 0 : p.s || 0;
+      if (v !== last) { rank = i + 1; last = v; }
+      const medal = rank <= 3 && v > 0 ? ['🥇', '🥈', '🥉'][rank - 1] : rank;
+      return `<li class="${rank <= 3 && v > 0 ? 'top top' + rank : ''}${p.id === pid() ? ' me' : ''}"><span class="rn">${medal}</span><span class="nm">${esc(p.n)}${mode !== 'best' && p.k >= 10 ? ` <i class="fire">🔥${p.k}</i>` : ''}</span>
+        <span class="bar"><i style="width:${(v / top * 100).toFixed(1)}%"></i></span><span class="sc">${fmt(v)}</span></li>`;
+    }).join('') + (more ? `<li class="more">…ほか ${more} 人</li>` : '') + '</ol>';
+  }
+  function drawBoard() {
+    const el = $('gBoard'), r = H && H.room; if (!el || !r) return;
+    const t = now(); let head, body, lst = null, lmode = 'now';
+    const tabs = `<div class="gtabs"><button type="button" data-g="tab:now" aria-selected="${H.tab === 'now'}">今回</button><button type="button" data-g="tab:best" aria-selected="${H.tab === 'best'}">🏆 ハイスコア</button></div>`;
+    if (H.tab === 'best') {
+      head = `<div class="gbh"><b>🏆 この部屋のハイスコア</b>${tabs}</div>`;
+      const bl = playersOf(r).filter(p => p.b > 0);
+      if (bl.length) { lst = bl; lmode = 'best'; } else body = '<div class="gcount"><small>まだ記録がありません</small></div>';
+    } else if (r.state === 'lobby' || !r.round) {
+      const ps = playersOf(r);
+      head = `<div class="gbh"><b>参加者を待っています</b>${tabs}</div>`;
+      body = ps.length ? `<div class="gchips">${ps.map(p => `<span class="gchipn">${esc(p.n)}</span>`).join('')}</div>` : `<div class="gcount"><small>生徒が 部屋番号 ${H.code} で 入ってくると ここに名前が出ます</small></div>`;
+    } else if (r.state === 'play' && t < r.startAt) {
+      head = `<div class="gbh"><b>第${r.round}回戦　${esc(cfgName(r.cfg))}</b>${tabs}</div>`;
+      body = `<div class="gcount"><b>${Math.max(1, Math.ceil((r.startAt - t) / 1000))}</b><small>まもなく スタート！</small></div>`;
+    } else {
+      lst = playersOf(r, r.round);
+      const end = r.state === 'end', left = Math.max(0, r.startAt + r.cfg.t * 1000 - t);
+      head = `<div class="gbh"><b>${end ? `🎉 第${r.round}回戦 結果発表` : `⏱ 残り ${Math.ceil(left / 1000)} 秒`}</b>${tabs}</div>` + (end ? '' : `<div class="gtbar host"><i style="width:${left / (r.cfg.t * 1000) * 100}%"${left < 10000 ? ' class="hurry"' : ''}></i></div>`);
+      if (end && lst[0] && lst[0].s > 0) head += `<div class="gchamp">🥇 ${esc(lst[0].n)} さん　${fmt(lst[0].s)} 点</div>`;
+      if (!lst.length) { lst = null; body = '<div class="gcount"><small>まだ だれも 答えていません</small></div>'; }
+    }
+    el.innerHTML = head + '<div class="gbb">' + (lst ? '' : body) + '</div>';
+    if (lst) { const bb = el.querySelector('.gbb'); bb.innerHTML = rows(lst, lmode, bb.clientWidth, bb.clientHeight); }
+  }
+
+  /* 生徒：参加 */
+  let B = null;
+  function openJoin(code, db) {
+    if (db) { S.db = db; save(); }
+    main.innerHTML = `<div class="gwait"><p class="gh">🏆 クラス対戦に参加</p><p class="note">部屋番号</p>
+      <input type="text" id="jCode" class="gbig" inputmode="numeric" maxlength="4" value="${esc(code || '')}" placeholder="0000">
+      <input type="text" id="jName" maxlength="10" placeholder="ニックネーム（10文字まで）" value="${esc(S.nick || '')}">
+      <p class="note">本名ではなく ニックネームでも OK。ランキングに表示されます</p>
+      <div class="grow"><button type="button" class="pbtn big" data-g="join">参加する ▶</button><button type="button" class="pbtn ghost" data-g="hub">◀ もどる</button></div></div>`;
+    if (code) { const n = $('jName'); if (n && !n.value) n.focus(); }
+  }
+  function join() {
+    const code = ($('jCode').value || '').replace(/\D/g, ''), name = ($('jName').value || '').trim().slice(0, 10);
+    if (code.length !== 4) { toast('部屋番号は 4 けたです'); return; }
+    if (!name) { toast('ニックネームを入れてください'); return; }
+    S.nick = name; save();
+    const me = ROOM(code) + '/players/' + pid();
+    api('GET', ROOM(code) + '/state').then(st => { if (!st) throw new Error('nf'); return api('GET', me); })
+      .then(old => api('PATCH', me, { n: name, s: (old && old.s) || 0, b: (old && old.b) || 0, r: (old && old.r) || 0, k: 0 }))
+      .then(() => syncClock(code))
+      .then(() => {
+        B = { code, room: null, played: 0, last: 0, push: null, awarded: {} };
+        const r = rw(); r.battles = Math.max(r.battles, 1); save(); checkBadges();
+        location.hash = '#battle/' + code;
+      }).catch(e => toast(e.message === 'nf' ? `部屋 ${code} が見つかりません` : `つながりません（${e.message}）`));
+  }
+  function openBattle(code) {
+    if (!B || B.code !== code) B = { code, room: null, played: 0, last: 0, push: null, awarded: {} };
+    drawWait();
+    syncClock(code).then(() => { if (B) B.stop = listen(ROOM(code), onRoom); });
+  }
+  function onRoom(room) {
+    if (!B) return;
+    if (!room) { toast('先生が部屋を閉じました'); location.hash = '#game'; return; }
+    B.room = room;
+    const me = room.players && room.players[pid()];
+    if (!me) { location.hash = '#join=' + B.code; return; }
+    if (room.state === 'play' && room.round !== B.played && now() < room.startAt + room.cfg.t * 1000 - 3000) {
+      B.played = room.round;
+      newGame(room.cfg, room.seed, 'battle', room.startAt);
+      api('PATCH', ROOM(B.code) + '/players/' + pid(), { s: 0, k: 0, w: 0, r: room.round, d: 0 }).catch(() => {});
+      playShell(`部屋 ${B.code}・第${room.round}回戦`);
+      runClock(endBattle);
+      return;
+    }
+    if (room.state === 'end' && B.played === room.round && !B.awarded[room.round]) {
+      B.awarded[room.round] = 1;
+      const lst = playersOf(room, room.round), my = lst.map(p => p.id).indexOf(pid());
+      if (my >= 0 && my < 3 && lst[my].s > 0) { rw().top3++; earn(50); }
+      save(); checkBadges();
+    }
+    if (!G || G.over) drawWait();
+  }
+  function pushScore(final) {
+    if (!G || G.mode !== 'battle' || !B) return;
+    const t = Date.now();
+    if (!final && t - B.last < 600) { clearTimeout(B.push); B.push = setTimeout(() => pushScore(), 650); return; }
+    B.last = t;
+    const me = (B.room && B.room.players && B.room.players[pid()]) || {};
+    api('PATCH', ROOM(B.code) + '/players/' + pid(), { s: G.score, k: G.combo, w: G.ok, r: B.played, b: Math.max(me.b || 0, G.score), d: final ? 1 : 0 }).catch(() => {});
+  }
+  function endBattle() {
+    clearTimeout(B && B.push); pushScore(true);
+    const coins = afterGame() + 20; save(); earn(coins);
+    G.coins = coins;
+    setTimeout(drawWait, 300);
+  }
+  function drawWait() {
+    if (!B) return;
+    const room = B.room;
+    let mid;
+    if (!room) mid = '<p class="gh">つないでいます…</p>';
+    else if (room.state === 'play' && room.round !== B.played) mid = `<p class="gh">いま 第${room.round}回戦の最中です</p><p class="note">次の回から参加できます。少し待ってね</p>`;
+    else if (B.played && room.round === B.played) {
+      const lst = playersOf(room, room.round), my = lst.map(p => p.id).indexOf(pid()), meP = lst[my] || {}, fin = room.state === 'end';
+      mid = `<p class="note">第${room.round}回戦 ${fin ? '結果' : '（集計中… みんなが終わるのを待っています）'}</p>
+        <div class="gscore">${my + 1}<small> 位 / ${lst.length} 人</small></div>
+        <p class="note">${fmt(meP.s || 0)} 点　✅ ${meP.w || 0} 問正解${G && G.coins ? `　🪙 +${G.coins}` : ''}</p>${rows(lst.slice(0, 5), 'now')}
+        <p class="note">${fin ? '先生が 次のスタートをおすと 始まります' : ''}</p>`;
+    } else mid = `<div class="gnew wait">参加中</div><p class="gh">${esc(S.nick || '')} さん、ようこそ！</p><p class="note">先生が スタートをおすと 3・2・1 で 全員いっせいに始まります</p>
+      <div class="gchips">${playersOf(room).slice(0, 40).map(p => `<span class="gchipn${p.id === pid() ? ' me' : ''}">${esc(p.n)}</span>`).join('')}</div>`;
+    main.innerHTML = `<div class="gwait"><div class="gwh"><button type="button" class="pbtn ghost" data-g="bleave">◀ ぬける</button><b>🏆 部屋 ${B.code}</b><span class="gppl">👥 ${room ? playersOf(room).length : 0} 人</span></div>${mid}</div>`;
+  }
+
+  /* ---------- 画面の切りかえ（#game・#ta・#join=1234・#host/1234・#battle/1234） ---------- */
+  function leave() { if (G) { clearInterval(G.timer); G = null; } if (H) { clearInterval(H.timer); if (H.stop) H.stop(); H = null; } }
+  function leaveBattle() { if (B) { if (B.stop) B.stop(); clearTimeout(B.push); B = null; } }
+  function route(hash) {
+    const h = decodeURIComponent((hash !== undefined ? hash : location.hash).slice(1));
+    let m;
+    if (h === 'game') { show(true); renderHub(); return true; }
+    if (h === 'ta') { show(true); leave(); leaveBattle(); startSolo(); return true; }
+    if ((m = h.match(/^join(?:=(\d*))?(?:&db=(.+))?$/))) { show(true); leave(); leaveBattle(); openJoin(m[1] || '', m[2] || ''); return true; }
+    if ((m = h.match(/^host\/(\d{4})$/))) { show(true); leave(); leaveBattle(); if (!base()) { renderHub(); return true; } openHost(m[1]); return true; }
+    if ((m = h.match(/^battle\/(\d{4})$/))) { show(true); leave(); if (!base()) { renderHub(); return true; } openBattle(m[1]); return true; }
+    return false;
+  }
+  function onClick(e) {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    const d = b.dataset;
+    if (d.gp != null && G) { pick(+d.gp); return; }
+    if (d.ta) { taCfg().m = d.ta; save(); renderHub(); return; }
+    if (d.hc) { hostCfg(d.hc); return; }
+    const [a, arg] = (d.g || '').split(':');
+    switch (a) {
+      case 'close': close(); break;
+      case 'hub': location.hash = '#game'; renderHub(); break;
+      case 'solo': if (location.hash === '#ta') startSolo(); else location.hash = '#ta'; break;
+      case 'again': startSolo(); break;
+      case 'brag': brag((G && G.share) || ''); break;
+      case 'quit': leave(); leaveBattle(); location.hash = '#game'; renderHub(); break;
+      case 'rewards': openRewards(); break;
+      case 'join': join(); break;
+      case 'mkroom': makeRoom(); break;
+      case 'hstart': hostStart(); break;
+      case 'hcopy': { const u = joinUrl(H.code); if (navigator.clipboard) navigator.clipboard.writeText(u).then(() => toast('参加リンクをコピーしました'), () => toast(u)); else toast(u); break; }
+      case 'hclose': if (confirm(`部屋 ${H.code} を閉じますか？（ランキングも消えます）`)) { const c = H.code; leave(); api('DELETE', ROOM(c)).then(() => { location.hash = '#game'; }, () => { location.hash = '#game'; }); } break;
+      case 'tab': H.tab = arg; drawBoard(); break;
+      case 'bleave': leaveBattle(); leave(); location.hash = '#game'; break;
+      case 'dbtest': {
+        const inp = $('dbUrl'); S.db = (inp ? inp.value : '').trim().replace(/\/+$/, ''); save();
+        if (!base()) { toast('https:// で始まる URL を入れてください'); return; }
+        const k = 'rooms/molping_' + pid();
+        api('PUT', k, { t: { '.sv': 'timestamp' } }).then(() => api('DELETE', k)).then(() => { toast('✅ つながりました'); renderHub(); }, err => toast('✕ つながりません（' + err.message + '）'));
+        break;
+      }
+    }
+  }
+  function init() {
+    shell(); chip();
+    const c = $('coinChip'); if (c) c.addEventListener('click', openRewards);
+    const g = $('gameBtn'); if (g) g.addEventListener('click', () => { location.hash = '#game'; route(); });
+    window.addEventListener('hashchange', () => { if (!route() && !root.hidden) { leave(); leaveBattle(); show(false); } });
+    window.addEventListener('resize', () => { if (H) drawBoard(); });
+    // 最初のリンクがゲームの画面なら、そこから始める（3Dの画面がリンクを書きかえていても）
+    const h0 = window.__hash0 || '';
+    if (/^#(game|ta|join|host\/|battle\/)/.test(h0)) { try { history.replaceState(null, '', h0); } catch (e) { /* 無視 */ } route(h0); }
+    touchDay(); save();
+  }
+  // ほかの画面から呼ぶ：正解したらコイン、クイズ満点など
+  return {
+    init, earn, open: () => { location.hash = '#game'; route(); },
+    full() { rw().full++; save(); checkBadges(); },
+    check: checkBadges,
+    _g: () => G, // テスト用
+  };
+})();
+GAME.init();
 </script>
 </body>
 </html>
