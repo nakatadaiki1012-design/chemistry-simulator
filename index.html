@@ -7325,10 +7325,95 @@ const GAME = (() => {
 
   /* ---------- 段位・バッジ ---------- */
   const MODES = [['mix', 'ミックス'], ['shape', '形・結合'], ['atom', '原子・イオン'], ['calc', '計算'], ['feat', '物質の特徴']];
+  // 分野ごとの出題：自動でつくる問題（makeQuestion と、このファイルの EXTRA）＋ 授業の確認テストの問題 ＋ 計算ドリル
   const TYPES = {
-    mix: ['shape', 'polar', 'mass', 'config', 'valence', 'ion', 'bondtype', 'mol', 'coef', 'state', 'hbond', 'boil'],
-    shape: ['shape', 'polar', 'bondtype', 'hbond'], atom: ['config', 'valence', 'ion'], calc: ['mass', 'mol', 'coef'], feat: ['state', 'hbond', 'boil', 'polar'],
+    mix: ['shape', 'polar', 'mass', 'config', 'valence', 'ion', 'bondtype', 'mol', 'coef', 'state', 'hbond', 'boil', 'nucleon', 'lp', 'ionformula', 'ionname', 'oxnum', 'acidval', 'count', 'flame', 'en', 'period'],
+    shape: ['shape', 'polar', 'bondtype', 'hbond', 'lp', 'en', 'ionformula'], atom: ['config', 'valence', 'ion', 'nucleon', 'period', 'ionname', 'flame'],
+    calc: ['mass', 'mol', 'coef', 'count'], feat: ['state', 'hbond', 'boil', 'polar', 'acidval', 'oxnum', 'flame'],
   };
+  const FIELD_LESSONS = {
+    mix: null, // null：化学基礎の全部
+    shape: ['ls-ionic', 'ls-cov', 'ls-shape', 'ls-polar', 'ls-hbond', 'ls-cryst', 'ls-metal'],
+    atom: ['ls-elem', 'ls-atom', 'ls-shell', 'ls-ion'],
+    calc: ['ls-amass', 'ls-mol', 'ls-conc', 'ls-rx', 'ls-qty', 'ls-ph', 'ls-neut'],
+    feat: ['ls-pure', 'ls-state', 'ls-hbond', 'ls-acid', 'ls-ph', 'ls-redox', 'ls-metalion', 'ls-life'],
+  };
+  /* ---------- 新しい問題の種類（数字や物質が毎回かわる） ---------- */
+  const rpick = a => a[Math.floor(Math.random() * a.length)];
+  const sup = s2 => { const [b, c] = s2.split('^'); return formulaHTML(b) + (c ? `<sup>${c}</sup>` : ''); };
+  const EXTRA = {
+    nucleon() {
+      const iso = [['H', 1, 1], ['H', 1, 2], ['C', 6, 12], ['C', 6, 13], ['C', 6, 14], ['N', 7, 14], ['O', 8, 16], ['O', 8, 18], ['F', 9, 19], ['Na', 11, 23], ['Mg', 12, 24], ['Al', 13, 27], ['S', 16, 32], ['Cl', 17, 35], ['Cl', 17, 37], ['K', 19, 39], ['Ca', 20, 40], ['U', 92, 235], ['U', 92, 238]];
+      const [el, Z, A] = rpick(iso), ask = rpick(['n', 'p', 'e', 'n']);
+      const ans = ask === 'n' ? A - Z : Z, name = { n: '中性子', p: '陽子', e: '電子' }[ask];
+      return { subject: Z <= 20 ? 'atom-' + el : null, q: `<sup>${A}</sup>${el}（原子番号 ${Z}）の原子1個にふくまれる${name}の数は？`, choices: choicesWith(String(ans), [A, Z, A - Z, A + Z, Z + 1, A - Z + 1, A - Z - 1].map(String)), answer: String(ans),
+        explain: `陽子の数＝電子の数＝原子番号 ${Z}。中性子の数＝質量数 − 原子番号＝${A} − ${Z}＝${A - Z}。` };
+    },
+    lp() {
+      const ids = ['water', 'ammonia', 'methane', 'hcl', 'hf', 'co2', 'nitrogen', 'h2s', 'ccl4', 'oxygen', 'hydrogen', 'chlorine', 'methanol', 'ethylene'];
+      const e = getModel(rpick(LIB.filter(x => ids.includes(x.id)))), kind = rpick(['lp', 'pair']);
+      const n = kind === 'lp' ? e.an.lone : e.an.pairs;
+      return { subject: e.id, q: `${e.name}${QF.fx ? ' ' + formulaHTML(displayFormula(e)) : ''} の分子にある<b>${kind === 'lp' ? '非共有電子対' : '共有電子対'}</b>は何組？`, choices: choicesWith(String(n), [0, 1, 2, 3, 4, 5, 6, 8].map(String)), answer: String(n),
+        explain: kind === 'lp' ? `電子式をかくと、結合に使われていない電子対が ${n} 組。` : `単結合は1組、二重結合は2組、三重結合は3組として数えると ${n} 組。` };
+    },
+    ionformula() {
+      const cat = [['Na', 1, 'ナトリウムイオン'], ['K', 1, 'カリウムイオン'], ['Mg', 2, 'マグネシウムイオン'], ['Ca', 2, 'カルシウムイオン'], ['Al', 3, 'アルミニウムイオン'], ['NH4', 1, 'アンモニウムイオン'], ['Fe', 3, '鉄(III)イオン'], ['Cu', 2, '銅(II)イオン']];
+      const an = [['Cl', 1, '塩化物イオン', '塩化'], ['O', 2, '酸化物イオン', '酸化'], ['OH', 1, '水酸化物イオン', '水酸化'], ['SO4', 2, '硫酸イオン', '硫酸'], ['NO3', 1, '硝酸イオン', '硝酸'], ['CO3', 2, '炭酸イオン', '炭酸'], ['S', 2, '硫化物イオン', '硫化']];
+      const c = rpick(cat), a = rpick(an);
+      const g = (x, y) => (y ? g(y, x % y) : x), L = c[1] * a[1] / g(c[1], a[1]), nc = L / c[1], na = L / a[1];
+      const part = (sym, k) => (k === 1 ? sym : (/[A-Z].*[A-Z]|\d/.test(sym) ? `(${sym})${k}` : sym + k));
+      const f = (x, y) => formulaHTML(part(c[0], x) + part(a[0], y));
+      const ans = f(nc, na), wrongs = [[1, 1], [na, nc], [nc, na * 2], [nc * 2, na], [a[1], c[1]]].map(([x, y]) => f(x, y));
+      return { q: `${c[2]}（${sup(c[0] + '^' + (c[1] > 1 ? c[1] : '') + '+')}）と${a[2]}（${sup(a[0] + '^' + (a[1] > 1 ? a[1] : '') + '−')}）からできる物質の組成式は？`,
+        choices: choicesWith(ans, wrongs).map(v => ({ v, html: v })), answer: ans, explain: `正の電荷 ${c[1]}×${nc} ＝ 負の電荷 ${a[1]}×${na} になるように数をそろえる → ${ans}` };
+    },
+    ionname() {
+      const L2 = [['SO4^2−', '硫酸イオン'], ['NO3^−', '硝酸イオン'], ['NH4^+', 'アンモニウムイオン'], ['CO3^2−', '炭酸イオン'], ['OH^−', '水酸化物イオン'], ['PO4^3−', 'リン酸イオン'], ['HCO3^−', '炭酸水素イオン'], ['CH3COO^−', '酢酸イオン'], ['H3O^+', 'オキソニウムイオン'], ['Fe^2+', '鉄(II)イオン'], ['Fe^3+', '鉄(III)イオン'], ['Cu^2+', '銅(II)イオン'], ['Ag^+', '銀イオン'], ['S^2−', '硫化物イオン']];
+      const [fm, nm] = rpick(L2), toH = x => formulaHTML(x.split('^')[0]) + '<sup>' + x.split('^')[1] + '</sup>';
+      if (Math.random() < 0.5) return { q: `${toH(fm)} の名前は？`, choices: choicesWith(nm, L2.map(x => x[1])), answer: nm, explain: `${toH(fm)} は${nm}。` };
+      return { q: `「${nm}」の化学式は？`, choices: choicesWith(fm, L2.map(x => x[0])).map(v => ({ v, html: toH(v) })), answer: fm, explain: `${nm}は ${toH(fm)}。` };
+    },
+    oxnum() {
+      const L3 = [['H2SO4', 'S', '+6'], ['SO2', 'S', '+4'], ['H2S', 'S', '−2'], ['NH3', 'N', '−3'], ['HNO3', 'N', '+5'], ['NO2', 'N', '+4'], ['KMnO4', 'Mn', '+7'], ['MnO2', 'Mn', '+4'], ['K2Cr2O7', 'Cr', '+6'], ['CO2', 'C', '+4'], ['CH4', 'C', '−4'], ['Fe2O3', 'Fe', '+3'], ['H2O2', 'O', '−1'], ['Cu2O', 'Cu', '+1'], ['CuO', 'Cu', '+2'], ['Cl2', 'Cl', '0'], ['HClO', 'Cl', '+1']];
+      const [fm, el, ans] = rpick(L3);
+      return { q: `${formulaHTML(fm)} の中の <b>${el}</b> の酸化数は？`, choices: choicesWith(ans, ['−3', '−2', '−1', '0', '+1', '+2', '+3', '+4', '+5', '+6', '+7']), answer: ans,
+        explain: `化合物全体で酸化数の合計は 0。H は +1、O は −2（H₂O₂ では −1）として計算すると、${el} は ${ans}。` };
+    },
+    acidval() {
+      const L4 = [['HCl', '塩化水素（塩酸）', 1, '強酸'], ['H2SO4', '硫酸', 2, '強酸'], ['HNO3', '硝酸', 1, '強酸'], ['CH3COOH', '酢酸', 1, '弱酸'], ['H3PO4', 'リン酸', 3, '弱酸'], ['H2CO3', '炭酸', 2, '弱酸'], ['(COOH)2', 'シュウ酸', 2, '弱酸'],
+        ['NaOH', '水酸化ナトリウム', 1, '強塩基'], ['KOH', '水酸化カリウム', 1, '強塩基'], ['Ca(OH)2', '水酸化カルシウム', 2, '強塩基'], ['Ba(OH)2', '水酸化バリウム', 2, '強塩基'], ['NH3', 'アンモニア', 1, '弱塩基'], ['Cu(OH)2', '水酸化銅(II)', 2, '弱塩基']];
+      const [fm, nm, v, k] = rpick(L4), nmF = nm + (QF.fx ? ' ' + formulaHTML(fm) : '');
+      if (Math.random() < 0.5) return { q: `${nmF} は何価の${/酸/.test(k) ? '酸' : '塩基'}？`, choices: ['1価', '2価', '3価'], answer: v + '価', explain: `${nm}は ${v} 価の${k}。` };
+      return { q: `${nmF} は 強い？ 弱い？`, choices: /酸/.test(k) ? ['強酸', '弱酸'] : ['強塩基', '弱塩基'], answer: k, explain: `${nm}は${k}（価数と強さは関係ない）。` };
+    },
+    count() {
+      const L5 = [['C6H12O6', 'グルコース'], ['C2H5OH', 'エタノール'], ['CH3COOH', '酢酸'], ['H2SO4', '硫酸'], ['C12H22O11', 'スクロース'], ['NH4NO3', '硝酸アンモニウム'], ['C3H8', 'プロパン'], ['Ca(OH)2', '水酸化カルシウム'], ['CO(NH2)2', '尿素'], ['C6H6', 'ベンゼン']];
+      const [fm, nm] = rpick(L5), c = parseBody(fm), tot = Object.values(c).reduce((a2, b2) => a2 + b2, 0);
+      const els = Object.keys(c);
+      if (Math.random() < 0.5) return { q: `${nm} ${formulaHTML(fm)} 1 分子（1 組）にふくまれる原子の数は、全部で何個？`, choices: choicesWith(String(tot), [tot - 1, tot + 1, tot - 2, tot + 2, tot * 2, els.length].map(String)), answer: String(tot), explain: els.map(e2 => `${e2}：${c[e2]}`).join('、') + ` → 合計 ${tot} 個` };
+      const e1 = rpick(els), n1 = c[e1], n = rpick([0.5, 1, 2, 3]);
+      return { q: `${nm} ${formulaHTML(fm)} ${n} mol にふくまれる ${e1} 原子は何 mol？`, choices: choicesWith(String(n * n1), [n, n * n1 * 2, n * n1 / 2, n * (n1 + 1), n * tot].map(String)), answer: String(n * n1), explain: `1 mol 中に ${e1} が ${n1} mol → ${n} × ${n1} ＝ ${n * n1} mol` };
+    },
+    flame() {
+      const L6 = [['Li', 'リチウム', '赤'], ['Na', 'ナトリウム', '黄'], ['K', 'カリウム', '赤紫'], ['Cu', '銅', '青緑'], ['Ca', 'カルシウム', '橙赤'], ['Sr', 'ストロンチウム', '紅'], ['Ba', 'バリウム', '黄緑']];
+      const [el, nm, col] = rpick(L6);
+      if (Math.random() < 0.5) return { q: `${nm}（${el}）の炎色反応の色は？`, choices: choicesWith(col, L6.map(x => x[2])), answer: col, explain: 'リアカー無き K 村、動力に馬力を借るとう するもくれない…（Li 赤・Na 黄・K 赤紫・Cu 青緑・Ca 橙赤・Sr 紅・Ba 黄緑）' };
+      return { q: `炎色反応で <b>${col}色</b>を示す元素は？`, choices: choicesWith(nm, L6.map(x => x[1])), answer: nm, explain: `${col}色は${nm}（${el}）。` };
+    },
+    en() {
+      const order = ['F', 'O', 'Cl', 'N', 'C', 'S', 'H', 'P', 'Si', 'Al', 'Mg', 'Ca', 'Na', 'K'];
+      const a = rpick(order); let b = rpick(order); if (b === a) b = order[(order.indexOf(a) + 3) % order.length];
+      const win = EL[a].en > EL[b].en ? a : b;
+      return { q: `電気陰性度が大きいのはどっち？　${a}（${EL[a].n}） と ${b}（${EL[b].n}）`, choices: [a, b], answer: win, explain: `電気陰性度：${a} ${EL[a].en}、${b} ${EL[b].en}。周期表の右上（F）ほど大きい（貴ガスは除く）。` };
+    },
+    period() {
+      const el = rpick(ELEMENTS_20.slice(1)), Z = EL[el].z, c = shellCounts(Z), per = c.filter(Boolean).length;
+      const grp = Z <= 2 ? (Z === 1 ? 1 : 18) : (() => { const v = c.filter(Boolean).slice(-1)[0]; return per === 4 ? v : v <= 2 ? v : v + 10; })();
+      if (Math.random() < 0.5) return { subject: 'atom-' + el, q: `${EL[el].n}（${el}、原子番号 ${Z}）は第何周期？`, choices: ['第1周期', '第2周期', '第3周期', '第4周期'], answer: `第${per}周期`, explain: `電子が入っている殻の数（${configText(c)}）＝ 周期 ${per}。` };
+      return { subject: 'atom-' + el, q: `${EL[el].n}（${el}、原子番号 ${Z}）は何族？`, choices: choicesWith(grp + '族', ['1族', '2族', '13族', '14族', '15族', '16族', '17族', '18族']), answer: grp + '族', explain: `最外殻の電子（${configText(c)}）から、${grp}族。` };
+    },
+  };
+  const genQ = t => (EXTRA[t] ? EXTRA[t]() : makeQuestion(t));
   const modeName = m => (MODES.find(x => x[0] === m) || MODES[0])[1];
   const tLabel = t => (t < 60 ? `${t}秒` : t % 60 ? `${Math.floor(t / 60)}分${t % 60}秒` : `${t / 60}分`);
   const TIMES = [30, 60, 90, 120, 180, 300];
@@ -7343,8 +7428,10 @@ const GAME = (() => {
     return `${modeName(cfg.m)}・${tLabel(cfg.t)}`;
   }
   // 単元ごとに、生成できる問題の種類（クイズの自動問題）
-  const UNIT_TYPES = { 'ls-state': ['state'], 'ls-shell': ['config', 'valence'], 'ls-ion': ['ion'], 'ls-ionic': ['bondtype'], 'ls-cov': ['bondtype', 'shape'], 'ls-shape': ['shape'], 'ls-polar': ['polar'],
-    'ls-hbond': ['hbond', 'boil'], 'ls-cryst': ['bondtype'], 'ls-metal': ['bondtype'], 'ls-amass': ['mass'], 'ls-mol': ['mol'], 'ls-rx': ['coef'], 'ls-qty': ['coef'] };
+  const UNIT_TYPES = { 'ls-elem': ['flame'], 'ls-state': ['state'], 'ls-atom': ['nucleon'], 'ls-shell': ['config', 'valence', 'period'], 'ls-ion': ['ion', 'ionname'],
+    'ls-ionic': ['bondtype', 'ionformula', 'ionname'], 'ls-cov': ['bondtype', 'shape', 'lp'], 'ls-shape': ['shape', 'lp'], 'ls-polar': ['polar', 'en'],
+    'ls-hbond': ['hbond', 'boil'], 'ls-cryst': ['bondtype'], 'ls-metal': ['bondtype'], 'ls-amass': ['mass', 'count'], 'ls-mol': ['mol', 'count'], 'ls-rx': ['coef'], 'ls-qty': ['coef'],
+    'ls-acid': ['acidval'], 'ls-neut': ['acidval'], 'ls-redox': ['oxnum'], 'ls-metalion': ['oxnum'] };
   // 出題のもと：確認テストの問題（1つずつ）＋ 自動でつくる問題・計算ドリル（数字が毎回かわるので多めに）
   function unitDeck(cfg, R) {
     const out = [];
@@ -7353,6 +7440,19 @@ const GAME = (() => {
       (UNIT_TYPES[l.id] || []).forEach(t => out.push({ k: 'gen', t }, { k: 'gen', t }));
       ((typeof DRILL_OF !== 'undefined' && DRILL_OF[l.id]) || []).forEach(t => { if (DRILLS[t]) out.push({ k: 'drill', t }, { k: 'drill', t }); });
     });
+    return shuffleR(out, R);
+  }
+  // 分野で選んだとき：自動の問題（種類ごとに3つ）＋ その分野の授業の確認テスト ＋ 計算ドリル
+  function fieldDeck(cfg, R) {
+    const out = [], ids = FIELD_LESSONS[cfg.m] || null;
+    (TYPES[cfg.m] || TYPES.mix).forEach(t => out.push({ k: 'gen', t }, { k: 'gen', t }, { k: 'gen', t }));
+    LESSONS.filter(l => (ids ? ids.includes(l.id) : l.course === 'kiso')).forEach(l => {
+      (LESSON_QUIZ[l.id] || []).forEach(x => out.push({ k: 'quiz', x }));
+      if (cfg.m === 'calc' || cfg.m === 'mix') ((typeof DRILL_OF !== 'undefined' && DRILL_OF[l.id]) || []).forEach(t => { if (DRILLS[t]) out.push({ k: 'drill', t }); });
+    });
+    return shuffleR(out, R);
+  }
+  function shuffleR(out, R) {
     for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
     return out;
   }
@@ -7470,7 +7570,7 @@ const GAME = (() => {
   function fromSource(src) {
     if (src.k === 'quiz') { const [q, a, w, ex] = src.x; return { q: esc(q), choices: shuffle([a].concat(w)), answer: a, explain: ex }; }
     if (src.k === 'drill') return drillChoice(src.t);
-    return makeQuestion(src.t);
+    return genQ(src.t);
   }
   function openRewards() {
     shell();
@@ -7498,12 +7598,13 @@ const GAME = (() => {
     const keep = Math.random;
     Math.random = R; QF.fx = cfg.fx !== 0;
     try {
-      if (unitMode(cfg)) {
-        if (!G.deck || G.di >= G.deck.length) { G.deck = unitDeck(cfg, R); G.di = 0; } // 1周したら、まぜ直してもう1周
-        return fromSource(G.deck[G.di++]);
-      }
-      const types = TYPES[cfg.m] || TYPES.mix;
-      return makeQuestion(types[Math.floor(R() * types.length)]);
+      // 山札のように順に出す（1周したら、まぜ直してもう1周）。最近出た問題と同じ文なら、とばして次へ
+      const mk = () => { if (!G.deck || G.di >= G.deck.length) { G.deck = unitMode(cfg) ? unitDeck(cfg, R) : fieldDeck(cfg, R); G.di = 0; } return fromSource(G.deck[G.di++]); };
+      G.recent = G.recent || [];
+      let q = mk();
+      for (let k = 0; k < 8 && G.recent.includes(q.q); k++) q = mk();
+      G.recent.push(q.q); if (G.recent.length > 40) G.recent.shift();
+      return q;
     } finally { Math.random = keep; QF.fx = true; }
   }
   let G = null, OFF = 0;
@@ -7980,6 +8081,8 @@ const GAME = (() => {
     full() { rw().full++; save(); checkBadges(); },
     check: checkBadges,
     _g: () => G, // テスト用
+    _extra(t, n) { const out = []; for (let i = 0; i < n; i++) out.push(EXTRA[t]()); return out; },
+    _sample(cfg, n) { const keep = G; G = { cfg, R: rng(7) }; const out = []; for (let i = 0; i < n; i++) out.push(seededQuestion(G.R, cfg)); G = keep; return out; }, // テスト用
   };
 })();
 GAME.init();
