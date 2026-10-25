@@ -7199,7 +7199,7 @@ start();
 const GAME = (() => {
   const KEY = 'molecule-lab:game';
   const DEFAULT_DB = 'https://english-logical-default-rtdb.firebaseio.com'; // 論理表現ラボと同じデータベース（部屋は「mol」で区別）
-  const PUBLIC_URL = 'https://nakatadaiki1012-design.github.io/chemistry-simulator/';
+  const PUBLIC_URL = 'https://chemistry-simulator.axw-nkt-fno.workers.dev/'; // 公開ページ（GitHub → Cloudflare Workers）
   const ROOM = code => 'rooms/mol' + code;
   let S = {};
   try { S = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { S = {}; }
@@ -7699,7 +7699,8 @@ const GAME = (() => {
     return api('PUT', p, { '.sv': 'timestamp' }).then(ts => { const t1 = Date.now(); if (typeof ts === 'number') OFF = ts - (t0 + t1) / 2; api('DELETE', p).catch(() => {}); }, () => {});
   }
   function joinUrl(code) {
-    const here = /^https?:/.test(location.protocol) && /github\.io$|localhost|127\.0\.0\.1/.test(location.hostname) ? location.origin + location.pathname : PUBLIC_URL;
+    // 公開ページ・自分のサーバーで開いているならそのページ。claude.ai の中やファイルで開いているときは公開ページのリンクにする
+    const here = /^https?:/.test(location.protocol) && !/claude\.ai$|claudeusercontent\.com$|anthropic\.com$/.test(location.hostname) ? location.origin + location.pathname : PUBLIC_URL;
     let u = here + '#join=' + code;
     if (S.db && base() !== DEFAULT_DB) u += '&db=' + encodeURIComponent(base());
     return u;

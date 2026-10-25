@@ -3,7 +3,7 @@
 化学基礎の授業で使える、**分子・イオン・結晶を立体で回して見る**Webアプリです。
 `index.html` 1ファイルだけで動きます（インストール不要）。
 
-**公開ページ（GitHub Pages を有効にした場合）**: https://nakatadaiki1012-design.github.io/chemistry-simulator/
+**公開ページ**: https://chemistry-simulator.axw-nkt-fno.workers.dev/ （GitHub に push すると Cloudflare Workers に反映。実験ラボ3D は https://chemistry-simulator.axw-nkt-fno.workers.dev/lab.html ）
 
 ## 使い方
 
