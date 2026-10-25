@@ -783,6 +783,11 @@ body.gm-on { overflow: hidden; }
 .gcount { display: grid; place-items: center; text-align: center; gap: 8px; min-height: 260px; } .gcount b { font: 800 90px var(--font-data); color: var(--warm); } .gcount small { color: var(--muted); font-size: 14px; }
 /* ===== ⚛️ 分子クラフト（コンボ・触媒タイムの見た目は 論理表現ラボの英文ロケットと同じ） ===== */
 .gm-main.mc { position: relative; overflow: hidden; background: radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 40%), radial-gradient(circle at 85% 80%, color-mix(in srgb, var(--ok) 12%, transparent), transparent 45%), var(--bg); }
+.grace { position: relative; flex: none; height: clamp(150px, 30vh, 260px); border: 1.5px solid var(--ink); border-radius: 10px; overflow: hidden; background: #6fb2ea; }
+.grace canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.gspeed { position: absolute; right: 8px; top: 6px; z-index: 1; font: 800 22px var(--font-data); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+.gspeed small { font-size: 11px; font-weight: 700; }
+.gplay.boost .grace { box-shadow: 0 0 0 3px rgba(80, 140, 255, .55), 0 0 26px rgba(80, 140, 255, .6); }
 .gcraft { display: flex; align-items: center; gap: 12px; padding: 6px 10px; border: 1.5px solid var(--line); border-radius: 10px; background: color-mix(in srgb, var(--panel) 92%, transparent); flex: none; }
 .gc3 { width: 170px; height: 120px; flex: none; border-radius: 8px; background: radial-gradient(circle, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%); }
 .gc3 canvas { display: block; width: 100% !important; height: 100% !important; }
@@ -870,7 +875,7 @@ body.gm-on { overflow: hidden; }
 .fxpop.boost { color: #ff9f1c; text-shadow: 0 0 14px rgba(255, 159, 28, .85), 0 2px 0 #fff; font-size: clamp(34px, 9vw, 80px) !important; }
 @keyframes gFxup { from { opacity: 1; margin-top: 0; } to { opacity: 0; margin-top: -40px; } }
 @keyframes gFxbig { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.3); } 30% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); } 70% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -70%) scale(1); } }
-@media (max-width: 720px) { .gc3 { width: 120px; height: 92px; } .gct b { font-size: 17px; } .gdots i { width: 16px; height: 16px; font-size: 8px; } .gcraft { gap: 8px; padding: 4px 8px; } .ghud { flex-wrap: wrap; row-gap: 4px; } .ghud .gtbar { order: 9; flex: 1 1 100%; } .gcombo { margin-left: auto; } .ghud2 { gap: 6px; } .gmeter span { font-size: 10px; } .gsky { font-size: 11.5px; gap: 6px; padding: 4px 8px; } .gsky .nxt { display: none; } .galt { font-size: 12.5px; } .garrive .ae { font-size: 48px; } .garrive .at b { font-size: 22px; } }
+@media (max-width: 720px) { .grace { height: clamp(120px, 22vh, 180px); } .gc3 { width: 120px; height: 92px; } .gct b { font-size: 17px; } .gdots i { width: 16px; height: 16px; font-size: 8px; } .gcraft { gap: 8px; padding: 4px 8px; } .ghud { flex-wrap: wrap; row-gap: 4px; } .ghud .gtbar { order: 9; flex: 1 1 100%; } .gcombo { margin-left: auto; } .ghud2 { gap: 6px; } .gmeter span { font-size: 10px; } .gsky { font-size: 11.5px; gap: 6px; padding: 4px 8px; } .gsky .nxt { display: none; } .galt { font-size: 12.5px; } .garrive .ae { font-size: 48px; } .garrive .at b { font-size: 22px; } }
 @media (prefers-reduced-motion: reduce) { .gplay.boost .gcard::after, .gspd.fast, .gplay.boost .rkt { animation: none; } }
 .gexp { margin-top: 12px; padding: 12px 14px; border-radius: 6px; border: 1.5px solid var(--line); border-left-width: 6px; background: var(--panel); text-align: left; animation: gIn .18s; }
 .gexp.ok { border-color: var(--ok); } .gexp.ng { border-color: var(--warm); }
@@ -8374,6 +8379,181 @@ const GAME_BANK = {
 
   window.MLFX = { play: play, burst: burst, rain: rain, stop: stop, pop: pop, popAt: popAt, unlock: ac, sparks: sparks, boost: boost };
 })();
+/* 分子ラボ：🏎 化学グランプリの コース（疑似3Dの道路。canvas 2D だけで描く）
+   ・正解すると アクセル（ギアが上がるほど 速い）、ニトロで さらに加速、ミスで スリップ
+   ・クラス対戦では クラスの友だちの車が 同じコースを走る（点数の差 ＝ 前後の きょり）
+   ・見ていない時は 止まる。動きを へらす設定なら ゆっくり */
+(function () {
+  'use strict';
+  var cv = null, cx = null, raf = 0, get = null, W = 0, H = 0, DPR = 1;
+  var pos = 0, v = 0, bgX = 0, lastT = 0, slipT = 0, wob = 0, lastSlip = 0, lastKick = 0, lean = 0, flame = 0;
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- コース ---------- */
+  var SEG = 200, ROADW = 2000, CAMH = 1000, DEPTH = 0.84, DRAW = 110, N = 0, segs = [];
+  var SIGNS = ['H', 'He', 'C', 'N', 'O', 'Na', 'Mg', 'Al', 'S', 'Cl', 'K', 'Ca', 'Fe', 'Cu', 'Zn', 'Ag', 'Au', 'H₂O', 'CO₂', 'NaCl', 'CH₄', 'NH₃'];
+  function build() {
+    segs = [];
+    var plan = [[40, 0], [30, 2.5], [30, 0], [40, -3], [20, 0], [30, 4], [25, -2], [40, 0], [35, -4], [25, 2], [30, 0], [30, 3], [40, -1.5], [20, 0]];
+    var k = 0;
+    plan.forEach(function (p) {
+      for (var i = 0; i < p[0]; i++) {
+        var e = Math.sin(i / p[0] * Math.PI); // カーブは なめらかに 入って 出る
+        var s = { curve: p[1] * e, sp: null, i: segs.length };
+        if (segs.length % 8 === 0) s.sp = { k: k % 3 === 2 ? 'sign' : 'tree', x: (k % 2 ? 1 : -1) * (1.5 + (k % 5) * 0.12), t: SIGNS[k % SIGNS.length] }, k++;
+        segs.push(s);
+      }
+    });
+    N = segs.length;
+  }
+  build();
+
+  function size() {
+    if (!cv) return;
+    var r = cv.parentNode.getBoundingClientRect();
+    DPR = Math.min(2, window.devicePixelRatio || 1);
+    W = Math.max(1, r.width); H = Math.max(1, r.height);
+    cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+
+  /* ---------- 絵 ---------- */
+  function poly(c, x1, y1, w1, x2, y2, w2) {
+    cx.fillStyle = c; cx.beginPath(); cx.moveTo(x1 - w1, y1); cx.lineTo(x2 - w2, y2); cx.lineTo(x2 + w2, y2); cx.lineTo(x1 + w1, y1); cx.closePath(); cx.fill();
+  }
+  // 車（うしろ姿）。x,y：下の まん中、w：はば
+  function car(x, y, w, col, opt) {
+    opt = opt || {};
+    var h = w * 0.5;
+    cx.save(); cx.translate(x, y); if (opt.rot) cx.rotate(opt.rot);
+    cx.fillStyle = 'rgba(0,0,0,.28)'; cx.beginPath(); cx.ellipse(0, 0, w * 0.55, w * 0.07, 0, 0, Math.PI * 2); cx.fill();
+    if (opt.flame) { // ニトロの 炎
+      var fl = w * (0.25 + Math.random() * 0.15);
+      [-0.16, 0.16].forEach(function (dx) {
+        var g = cx.createLinearGradient(0, -h * 0.35, 0, -h * 0.35 + fl);
+        g.addColorStop(0, 'rgba(220,240,255,.95)'); g.addColorStop(0.4, 'rgba(90,160,255,.8)'); g.addColorStop(1, 'rgba(60,90,255,0)');
+        cx.fillStyle = g; cx.beginPath(); cx.ellipse(dx * w, -h * 0.35 + fl / 2, w * 0.05, fl / 2, 0, 0, Math.PI * 2); cx.fill();
+      });
+    }
+    cx.fillStyle = '#1b1d22'; // タイヤ
+    cx.fillRect(-w * 0.5, -h * 0.55, w * 0.2, h * 0.55); cx.fillRect(w * 0.3, -h * 0.55, w * 0.2, h * 0.55);
+    cx.fillStyle = col; // 車体
+    cx.beginPath(); cx.moveTo(-w * 0.32, -h * 0.15); cx.lineTo(-w * 0.26, -h * 0.75); cx.lineTo(w * 0.26, -h * 0.75); cx.lineTo(w * 0.32, -h * 0.15); cx.closePath(); cx.fill();
+    cx.fillStyle = 'rgba(255,255,255,.25)'; cx.fillRect(-w * 0.22, -h * 0.72, w * 0.44, h * 0.12);
+    cx.fillStyle = '#20232a'; cx.fillRect(-w * 0.12, -h * 1.0, w * 0.24, h * 0.3); // 運転席
+    cx.fillStyle = col; cx.fillRect(-w * 0.42, -h * 1.12, w * 0.84, h * 0.16); // うしろの羽
+    cx.fillStyle = '#111'; cx.fillRect(-w * 0.3, -h * 0.96, w * 0.05, h * 0.2); cx.fillRect(w * 0.25, -h * 0.96, w * 0.05, h * 0.2);
+    cx.fillStyle = '#ff3b30'; cx.fillRect(-w * 0.2, -h * 0.3, w * 0.08, h * 0.08); cx.fillRect(w * 0.12, -h * 0.3, w * 0.08, h * 0.08); // テールランプ
+    if (opt.num != null) { cx.fillStyle = '#fff'; cx.font = '700 ' + Math.max(8, w * 0.16) + 'px sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(opt.num, 0, -h * 0.45); }
+    cx.restore();
+  }
+  function tree(x, y, s) {
+    cx.fillStyle = '#6b4a2b'; cx.fillRect(x - s * 0.06, y - s * 0.35, s * 0.12, s * 0.35);
+    cx.fillStyle = '#2f7d4a'; cx.beginPath(); cx.moveTo(x, y - s * 1.3); cx.lineTo(x - s * 0.38, y - s * 0.3); cx.lineTo(x + s * 0.38, y - s * 0.3); cx.closePath(); cx.fill();
+    cx.fillStyle = '#3c9a5c'; cx.beginPath(); cx.moveTo(x, y - s * 1.3); cx.lineTo(x - s * 0.25, y - s * 0.7); cx.lineTo(x + s * 0.25, y - s * 0.7); cx.closePath(); cx.fill();
+  }
+  function sign(x, y, s, t) { // 元素記号の かんばん
+    cx.fillStyle = '#555'; cx.fillRect(x - s * 0.03, y - s * 0.6, s * 0.06, s * 0.6);
+    cx.fillStyle = '#fff'; cx.strokeStyle = '#2753d6'; cx.lineWidth = Math.max(1, s * 0.04);
+    cx.fillRect(x - s * 0.36, y - s * 1.15, s * 0.72, s * 0.58); cx.strokeRect(x - s * 0.36, y - s * 1.15, s * 0.72, s * 0.58);
+    if (s > 14) { cx.fillStyle = '#2753d6'; cx.font = '700 ' + (s * (t.length > 2 ? 0.2 : 0.3)) + 'px sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(t, x, y - s * 0.86); }
+  }
+
+  /* ---------- 1 コマ ---------- */
+  function frame(now) {
+    raf = requestAnimationFrame(frame);
+    if (!cv || !get || document.hidden || !cv.isConnected) { lastT = 0; return; }
+    var st = get() || {}, dt = lastT ? Math.min(0.05, (now - lastT) / 1000) : 0.016; lastT = now;
+    // スピード：ギアと ニトロで 上がる。正解の しゅんかんに グッと加速、ミスで スリップ
+    var target = st.started ? 2200 * (1 + (st.gear || 0) * 0.28) * (st.nitro ? 1.55 : 1) : 0;
+    if (st.kick && st.kick !== lastKick) { lastKick = st.kick; v = Math.min(v + 1500, Math.max(target, 2200) * 1.3); } // 正解：グッと加速（上限つき）
+    if (st.slip && st.slip !== lastSlip) { lastSlip = st.slip; slipT = 0.9; v *= 0.45; }
+    v += (target - v) * Math.min(1, dt * (v < target ? 0.9 : 0.6));
+    if (reduce) v = Math.min(v, 1800);
+    slipT = Math.max(0, slipT - dt); wob = slipT > 0 ? Math.sin(now / 45) * slipT * 0.35 : 0;
+    pos = (pos + v * dt) % (N * SEG);
+    flame = st.nitro ? 1 : 0;
+
+    var base = Math.floor(pos / SEG), frac = (pos % SEG) / SEG, HZ = H * 0.42;
+    var curNow = segs[base % N].curve; lean += ((curNow * -0.05) - lean) * Math.min(1, dt * 4);
+    bgX -= curNow * v * dt * 0.00012;
+
+    // 空と 山
+    var sky = cx.createLinearGradient(0, 0, 0, HZ);
+    sky.addColorStop(0, st.nitro ? '#5a6fd6' : '#6fb2ea'); sky.addColorStop(1, '#cfe8f7');
+    cx.fillStyle = sky; cx.fillRect(0, 0, W, HZ + 2);
+    cx.fillStyle = '#9fb6c8';
+    for (var m = -1; m < 4; m++) { var mx = ((bgX * W * 0.5) % (W * 0.6)) + m * W * 0.6; cx.beginPath(); cx.moveTo(mx, HZ); cx.lineTo(mx + W * 0.18, HZ - H * 0.16); cx.lineTo(mx + W * 0.32, HZ - H * 0.08); cx.lineTo(mx + W * 0.45, HZ - H * 0.2); cx.lineTo(mx + W * 0.6, HZ); cx.fill(); }
+    cx.fillStyle = '#5fa463'; cx.fillRect(0, HZ, W, H - HZ);
+
+    // 道路（手前から おく へ。見えない部分は 描かない）
+    var x = 0, dx = -curNow * frac * 0.002, maxy = H, proj = [];
+    for (var n = 0; n < DRAW; n++) {
+      var sg = segs[(base + n) % N];
+      var z1 = (n - frac) * SEG + 1, z2 = (n + 1 - frac) * SEG;
+      var s1 = DEPTH / Math.max(0.05, z1 / SEG), s2 = DEPTH / (z2 / SEG);
+      var w1 = s1 * W * 2.2, w2 = s2 * W * 2.2; // 道の はばの半分（画面上）
+      var Y1 = HZ + s1 * CAMH / SEG * (H - HZ) * 0.9;
+      var X1 = W / 2 + (x - wob) * w1;
+      x += dx; dx += sg.curve * 0.002;
+      var X2 = W / 2 + (x - wob) * w2, Y2 = HZ + s2 * CAMH / SEG * (H - HZ) * 0.9;
+      proj.push({ x: X2, y: Y2, w: w2, sg: sg, s: s2 });
+      if (Y2 >= maxy) continue;
+      var alt = Math.floor((base + n) / 3) % 2;
+      cx.fillStyle = alt ? '#5fa463' : '#579a5b'; cx.fillRect(0, Y2, W, Math.min(maxy, Y1) - Y2 + 1);
+      poly(alt ? '#e6e6e6' : '#d23c3c', X1, Y1, w1 * 1.12, X2, Y2, w2 * 1.12); // 縁石
+      poly(alt ? '#6b6f78' : '#666a72', X1, Y1, w1, X2, Y2, w2);
+      if (alt) poly('#f4f4f4', X1, Y1, w1 * 0.025, X2, Y2, w2 * 0.025); // センターライン
+      if ((base + n) % N === 0) poly('#fff', X1, Y1, w1, X2, Y2, w2); // スタートライン
+      maxy = Y2;
+    }
+    // おくから 手前へ：木・かんばん・ライバルの車
+    var rivals = st.rivals || [];
+    for (var p = proj.length - 1; p >= 1; p--) {
+      var q = proj[p], sp = q.sg.sp;
+      if (sp && q.s > 0.02) { var sx = q.x + sp.x * q.w, ss = q.w * 0.9; if (sp.k === 'tree') tree(sx, q.y, ss); else sign(sx, q.y, ss, sp.t); }
+      rivals.forEach(function (r, i) {
+        if (r._n !== p) return;
+        var rx = q.x + (i % 2 ? 0.45 : -0.45) * q.w, rw = q.w * 0.42;
+        car(rx, q.y, rw, r.col, { num: r.num });
+        if (rw > 10) { cx.font = '700 ' + Math.max(10, Math.min(14, rw * 0.3)) + 'px sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'bottom'; var tw = cx.measureText(r.n).width + 8; cx.fillStyle = 'rgba(0,0,0,.6)'; cx.fillRect(rx - tw / 2, q.y - rw * 0.7 - 18, tw, 16); cx.fillStyle = '#fff'; cx.fillText(r.n, rx, q.y - rw * 0.7 - 3); }
+      });
+    }
+    // スピードの線（ニトロ）
+    if (st.nitro && !reduce) {
+      cx.strokeStyle = 'rgba(255,255,255,.55)'; cx.lineWidth = 1.5;
+      for (var k = 0; k < 14; k++) { var a = Math.random() * Math.PI * 2, r0 = Math.min(W, H) * (0.3 + Math.random() * 0.2); cx.beginPath(); cx.moveTo(W / 2 + Math.cos(a) * r0, HZ + Math.sin(a) * r0 * 0.6); cx.lineTo(W / 2 + Math.cos(a) * r0 * 1.6, HZ + Math.sin(a) * r0 * 1); cx.stroke(); }
+    }
+    // 自分の車
+    var cw = Math.min(W * 0.26, H * 0.62);
+    car(W / 2 + wob * W * 0.4, H - 6 + (st.started ? Math.sin(now / 60) * v / 4000 : 0), cw, st.col || '#d62d20', { rot: lean + wob, flame: flame });
+    // 後ろの ライバル（画面の下に 名前だけ）
+    var behind = st.behind || [];
+    if (behind.length) {
+      cx.font = '700 11px sans-serif'; cx.textAlign = 'left'; cx.textBaseline = 'bottom';
+      var t = '▼ 後ろ：' + behind.slice(0, 3).map(function (b) { return b.n + ' ' + b.d + 'm'; }).join('　');
+      var tw2 = cx.measureText(t).width + 10; cx.fillStyle = 'rgba(0,0,0,.55)'; cx.fillRect(6, H - 20, tw2, 16); cx.fillStyle = '#fff'; cx.fillText(t, 11, H - 6);
+    }
+    if (st.onSpeed) st.onSpeed(Math.round(v * 0.04));
+  }
+
+  function start(host, getter) {
+    stop();
+    get = getter; pos = 0; v = 0; lastT = 0; slipT = 0; lastKick = 0; lastSlip = 0;
+    cv = document.createElement('canvas'); cv.className = 'grc'; cv.setAttribute('aria-hidden', 'true');
+    host.appendChild(cv); cx = cv.getContext('2d');
+    size(); window.addEventListener('resize', size);
+    raf = requestAnimationFrame(frame);
+  }
+  function stop() {
+    if (raf) cancelAnimationFrame(raf); raf = 0;
+    window.removeEventListener('resize', size);
+    if (cv && cv.parentNode) cv.parentNode.removeChild(cv);
+    cv = null; get = null;
+  }
+  // ライバルを 何番目の 区間に 置くか（前の車だけ。きょり m → 区間）
+  function place(rivals) { rivals.forEach(function (r) { r._n = Math.max(6, Math.min(DRAW - 5, Math.round(r.d * 0.12) + 6)); }); return rivals; }
+  window.MLRACE = { start: start, stop: stop, place: place };
+})();
 // ===== ごほうび（コイン・段位・バッジ）／⏱ タイムアタック／🏆 クラス対戦 =====
 // 論理表現ラボと同じしくみ。クラス対戦は Firebase Realtime Database（無料）の REST とストリームを使う
 const GAME = (() => {
@@ -8766,7 +8946,7 @@ const GAME = (() => {
       <div class="glv"><small>いまの段位</small><b>${lv.name}</b><div class="gbar"><i style="width:${pc.toFixed(1)}%"></i></div>
       <small>${lv.next ? `次の「${lv.nextName}」まで あと ${fmt(lv.next - r.coins)} コイン` : '最高の段位です！'}</small>
       <div class="gstats"><span>🪙 <b>${fmt(r.coins)}</b> コイン</span><span>🔥 <b>${streakNow()}</b> 日連続</span><span>🏅 <b>${Object.keys(r.badges).length}</b>/${BADGES.length}</span></div>
-      <table class="gbest"><tr><th>⚛️ ベスト</th>${MODES.concat([['unit', '単元']]).map(m => `<th>${m[1]}</th>`).join('')}</tr><tr><th>点数</th>${MODES.concat([['unit']]).map(m => { const v = r.best['mc:' + m[0]]; return `<td>${v ? fmt(v) : '－'}</td>`; }).join('')}</tr></table></div>
+      <table class="gbest"><tr><th>ベスト</th>${MODES.concat([['unit', '単元']]).map(m => `<th>${m[1]}</th>`).join('')}</tr>${[['rc:', '🏎 m'], ['mc:', '⚛️ 点']].map(([k, lb]) => `<tr><th>${lb}</th>${MODES.concat([['unit']]).map(m => { const v = r.best[k + m[0]]; return `<td>${v ? fmt(v) : '－'}</td>`; }).join('')}</tr>`).join('')}</table></div>
       <div class="gbadges">${BADGES.map(b => { const on = r.badges[b.id]; return `<div class="gbd${on ? '' : ' off'}" title="${esc(b.how)}"><i>${on ? b.ico : '🔒'}</i><b>${esc(b.name)}</b><small>${esc(on || b.how)}</small></div>`; }).join('')}</div>
       <p class="note">コインのもらい方：クイズ・確認テスト・計算練習の正解 +10、確認テスト合格 +50（はじめての合格は +150）、分子クラフトは 100 点（原子 1 個）で +1、クラス対戦に参加 +20・3 位以内 +50</p></div>`;
     if (!dlg.open) dlg.showModal();
@@ -8812,12 +8992,19 @@ const GAME = (() => {
   const molName = e => `${esc(e.name)} ${formulaHTML(e.rational || displayFormula(e))}`; // 示性式があれば そちら（CH₃OH など）
   const zukan = () => { if (!Array.isArray(S.zukan)) S.zukan = []; return S.zukan; };
   // いまの分子：G.mi（何番目）、G.have（その分子に入った原子の数）。ならびを全部つくったら、最後の分子を くり返す
+  // テーマ：🏎 化学グランプリ（race・はじめから）／⚛️ 分子クラフト（craft）。点数のつけ方は同じ（1 問 100 × ギア）
+  const race = cfg => ((cfg || (G && G.cfg) || {}).th || 'race') !== 'craft';
+  const THEMES = [['race', '🏎 化学グランプリ'], ['craft', '⚛️ 分子クラフト']];
+  const LAP = 1000; // 1 周 1000 m（点数 1 点 ＝ 1 m）
+  const RCOL = ['#2f6bff', '#1f8a5b', '#e0a100', '#8e44ad', '#ff7a1a', '#0fa3b1', '#e84393', '#6d4c41'];
+  const rcol = id => RCOL[[...String(id)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % RCOL.length];
   const curMol = () => { const L = ladder(); return L[Math.min(G.mi, L.length - 1)]; };
   const fever = () => !!(G && G.feverUntil && Date.now() < G.feverUntil);
   const comboX = () => (G.combo >= 40 ? 4 : G.combo >= 20 ? 3 : G.combo >= 10 ? 2 : G.combo >= 5 ? 1.5 : 1);
   const mult = () => comboX() * (fever() ? 2 : 1);
   const solo = () => G && G.mode === 'solo';
   const reading = () => G.lock && G.q && G.q.pick >= 0; // 解説を読んでいる間（ひとりでは 燃料が へらない）
+  const gearNow = () => 1 + (G.combo >= 40 ? 4 : G.combo >= 20 ? 3 : G.combo >= 10 ? 2 : G.combo >= 5 ? 1 : 0);
   const atomsNow = () => [1, 2, 3, 4, 5][G.combo >= 40 ? 4 : G.combo >= 20 ? 3 : G.combo >= 10 ? 2 : G.combo >= 5 ? 1 : 0] * (fever() ? 2 : 1);
   const speedNow = () => (solo() ? Math.min(RULE.cap, 1 + Math.max(0, G.el / 1000 - RULE.calm) / RULE.ramp) : 1);
   const timeLeft = () => (solo() ? G.left : Math.max(0, G.endAt - now()));
@@ -8825,7 +9012,7 @@ const GAME = (() => {
   function newGame(cfg, seed, mode, startAt) {
     if (G) clearInterval(G.timer);
     G = { cfg, R: rng(seed), score: 0, combo: 0, maxCombo: 0, ok: 0, miss: 0, mode, startAt, endAt: startAt + cfg.t * 1000, q: null, lock: false, over: false, timer: null,
-      meter: 0, feverUntil: 0, feverN: 0, left: RULE.start * 1000, el: 0, tl: 0, maxSpeed: 1, atoms: 0, mi: 0, have: 0, made: [] };
+      meter: 0, feverUntil: 0, feverN: 0, left: RULE.start * 1000, el: 0, tl: 0, maxSpeed: 1, atoms: 0, mi: 0, have: 0, made: [], kick: 0, slip: 0, kmh: 0, maxKmh: 0 };
     nextQ();
     return G;
   }
@@ -8844,17 +9031,18 @@ const GAME = (() => {
       const n = atomsNow(), p = n * RULE.base; G.score += p; G.atoms += n;
       drawQ(); // 先に 正解の色を出してから 演出
       const b2 = g$(`[data-gp="${i}"]`) || btn;
-      if (window.MLFX && b2) { MLFX.sparks(b2, 1 + Math.min(7, Math.floor(G.combo / 3)) * (fever() ? 2 : 1)); MLFX.popAt(b2, '⚛️ +' + n + ' 原子', 'up'); }
+      if (window.MLFX && b2) { MLFX.sparks(b2, 1 + Math.min(7, Math.floor(G.combo / 3)) * (fever() ? 2 : 1)); MLFX.popAt(b2, race() ? '🏎 +' + fmt(p) + ' m' : '⚛️ +' + n + ' 原子', 'up'); }
       if (!fever()) { G.meter++; if (G.meter >= RULE.fever) startFever(); }
       if ([5, 10, 20, 40].includes(G.combo) || (G.combo > 40 && G.combo % 20 === 0)) {
         FX('combo'); const m = cardMid();
-        if (m && window.MLFX) { MLFX.pop(G.combo + ' COMBO!  原子 ×' + atomsNow(), m[0], m[1], 'big'); MLFX.burst(40, m[0], m[1] + 20); }
+        if (m && window.MLFX) { MLFX.pop(G.combo + ' COMBO!  ' + (race() ? 'ギア ' + gearNow() : '原子 ×' + atomsNow()), m[0], m[1], 'big'); MLFX.burst(40, m[0], m[1] + 20); }
       } else FX('ok');
-      addAtoms(n);
+      if (race()) { G.kick++; const lap = Math.floor(G.score / LAP); if (lap > Math.floor((G.score - p) / LAP)) setTimeout(() => { const m = cardMid(0.3); FX('lead'); if (m && window.MLFX) MLFX.pop(`🏁 ${lap} 周！`, m[0], m[1] + 30, 'big'); }, 250); }
+      else addAtoms(n);
       if (solo()) { const b = G.combo >= 20 ? 4 : G.combo >= 10 ? 3 : 2; G.left += b * 1000; timePop('⏳+' + b + '秒', 'tplus'); }
       flash('ok');
     } else {
-      G.combo = 0; G.miss++; G.meter = Math.max(0, G.meter - 2); // ミスで メーターは 少し へるだけ
+      G.combo = 0; G.miss++; G.meter = Math.max(0, G.meter - 2); G.slip++; // ミスで メーターは 少し へるだけ（レースでは スリップ）
       if (solo()) { G.left -= RULE.miss; timePop('−' + RULE.miss / 1000 + '秒', 'tminus'); }
       FX('miss'); drawQ(); flash('ng');
     }
@@ -8869,7 +9057,7 @@ const GAME = (() => {
   function startFever() {
     G.feverUntil = Date.now() + RULE.feverSec * 1000; G.meter = 0; G.feverN++;
     FX('boost'); const m = cardMid(0.3);
-    if (m && window.MLFX) { MLFX.pop('🧪 触媒タイム！ 原子 ×2', m[0], m[1], 'go boost'); MLFX.boost(RULE.feverSec); }
+    if (m && window.MLFX) { MLFX.pop(race() ? '🔥 ニトロ！！ ×2' : '🧪 触媒タイム！ 原子 ×2', m[0], m[1], 'go boost'); if (!race()) MLFX.boost(RULE.feverSec); }
   }
   // 原子を 分子に入れる。分子が できあがったら 図鑑に登録して 次の分子へ（1 問で 2 つ できることもある）
   function addAtoms(n) {
@@ -8914,12 +9102,25 @@ const GAME = (() => {
     main.classList.add('mc');
     main.innerHTML = `<div class="gplay"><div class="ghud"><button type="button" class="pbtn ghost" data-g="quit" title="やめる">✕</button>
       <div class="gtbar"><i id="gTf"></i><span id="gTs"></span></div>${G && G.mode === 'battle' ? '<div class="grank" id="gRk"></div>' : ''}<div class="gcombo" id="gCb"></div><div class="gsc"><small>${esc(title)}</small><b id="gSc">0</b></div></div>
-      <div class="ghud2"><span class="mlab">🧪</span><div class="gmeter"><i id="gMt"></i><span id="gMx"></span></div>${G && G.mode === 'solo' ? '<span class="gspd" id="gSp" title="時間の減り"></span>' : ''}<span class="galt" id="gAl">⚛️ 0</span></div>
-      <div class="gcraft"><div class="gc3" id="gC3"></div><div class="gct"><small>いま つくっている分子</small><b id="gCn"></b><div class="gdots" id="gCd"></div><small id="gCz"></small></div></div>
+      <div class="ghud2"><span class="mlab">${race() ? '🔥' : '🧪'}</span><div class="gmeter"><i id="gMt"></i><span id="gMx"></span></div>${G && G.mode === 'solo' ? '<span class="gspd" id="gSp" title="時間の減り"></span>' : ''}<span class="galt" id="gAl">⚛️ 0</span></div>
+      ${race() ? '<div class="grace" id="gRace"><span class="gspeed" id="gKmh">0<small> km/h</small></span></div>' : '<div class="gcraft"><div class="gc3" id="gC3"></div><div class="gct"><small>いま つくっている分子</small><b id="gCn"></b><div class="gdots" id="gCd"></div><small id="gCz"></small></div></div>'}
       <section class="gcard" id="gQ"></section></div>`;
     CR.key = '';
+    if (race() && window.MLRACE) MLRACE.start($('gRace'), raceState);
   }
-  function stopScene() { if (window.MLFX) MLFX.stop(); if (main) main.classList.remove('mc'); }
+  // コースに 出す ライバル：対戦では クラスの友だち、ひとりでは 自己ベストの ゴースト
+  function raceState() {
+    if (!G) return null;
+    const st = { started: now() >= G.startAt && !G.over, gear: gearNow() - 1, nitro: fever(), kick: G.kick, slip: G.slip, rivals: [], behind: [],
+      onSpeed: k => { G.kmh = k; if (k > G.maxKmh) G.maxKmh = k; } };
+    let others = [];
+    if (G.mode === 'battle' && B && B.room) others = playersOf(B.room, B.played).filter(p => p.id !== pid()).map(p => ({ n: p.n, s: p.s || 0, col: rcol(p.id) }));
+    else if (G.ghost && st.started) others = [{ n: '👻 自己ベスト', s: Math.round(G.ghost.s * Math.min(1, G.el / 1000 / G.ghost.d)), col: 'rgba(160,170,190,.75)' }];
+    others.forEach((o, i) => { const d = o.s - G.score; if (d > 0 && d < 750) st.rivals.push({ n: o.n, d, col: o.col, num: i + 2 }); else if (d <= 0 && d > -1000) st.behind.push({ n: o.n, d: -d }); });
+    if (window.MLRACE) MLRACE.place(st.rivals);
+    return st;
+  }
+  function stopScene() { if (window.MLRACE) MLRACE.stop(); if (window.MLFX) MLFX.stop(); if (main) main.classList.remove('mc'); }
   /* ---------- 組み上がっていく分子の 3D（問題の図とは 別の描画） ---------- */
   const CR = { key: '' };
   function craftShow() {
@@ -8984,9 +9185,11 @@ const GAME = (() => {
     if (pl) { pl.classList.toggle('boost', fv); pl.dataset.combo = G.combo >= 20 ? 3 : G.combo >= 10 ? 2 : G.combo >= 5 ? 1 : 0; }
     const mt = $('gMt'), mx = $('gMx'), sp = $('gSp'), ag = $('gAl');
     if (mt) mt.style.width = (fv ? (G.feverUntil - Date.now()) / (RULE.feverSec * 1000) * 100 : G.meter / RULE.fever * 100).toFixed(0) + '%';
-    if (mx) mx.textContent = fv ? '🧪 触媒タイム！ 原子 ×2' : 'あと ' + (RULE.fever - G.meter) + ' 問正解で 触媒タイム';
+    if (mx) mx.textContent = race() ? (fv ? '🔥 ニトロ！！ 点数 ×2' : 'あと ' + (RULE.fever - G.meter) + ' 問正解で ニトロ') : (fv ? '🧪 触媒タイム！ 原子 ×2' : 'あと ' + (RULE.fever - G.meter) + ' 問正解で 触媒タイム');
     if (sp) { const v = speedNow(); if (v > G.maxSpeed) G.maxSpeed = v; sp.textContent = started && v > 1.04 ? '⏩ ×' + v.toFixed(1) : ''; sp.classList.toggle('fast', v > 2); }
-    if (ag) ag.textContent = '⚛️ ' + G.atoms + ' 原子';
+    if (ag) ag.textContent = race() ? `🏁 ${fmt(G.score)} m・${Math.floor(G.score / LAP) + 1}周目` : '⚛️ ' + G.atoms + ' 原子';
+    const kh = $('gKmh'); if (kh) kh.innerHTML = `${G.kmh}<small> km/h　ギア ${gearNow()}</small>`;
+    if (race()) return void (G.mode === 'battle' && liveRank());
     const key = G.mi + ':' + G.have + ':' + (CR.done ? CR.done.id : ''); if (CR.key !== key) { CR.key = key; craftShow(); }
     if (G.mode === 'battle') liveRank();
   }
@@ -9009,7 +9212,7 @@ const GAME = (() => {
       const n = Math.ceil((G.startAt - t) / 1000);
       if (n !== G.lastN) {
         G.lastN = n; if (n <= 3) FX('beep');
-        el.innerHTML = `<div class="gcount"><small>${esc(cfgName(G.cfg, solo()))}</small><b>${n > 3 ? '…' : n}</b><small>${'⚛️ 正解するたびに 原子が手に入り、分子が組み上がる！ 続けて正解すると コンボで 原子が ふえる、8 問正解で 🧪触媒タイム（原子 ×2）。' + (solo() ? '時間は 正解でふえて、ミスで −2 秒。だんだん 時間の減りが速くなる' : '')}</small></div>`;
+        el.innerHTML = `<div class="gcount"><small>${esc(cfgName(G.cfg, solo()))}</small><b>${n > 3 ? '…' : n}</b><small>${(race() ? '🏎 正解するたびに アクセル！ 続けて正解すると ギアが上がって 加速、8 問正解で 🔥ニトロ（点数 ×2）。ミスすると スリップ。' + (G.mode === 'battle' ? 'クラスの友だちの車も 同じコースを走る！' : G.ghost ? '👻 自己ベストの ゴーストと 勝負！' : '') : '⚛️ 正解するたびに 原子が手に入り、分子が組み上がる！ 続けて正解すると コンボで 原子が ふえる、8 問正解で 🧪触媒タイム（原子 ×2）。') + (solo() ? '　時間は 正解でふえて、ミスで −2 秒。だんだん 時間の減りが速くなる' : '')}</small></div>`;
       }
       drawHud(); return;
     }
@@ -9034,7 +9237,7 @@ const GAME = (() => {
       if (t < G.startAt) { drawQ(); return; }
       if (wasCount) {
         wasCount = false; drawQ(); FX('go');
-        const m = cardMid(0.3); if (m && window.MLFX) MLFX.pop('START!', m[0], m[1], 'go');
+        const m = cardMid(0.3); if (m && window.MLFX) MLFX.pop(race() ? 'GO!' : 'START!', m[0], m[1], 'go');
       }
       if (solo()) { const rt = Date.now(), dt = G.tl ? rt - G.tl : 0; G.tl = rt; if (!reading()) { G.el += dt; G.left -= dt * speedNow(); } }
       if (timeLeft() <= 0 && !G.over) { G.over = true; G.dur = solo() ? G.el / 1000 : G.cfg.t; clearInterval(G.timer); clearTimeout(G.adv); FX('whistle'); onEnd(); return; }
@@ -9046,31 +9249,37 @@ const GAME = (() => {
   function afterGame() { const r = rw(); if (G.maxCombo > r.maxCombo) r.maxCombo = G.maxCombo; if (G.score > r.taBest) r.taBest = G.score; return Math.floor(G.score / 100); }
 
   /* ---------- ひとりで タイムアタック ---------- */
-  const taCfg = () => { if (!S.ta) S.ta = { m: 'mix' }; const c = S.ta; if (!c.r) c.r = 'fld'; if (!c.t) c.t = 60; if (c.u === undefined) c.u = ''; return c; };
-  const bestKey = cfg => 'mc:' + (cfg.r === 'unit' ? 'unit' : cfg.m); // 分子クラフトになってからの記録
+  const taCfg = () => { if (!S.ta) S.ta = { m: 'mix' }; const c = S.ta; if (!c.th) c.th = 'race'; if (!c.r) c.r = 'fld'; if (!c.t) c.t = 60; if (c.u === undefined) c.u = ''; return c; };
+  const bestKey = cfg => (race(cfg) ? 'rc:' : 'mc:') + (cfg.r === 'unit' ? 'unit' : cfg.m); // テーマごとの記録
   function startSolo() {
     const c = taCfg();
     if (c.r === 'unit' && !unitList(c).length) { toast('単元をえらんでください'); renderHub(); return; }
-    newGame({ r: c.r, m: c.m, u: c.u, t: +c.t, fig: c.fig ? 1 : 0, d3: c.d3 ? 1 : 0, fx: c.fx === 0 ? 0 : 1, ex: c.ex === 0 ? 0 : 1 }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
+    newGame({ r: c.r, m: c.m, u: c.u, t: +c.t, fig: c.fig ? 1 : 0, d3: c.d3 ? 1 : 0, fx: c.fx === 0 ? 0 : 1, ex: c.ex === 0 ? 0 : 1, th: c.th }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
+    const r = rw(), k = bestKey(G.cfg); if (race(G.cfg) && r.best[k] && r.bestDur && r.bestDur[k]) G.ghost = { s: r.best[k], d: r.bestDur[k] };
     playShell('スコア');
     runClock(endSolo);
   }
   function endSolo() {
     const r = rw(), key = bestKey(G.cfg), prev = r.best[key] || 0, rec = G.score > prev;
-    if (rec) r.best[key] = G.score;
+    if (rec) { r.best[key] = G.score; (r.bestDur = r.bestDur || {})[key] = Math.max(1, G.dur || 1); }
     const coins = afterGame(); save(); earn(coins); checkBadges();
     const dur = Math.round(G.dur || 0), mm = Math.floor(dur / 60) + '分' + (dur % 60) + '秒', big = bigMol();
-    G.share = `分子ラボ3D ⚛️分子クラフト（${cfgName(G.cfg, true)}）\n${G.made.length}個の分子をつくった！ いちばん大きいのは「${big ? big.name : 'まだなし'}」\n原子 ${G.atoms} 個・${fmt(G.score)}点・${G.ok}問正解\n最大${G.maxCombo}コンボ・段位「${levelOf(r.coins).name}」\n${PUBLIC_URL}`;
+    G.share = race() ? `分子ラボ3D 🏎化学グランプリ（${cfgName(G.cfg, true)}）\n${fmt(G.score)} m 走った！（${Math.floor(G.score / LAP)}周）最高 ${G.maxKmh} km/h\n${G.ok}問正解・最大${G.maxCombo}コンボ・段位「${levelOf(r.coins).name}」\n${PUBLIC_URL}` : `分子ラボ3D ⚛️分子クラフト（${cfgName(G.cfg, true)}）\n${G.made.length}個の分子をつくった！ いちばん大きいのは「${big ? big.name : 'まだなし'}」\n原子 ${G.atoms} 個・${fmt(G.score)}点・${G.ok}問正解\n最大${G.maxCombo}コンボ・段位「${levelOf(r.coins).name}」\n${PUBLIC_URL}`;
     if (rec && G.score > 0 && window.MLFX) setTimeout(() => { FX('fanfare'); MLFX.rain(3); MLFX.burst(80); }, 500);
     $('gQ').innerHTML = `<div class="gres">${rec && G.score > 0 ? '<div class="gnew">新記録</div>' : ''}
-      <div class="gscore">${fmt(G.score)}<small> 点</small></div>
-      ${madeHTML()}
-      <p class="gphrase">⚛️ 原子 <b>${G.atoms}</b> 個　✅ <b>${G.ok}</b> 問正解　⏱ <b>${mm}</b>　🧪 触媒タイム <b>${G.feverN}</b> 回</p>
+      <div class="gscore">${fmt(G.score)}<small> ${race() ? 'm' : '点'}</small></div>
+      ${race() ? raceResHTML(prev) : madeHTML()}
+      <p class="gphrase">${race() ? `🏁 <b>${Math.floor(G.score / LAP)}</b> 周　⚡ 最高 <b>${G.maxKmh}</b> km/h` : `⚛️ 原子 <b>${G.atoms}</b> 個`}　✅ <b>${G.ok}</b> 問正解　⏱ <b>${mm}</b>　${race() ? '🔥 ニトロ' : '🧪 触媒タイム'} <b>${G.feverN}</b> 回</p>
       <p class="note">✕ ミス ${G.miss}　⚡ 最大 ${G.maxCombo} コンボ　⏩ 時間の減り 最高 ×${G.maxSpeed.toFixed(1)}　🪙 +${coins}</p>
       <p class="note">${esc(cfgName(G.cfg, true))} のベスト：${fmt(Math.max(prev, G.score))} 点</p>
       ${reviewHTML()}
       <div class="grow"><button type="button" class="pbtn big" data-g="again">↺ もう一度</button><button type="button" class="pbtn ghost" data-g="brag">📣 自慢する</button><button type="button" class="pbtn ghost" data-g="hub">◀ もどる</button></div></div>`;
     $('gCb').innerHTML = '';
+  }
+  function raceResHTML(prev) {
+    const nextLap = (Math.floor(G.score / LAP) + 1) * LAP;
+    const vs = prev ? (G.score > prev ? `<b class="ok">👻 ゴーストに勝った！（+${fmt(G.score - prev)} m）</b>` : `<span>👻 ゴーストまで あと ${fmt(prev - G.score)} m</span>`) : '';
+    return `<div class="gmade"><div class="gmbig"><small>走ったきょり</small><b>🏎 ${fmt(G.score)} m</b>${vs}<em class="togo">あと <i>${fmt(nextLap - G.score)}</i> m で ${nextLap / LAP} 周</em></div></div>`;
   }
   const bigMol = () => { let b = null; (G.made || []).forEach(id => { const e = LIB.find(x => x.id === id); if (e && (!b || molSize(e) >= molSize(b))) b = e; }); return b; };
   // 結果：つくった分子の ならび と、次の分子まで あと何原子
@@ -9101,7 +9310,7 @@ const GAME = (() => {
   function rangeHTML(cfg, attr, busy, uc) {
     const dis = busy ? ' disabled' : '';
     const seg = (key, opts, cur) => `<div class="seg wrap">${opts.map(o => `<button type="button" data-${attr}="${key}:${o[0]}" aria-pressed="${String(cur) === String(o[0])}"${dis}>${o[1]}</button>`).join('')}</div>`;
-    let h = `<div class="gfld"><span class="gfl">出題</span>${seg('r', [['fld', '分野で選ぶ'], ['unit', '単元で選ぶ']], cfg.r || 'fld')}</div>`;
+    let h = `<div class="gfld"><span class="gfl">ゲーム</span>${seg('th', THEMES, race(cfg) ? 'race' : 'craft')}</div><div class="gfld"><span class="gfl">出題</span>${seg('r', [['fld', '分野で選ぶ'], ['unit', '単元で選ぶ']], cfg.r || 'fld')}</div>`;
     if ((cfg.r || 'fld') === 'fld') h += `<div class="gfld"><span class="gfl">分野</span>${seg('m', MODES, cfg.m)}</div>`;
     else {
       const sel = new Set(String(cfg.u || '').split(',').filter(Boolean)), list = LESSONS.filter(l => l.course === uc);
@@ -9122,6 +9331,7 @@ const GAME = (() => {
     const sel = new Set(String(cfg.u || '').split(',').filter(Boolean));
     const join = () => LESSONS.filter(l => sel.has(l.id)).map(l => l.id).join(',');
     if (key === 'r') return { r: val };
+    if (key === 'th') return { th: val };
     if (key === 'm') return { m: val };
     if (key === 't') return { t: +val };
     if (key === 'ut') { if (sel.has(val)) sel.delete(val); else sel.add(val); return { r: 'unit', u: join() }; }
@@ -9142,7 +9352,7 @@ const GAME = (() => {
     leave(); leaveBattle();
     const cfg = taCfg(), r = rw(), best = r.best[bestKey(cfg)] || 0, hasDb = !!base();
     main.innerHTML = `<div class="ghub">
-      <section class="gpanel"><h3>⚛️ 分子クラフト</h3><p class="note">正解するたびに 原子が手に入り、分子が 1 つずつ組み上がる！ H₂ → H₂O → CO₂ → … → グルコース → スクロース。続けて正解すると コンボで 原子がふえる（5・10・20・40 コンボで 2〜5 個）、8 問正解で 🧪触媒タイム（原子 ×2）。どこまで 大きな分子を つくれる？</p>
+      <section class="gpanel"><h3>${race(cfg) ? '🏎 化学グランプリ' : '⚛️ 分子クラフト'}</h3><p class="note">${race(cfg) ? '正解するたびに アクセル！ 続けて正解すると ギアが上がって加速（5・10・20・40 コンボで ギア 2〜5、点数 ×2〜×5）、8 問正解で 🔥ニトロ（点数 ×2）。ミスすると スリップ。自己ベストの 👻ゴーストと 勝負。どこまで 走れる？' : '正解するたびに 原子が手に入り、分子が 1 つずつ組み上がる！ H₂ → H₂O → CO₂ → … → グルコース → スクロース。続けて正解すると コンボで 原子がふえる（5・10・20・40 コンボで 2〜5 個）、8 問正解で 🧪触媒タイム（原子 ×2）。どこまで 大きな分子を つくれる？'}</p>
         ${rangeHTML(cfg, 'ta', false, S.ucourse || 'kiso')}
         <div class="gfld"><button type="button" class="pbtn big" data-g="solo">▶ スタート</button><span class="gbestv">ベスト <b>${fmt(best)}</b> 点</span><button type="button" class="pbtn ghost" data-g="zukan">📗 分子図鑑 ${zukan().length}/${ladder().length}</button><button type="button" class="pbtn ghost" data-g="sfx" title="効果音">${S.sfx === false ? '🔇 効果音 オフ' : '🔊 効果音 オン'}</button></div>
         <button type="button" class="pbtn ghost" data-g="rewards">🏅 段位・バッジを見る</button></section>
@@ -9205,7 +9415,7 @@ const GAME = (() => {
   /* 先生：部屋 */
   let H = null;
   function makeRoom() {
-    const cfg = { r: 'fld', m: 'mix', u: '', t: 60, fig: 0, d3: 0, fx: 1, ex: 1 };
+    const cfg = { r: 'fld', m: 'mix', u: '', t: 60, fig: 0, d3: 0, fx: 1, ex: 1, th: 'race' };
     const tryOne = n => {
       const code = String(1000 + Math.floor(Math.random() * 9000));
       return api('GET', ROOM(code)).then(v => {
