@@ -1344,6 +1344,57 @@ function fxWarn(obj, sec, then, glowAt) {
     if (glow) { glow.scale.setScalar(0.15 + k * 0.7); glow.material.opacity = 0.95 * k; glow.material.color.setHSL(0.08 - 0.05 * k, 1, 0.6); }
   }, () => { obj.position.copy(base); obj.scale.copy(s0); if (obj.parent) then(); });
 }
+// ひび：器具のガラスに、少しずつ ひびが走って そのまま残る（すぐには割れない）
+// obj：ひびをつける器具（いっしょに回る）、wp：ひびの中心（世界の位置）
+function fxCrack(obj, wp, size, slow) {
+  size = size || 1;
+  const g = new THREE.Group(); g.position.copy(wp); g.quaternion.copy(R.camera.quaternion);
+  R.scene.add(g); if (obj) obj.attach(g);
+  const segs = [], grow = (x, y, a, len, depth) => {
+    const n = 3 + Math.floor(Math.random() * 3); let px = x, py = y;
+    for (let i = 0; i < n; i++) {
+      a += (Math.random() - 0.5) * 0.8; const l = len / n * (0.7 + Math.random() * 0.6);
+      const nx = px + Math.cos(a) * l, ny = py + Math.sin(a) * l;
+      segs.push({ p: [px, py, nx, ny], d: depth * 3 + i });
+      if (depth < 1 && Math.random() < 0.4) grow(nx, ny, a + (Math.random() < 0.5 ? 0.8 : -0.8), len * 0.45, depth + 1);
+      px = nx; py = ny;
+    }
+  };
+  for (let i = 0; i < 4; i++) grow(0, 0, i / 4 * Math.PI * 2 + Math.random(), 0.55 * size, 0);
+  const maxD = Math.max(...segs.map(q => q.d)) + 1;
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(new Array(segs.length * 6).fill(0), 3));
+  const lines = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, depthTest: false }));
+  const lines2 = new THREE.LineSegments(geo, new THREE.LineBasicMaterial({ color: 0x46505a, transparent: true, opacity: 0.55, depthTest: false }));
+  lines2.position.set(0.012, -0.012, 0); lines.renderOrder = lines2.renderOrder = 9; g.add(lines2, lines);
+  sfx.tick();
+  const dur = (slow || 1.6) * 1000, t0 = performance.now();
+  (function step() {
+    if (!g.parent) return;
+    const k = Math.min(1, (performance.now() - t0) / dur), arr = geo.attributes.position.array;
+    segs.forEach((q, i) => { const f = Math.max(0, Math.min(1, k * maxD * 1.1 - q.d)); const [x0, y0, x1, y1] = q.p; arr.set([x0, y0, 0.03, x0 + (x1 - x0) * f, y0 + (y1 - y0) * f, 0.03], i * 6); });
+    geo.attributes.position.needsUpdate = true;
+    if (k < 1) requestAnimationFrame(step);
+  })();
+  setTimeout(() => sfx.tick(), dur * 0.55);
+  return g;
+}
+// ゴム栓がおし上げられて 飛ぶ（中の圧力が上がる）
+function fxPopStopper(stp, then) {
+  const p0 = stp.position.clone(), r0 = stp.rotation.clone(), t0 = performance.now();
+  (function step() {
+    if (!stp.parent) return;
+    const e = (performance.now() - t0) / 1000;
+    if (e < 2.4) { const k = e / 2.4; stp.position.set(p0.x + (Math.random() - 0.5) * 0.02 * k, p0.y + 0.05 * k * k, p0.z); }
+    else {
+      const t = e - 2.4;
+      if (t < 0.02 + 1 / 60) { sfx.pop(); fxLeak(stp.getWorldPosition(new THREE.Vector3()), 0xf4f6f8, 8); }
+      stp.position.set(p0.x + 0.9 * t, p0.y + 0.05 + 3.2 * t - 4.9 * t * t, p0.z + 0.3 * t);
+      stp.rotation.set(r0.x + t * 6, r0.y, r0.z + t * 4);
+      if (stp.position.y < 0.15) { stp.position.y = 0.15; if (then) then(); return; }
+    }
+    requestAnimationFrame(step);
+  })();
+}
 // ガスもれ：目に見えないガスを、うすい雲で見えるようにする
 function fxLeak(pos, color, n) {
   fxParticles(pos, n || 3, { amb: true, life: 2.4, size: 0.18, op: 0.22, g: -0.25, vel: () => new THREE.Vector3((Math.random() - 0.5) * 0.5, 0.25 + Math.random() * 0.3, (Math.random() - 0.5) * 0.5), grow: k => 1 + k * 5, color: () => new THREE.Color(color || 0xc9e7b0), fade: 1 });
@@ -1498,7 +1549,7 @@ PR['p-burner'] = {
       if (s.matchOn && s.open && s.gas > 0 && !s.lit) {
         const p = s.m.flame.g.getWorldPosition(new THREE.Vector3());
         if (s.leak > 1.2) {
-          fxBoom(p.clone().add(new THREE.Vector3(0, 0.5, 0)), 0.7 + Math.min(0.6, s.leak / 8));
+          fxFlare(p.clone().add(new THREE.Vector3(0, 0.3, 0)), 0.9 + Math.min(0.6, s.leak / 8)); // 「ボッ」と炎がふき出す（爆発のように壊れるわけではない）
           danger({ title: 'ガスを出してから、マッチを近づけた', what: 'まわりにたまっていたガスに一気に火がつき、<b>「ボン！」と炎がふき出す</b>（爆発的な燃焼）。顔・前髪・手をやけどする。', why: 'ガスは目に見えず、においも少ない。出しっぱなしにした時間（約' + Math.round(s.leak) + '秒）だけ、空気とまざった燃えやすいガスが筒のまわりに広がっている。', fix: '<b>マッチに火をつけて筒の口に近づけてから</b>、ガス調節ねじを少しずつ開く。火がつかなかったら、すぐにガスを止めて、少し待ってからやり直す。', retry: true });
         } else { fxFlare(p, 0.6); }
         s.lit = true; s.matchOn = false; if (s.step <= 3) s.step = 4;
@@ -1545,17 +1596,15 @@ PR['p-lamp'] = {
         fxPoolFire(new THREE.Vector3(0.8, 0, 0.6), 1.3, 2.5);
         danger({ title: '火がついたまま、アルコールを足した', what: '注いでいるアルコールに火がうつり、<b>炎がアルコールのびんや手までさかのぼる</b>。こぼれたアルコールが机の上で燃え広がり、大やけどや火事になる。', why: 'アルコールはとても燃えやすく、気化した蒸気にも火がつく。火の近くで注ぐと、蒸気から液体へ一気に燃えうつる。', fix: '<b>必ずふたをして火を消し、ランプが冷めてから</b>アルコールを足す。8分目くらいまで。', retry: true });
       } else {
-        // ① 中で蒸気に火がつき、ランプがふるえる → ② 破裂 → ③ こぼれたアルコールが燃える
-        fxWarn(m.g, 0.55, () => {
-          fxShatter(new THREE.Vector3(0, 0.8, 0), 0.9, m.g, () => {
-            fxBoom(new THREE.Vector3(0, 1.0, 0), 0.6);
-            R.labels.forEach(L => { if (L.part) L.el.hidden = true; }); // こわれた器具の名前は消す
-            fxPoolFire(new THREE.Vector3(0, 0, 0), 1.6, 3);
-          });
-        }, new THREE.Vector3(0, 0.9, 0));
+        // ① 炎が中へ入り、中の蒸気に「ボッ」と火がつく → ② 口から炎がふき出す → ③ その熱でガラスにひび（すぐには割れない）
+        const inner = new THREE.Mesh(new THREE.SphereGeometry(0.8, 18, 12), fxMat(0xffa64d, 0, true)); inner.position.set(0, 0.85, 0); inner.scale.set(1.2, 0.8, 1.2); m.g.add(inner);
+        const t0 = performance.now();
+        (function glow() { if (!inner.parent) return; const e = (performance.now() - t0) / 1000; inner.material.opacity = e < 0.25 ? e / 0.25 * 0.75 : Math.max(0, 0.75 - (e - 0.25) * 0.6); if (e < 1.6) requestAnimationFrame(glow); else m.g.remove(inner); })();
+        setTimeout(() => { if (state.pr !== s) return; fxFlare(new THREE.Vector3(0, 2.0, 0), 0.55); }, 180);
+        setTimeout(() => { if (state.pr !== s) return; fxCrack(m.g, m.g.localToWorld(new THREE.Vector3(0.55, 0.75, 0.6)), 1.0, 1.8); }, 1600);
         danger(kind === 'blow'
-          ? { title: '火を息で吹き消した', what: '炎が芯をつたって<b>ランプの中に入り、中にたまったアルコールの蒸気に引火</b>。ランプが破裂して、燃えるアルコールが飛び散る。', why: '息を吹きかけると、炎がゆれて芯のすき間から中へ押しこまれることがある。ランプの中には、気化したアルコールと空気がまざっている。', fix: '<b>ふたを横からそっとかぶせて</b>消す（酸素をさえぎる）。一度ふたをとって冷まし、もう一度ふたをする。', retry: true }
-          : { title: 'アルコールが少ないまま、火をつけた', what: 'ランプの中のすき間に、気化したアルコールと空気がまざってたまっている。そこに火が入り、<b>ランプの中で爆発して破裂</b>する。', why: 'アルコールが少ないほど、中の空間が広くなり、燃えやすい蒸気がたくさんたまる。', fix: 'アルコールは<b>8分目くらい</b>まで入れてから火をつける。少なくなったら、火を消して冷ましてから足す。', retry: true });
+          ? { title: '火を息で吹き消した', what: '炎が芯をつたって<b>ランプの中に入り、中にたまったアルコールの蒸気に引火</b>。中で「ボッ」と燃えて、口から炎がふき出す。その熱で<b>ガラスにひびが入る</b>ことがある（画面のように）。ひびのあるランプを使い続けたり、ひどいときは<b>ランプが割れて</b>、燃えるアルコールが飛び散り火事になる。', why: '息を吹きかけると、炎がゆれて芯のすき間から中へ押しこまれることがある。ランプの中には、気化したアルコールと空気がまざっている。', fix: '<b>ふたを横からそっとかぶせて</b>消す（酸素をさえぎる）。一度ふたをとって冷まし、もう一度ふたをする。', retry: true }
+          : { title: 'アルコールが少ないまま、火をつけた', what: 'ランプの中のすき間に、気化したアルコールと空気がまざってたまっている。そこに火が入ると、<b>ランプの中で「ボッ」と燃え</b>、口から炎がふき出す。ガラスに<b>ひびが入ったり</b>、ひどいときは<b>割れて</b>燃えるアルコールが飛び散る。', why: 'アルコールが少ないほど、中の空間が広くなり、燃えやすい蒸気がたくさんたまる。', fix: 'アルコールは<b>8分目くらい</b>まで入れてから火をつける。少なくなったら、火を消して冷ましてから足す。', retry: true });
       }
     };
     R.tick = t => {
@@ -1588,7 +1637,7 @@ PR['p-lamp'] = {
   },
   act(a, v) {
     const s = state.pr;
-    if (s.broken && a !== 'reset') { toast('ランプがこわれてしまった。「はじめから」でやり直そう。', 'info'); renderCard(); return; }
+    if (s.broken && a !== 'reset') { toast('ひびの入ったランプは使えない。「はじめから」でやり直そう。', 'info'); renderCard(); return; }
     if (a === 'amt') { s.amount = v; s.rebuildAlc(); if (v < 0.5) toast('少なすぎる！ 中に気化したアルコールがたまって、引火・爆発する危険がある。8分目くらいに。', 'ng'); else if (v > 0.9) toast('入れすぎると、こぼれたり芯の近くまで来たりして危険。8分目くらいに。', 'info'); }
     if (a === 'wick') { s.wick = v; if (v > 8) toast('芯を出しすぎると炎が大きくなりすぎる。5 mm くらいに。', 'info'); }
     if (a === 'uncap') {
@@ -2355,7 +2404,7 @@ PR['p-distill'] = {
     let rcLiq = null; rc.g.children.forEach(c => { if (c.renderOrder === 1) rcLiq = c; });
     rcLiq.material.color.set(0xeaf6ff);
     const seal = rubberStopper(0.2, 0.16, 0.18); seal.position.set(2.75, 3.32 * 0.42 + 0.05, 0); g.add(seal);
-    s.rcG = rc.g; s.sealM = seal; s.flaskPos = new THREE.Vector3(FX, FY + 0.9, 0); s.neckPos = new THREE.Vector3(FX, NECK_TOP, 0);
+    s.rcG = rc.g; s.sealM = seal; s.sealPos = seal.position.clone(); s.flaskPos = new THREE.Vector3(FX, FY + 0.9, 0); s.neckPos = new THREE.Vector3(FX, NECK_TOP, 0);
     // 中の液
     const fLiq = new THREE.Group(); fg.add(fLiq);
     const flows = bubbleSet(10, 0x8fc9ef, 0.05); flows.forEach(f => g.add(f));
@@ -2429,7 +2478,7 @@ PR['p-distill'] = {
     const s = state.pr;
     if (a === 'set') { const [k, val] = v.split(':'); s[k] = val === 'true' ? true : val === 'false' ? false : val; s.result = null; s.running = false; }
     if (a === 'dheat') {
-      if (s.rcG) s.rcG.visible = true; dangerClose();
+      if (s.rcG) s.rcG.visible = true; if (s.sealM && s.sealPos) { s.sealM.position.copy(s.sealPos); s.sealM.rotation.set(0, 0, 0); } dangerClose();
       const bad = [];
       if (s.therm !== 'branch') bad.push('温度計の球部は、枝の付け根の高さにする（出ていく蒸気の温度をはかるため。液の中では液の温度になってしまう）');
       if (!s.stone) bad.push('沸騰石を入れないと、突沸（急に激しく沸騰する）して危険');
@@ -2444,8 +2493,8 @@ PR['p-distill'] = {
         if (state.pr !== me) return;
         if (hz === 'seal') {
           const p = me.rcG.position.clone().add(new THREE.Vector3(0, 0.8, 0));
-          fxWarn(me.rcG, 0.6, () => fxShatter(p, 0.7, me.rcG, () => { fxBoom(p, 0.55); me.sealM.visible = false; }));
-          danger({ title: '受け器をゴム栓で密閉したまま、加熱した', what: '出口のない装置の中で、蒸気と熱くなった空気がふくらみ、圧力がどんどん上がる。<b>いちばん弱い所（受け器やつなぎ目）が破裂</b>して、ガラスの破片と熱い液が飛び散る。', why: '気体は温度が上がると体積がふえる。閉じこめると、その分だけ圧力が上がる。', fix: '受け器は<b>密閉しない</b>（アルミはくをかぶせる・脱脂綿をつめるなど、空気が出入りできるようにする）。', retry: true });
+          fxPopStopper(me.sealM); // 中の圧力が上がって、ゴム栓が少しずつおし上げられ「ポン」と飛ぶ
+          setTimeout(() => { if (state.pr === me) danger({ title: '受け器をゴム栓で密閉したまま、加熱した', what: '出口のない装置の中で、蒸気と熱くなった空気がふくらみ、圧力がどんどん上がる。まず<b>ゴム栓が少しずつおし上げられて「ポン」と飛ぶ</b>（画面のように）。栓が飛ばないと、<b>つなぎ目がはずれて</b>熱い蒸気がふき出したり、<b>ガラスが割れたり</b>する。', why: '気体は温度が上がると体積がふえる。閉じこめると、その分だけ圧力が上がる。', fix: '受け器は<b>密閉しない</b>（アルミはくをかぶせる・脱脂綿をつめるなど、空気が出入りできるようにする）。', retry: true }); }, reduceMotion ? 50 : 3000);
         } else {
           fxBump(me.neckPos.clone().add(new THREE.Vector3(0, 0.15, 0)), 0xb39ddb, new THREE.Vector3(0.1, 1, 0), 0.6);
           danger(hz === 'stone'
@@ -3173,11 +3222,11 @@ function seqHazard(s, o, st) {
   const kind = /逆流|割れ/.test(w) ? 'crack' : /突沸|飛び散|飛び出|ふき出/.test(w) ? 'bump' : /爆発|破裂|引火/.test(w) ? 'boom' : /有毒|中毒/.test(w) ? 'gas' : null;
   if (!kind) return;
   const at = s.hzAt ? s.hzAt(kind) : new THREE.Box3().setFromObject(R.group).getCenter(new THREE.Vector3());
-  if (kind === 'crack') { fxShatter(at, 0.55); if (/逆流/.test(w)) fxBump(at, 0xeef6f8, new THREE.Vector3(0, 1, 0), 0.35); }
+  if (kind === 'crack') { if (/逆流/.test(w)) fxLeak(at, 0xeef6f8, 4); setTimeout(() => { if (state.pr === s) fxCrack(s.hzTube || null, at.clone().add(new THREE.Vector3(0, 0, 0.35)), 0.6, 1.6); }, /逆流/.test(w) ? 1500 : 900); }
   if (kind === 'bump') fxBump(at, 0xbfe2f5, new THREE.Vector3(0, 1, 0), 0.6);
-  if (kind === 'boom') fxBoom(at, 0.5);
+  if (kind === 'boom') fxFlare(at, 0.5);
   if (kind === 'gas') { for (let i = 0; i < 4; i++) setTimeout(() => state.pr === s && fxLeak(at, 0x8e44ad, 5), i * 250); stageHit(); }
-  danger({ title: 'えらんだ操作：' + o.text, what: w, fix: st.do + '。<br>' + st.why });
+  danger({ title: 'えらんだ操作：' + o.text, what: w + (kind === 'crack' ? '（画面では、まず ひびが入ったところ。そのまま加熱を続けると割れる）' : ''), fix: st.do + '。<br>' + st.why });
 }
 
 // 細かい部品
@@ -3512,6 +3561,7 @@ const REAGENTS = [
   { id: 'naoh', name: '水酸化ナトリウム水溶液', c: 'base' },
   { id: 'nacl', name: '食塩水', c: 'salt' },
   { id: 'cuso4', name: '硫酸銅(II)水溶液', c: 'cu' },
+  { id: 'bleach', name: '塩素系漂白剤（うすめたもの）', c: 'cl' },
   { id: 'btb', name: 'BTB溶液（数滴）', c: 'btb', drop: true },
   { id: 'pp', name: 'フェノールフタレイン（数滴）', c: 'pp', drop: true },
 ];
@@ -3581,9 +3631,23 @@ function containerPlay(cfg) {
         }
         const col = playColor(P);
         P.mat.color.set(col.c); P.mat.opacity = col.op;
-        // あわ（沸騰）
+        // 混ぜると危険：塩素系漂白剤 ＋ 酸 → 塩素。すぐには変わらず、少しずつ泡が出て、黄緑色の気体がたまっていく
+        const mixing = (P.cl || 0) > 0 && P.acid > P.base + 1e-9 && P.mL > 0;
+        const nowS = performance.now() / 1000, rdt = Math.min(0.2, nowS - (P.lastS || nowS)); P.lastS = nowS; // 本当の経過時間
+        if (mixing) {
+          P.mixT = (P.mixT || 0) + rdt;
+          const k = Math.min(1, P.mixT / 14);
+          P.mat.color.lerp(new THREE.Color(0xdfe7a0), k * 0.45);
+          P.gasT = (P.gasT || 0) + rdt;
+          if (P.mixT > 4 && P.gasT > 1.1 - k * 0.6) { P.gasT = 0; fxLeak(m.g.localToWorld(new THREE.Vector3(0, P.hOf(P.mL) + 0.25, 0)), 0xc8dc4a, 2 + Math.round(k * 4)); }
+          if (P.mixT > 12 && !P.mixWarned) {
+            P.mixWarned = true;
+            danger({ title: '塩素系漂白剤と酸（塩酸）を混ぜた', what: '混ぜた直後は<b>ほとんど変化が見えない</b>。でも少しずつ小さな泡が出て、<b>黄緑色で有毒な塩素</b>が発生し、まわりにたまっていく（画面のように）。気づかずに吸いこむと、目・のどをいため、せきや息苦しさが出る。', why: '次亜塩素酸ナトリウム NaClO と塩酸が反応する：NaClO ＋ 2HCl → NaCl ＋ H₂O ＋ Cl₂。においに気づいたときには、もう吸いこんでいる。', fix: '<b>「まぜるな危険」の表示がある洗剤どうしは混ぜない</b>（酸性の洗剤・クエン酸・酢 などとも）。もし混ぜてしまったら、すぐにその場をはなれて<b>換気</b>する。', real: 'いちど出た気体は消えないので、「中身を捨てる」までは泡が出つづけます。' });
+          }
+        }
+        // あわ（沸騰、または気体が発生している）
         P.bub.forEach((b, i) => {
-          b.visible = P.heat && P.T >= 99 && P.mL > 0;
+          b.visible = (P.heat && P.T >= 99 && P.mL > 0) || (mixing && P.mixT > 1.5 && i < 3 + Math.min(10, P.mixT * 0.8));
           if (!b.visible) return;
           const kk = (t * 0.9 + b.userData.ph) % 1, yy = cfg.prof[0][1] + 0.05 + kk * Math.max(0.05, h - cfg.prof[0][1] - 0.08), r = rAt(yy) * 0.7 * ((i * 37 % 10) / 10);
           b.position.set(Math.cos(i * 2.4) * r, yy, Math.sin(i * 2.4) * r);
@@ -3636,6 +3700,7 @@ function containerPlay(cfg) {
         if (r.c === 'base') P.base += mol;
         if (r.c === 'salt') P.salt += mol;
         if (r.c === 'cu') P.cu += mol;
+        if (r.c === 'cl') P.cl = (P.cl || 0) + mol;
         if (r.c === 'btb') P.btb = true;
         if (r.c === 'pp') P.pp = true;
         // 中和してから、余った OH⁻ が Cu²⁺ と沈殿をつくる
@@ -3643,13 +3708,13 @@ function containerPlay(cfg) {
         if (P.cu > 0 && extraOH > 0) { const n = Math.min(P.cu, extraOH / 2); P.cu -= n; P.cuoh += n; }
         if (cfg.warnFill && P.mL > cfg.warnFill && cfg.heat !== 'none') toast(cfg.warnFillMsg, 'info');
       }
-      if (a === 'empty') { Object.assign(P, { mL: 0, acid: 0, base: 0, salt: 0, cu: 0, cuoh: 0, btb: false, pp: false, residue: null, boilMsg: false }); }
+      if (a === 'empty') { Object.assign(P, { mL: 0, acid: 0, base: 0, salt: 0, cu: 0, cuoh: 0, cl: 0, mixT: 0, mixWarned: false, btb: false, pp: false, residue: null, boilMsg: false }); }
       if (a === 'heat') {
         if (cfg.heat === 'none') return;
         if (!P.heat && P.mL === 0 && cfg.heat !== 'dish') {
           const mm = R.group.children[0], at = mm.localToWorld(new THREE.Vector3(0, 0.5, 0));
-          setTimeout(() => { if (R.group.children[0] !== mm || !state.play || !state.play.heat || state.play.mL > 0) return; fxWarn(mm, 0.45, () => fxShatter(at, 0.8, mm)); state.play.heat = false; R.labels.forEach(L => { if (L.part) L.el.hidden = true; });
-            danger({ title: 'からっぽのガラス器具を、加熱した', what: '中に液がないので、ガラスの一部だけがどんどん熱くなり、<b>「ピシッ」とひびが入って割れる</b>。', why: '液があれば熱が液に逃げて温度が上がりすぎない。空だと、熱いところと冷たいところの差でガラスがゆがみ、割れる。', fix: '<b>中に液を入れてから</b>加熱する（加熱できる器具だけ）。ビーカーやフラスコは金網をしく。', retry: true }); }, reduceMotion ? 50 : 1600);
+          setTimeout(() => { if (R.group.children[0] !== mm || !state.play || !state.play.heat || state.play.mL > 0) return; fxCrack(mm, mm.localToWorld(new THREE.Vector3(0.55, 0.7, 0.9)), 1.1, 2.0); state.play.heat = false;
+            danger({ title: 'からっぽのガラス器具を、加熱した', what: '中に液がないので、ガラスの一部だけがどんどん熱くなり、<b>「ピシッ」とひびが入る</b>（画面のように）。ひびの入った器具を加熱したり、液を入れたりすると、そこから<b>割れる</b>。', why: '液があれば熱が液に逃げて温度が上がりすぎない。空だと、熱いところと冷たいところの差でガラスがゆがみ、割れる。', fix: '<b>中に液を入れてから</b>加熱する（加熱できる器具だけ）。ビーカーやフラスコは金網をしく。', retry: true }); }, reduceMotion ? 50 : 3500); // しばらく加熱を続けると、ひびが入る
         }
         if (!P.heat && cfg.heatWarn) toast(cfg.heatWarn, 'info');
         P.heat = !P.heat;
@@ -3744,8 +3809,8 @@ PLAY.lamp = {
       else {
         P.lit = false; const mm = R.group.children[0];
         const c1 = mm.localToWorld(new THREE.Vector3(0, 1.0, 0)), c2 = mm.localToWorld(new THREE.Vector3(0, 0.8, 0)), c0 = mm.localToWorld(new THREE.Vector3(0, 0, 0));
-        fxWarn(mm, 0.55, () => fxShatter(c2, 0.9, mm, () => { fxBoom(c1, 0.6); fxPoolFire(c0, 1.6, 3); R.labels.forEach(L => { if (L.part) L.el.hidden = true; }); }), c2);
-        danger({ title: '火を息で吹き消した', what: '炎が芯をつたって<b>ランプの中に入り、中にたまったアルコールの蒸気に引火</b>。ランプが破裂して、燃えるアルコールが飛び散る。', why: '息を吹きかけると、炎がゆれて芯のすき間から中へ押しこまれることがある。ランプの中には、気化したアルコールと空気がまざっている。', fix: '<b>ふたを横からそっとかぶせて</b>消す（酸素をさえぎる）。', retry: true });
+        fxFlare(c1.clone().add(new THREE.Vector3(0, 1.0, 0)), 0.55); setTimeout(() => { if (R.group.children[0] === mm) fxCrack(mm, c2.clone().add(new THREE.Vector3(0.55, 0, 0.6)), 1.0, 1.8); }, 1500);
+        danger({ title: '火を息で吹き消した', what: '炎が芯をつたって<b>ランプの中に入り、中にたまったアルコールの蒸気に引火</b>。中で「ボッ」と燃えて、口から炎がふき出す。その熱で<b>ガラスにひびが入る</b>ことがある（画面のように）。ひびのあるランプを使い続けたり、ひどいときは<b>ランプが割れて</b>、燃えるアルコールが飛び散り火事になる。', why: '息を吹きかけると、炎がゆれて芯のすき間から中へ押しこまれることがある。ランプの中には、気化したアルコールと空気がまざっている。', fix: '<b>ふたを横からそっとかぶせて</b>消す（酸素をさえぎる）。', retry: true });
       }
     }
     renderCard();
