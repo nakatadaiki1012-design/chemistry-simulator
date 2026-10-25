@@ -860,7 +860,9 @@ body.gm-on { overflow: hidden; }
 .gexp .pbtn { margin-left: auto; display: flex; gap: 8px; align-items: baseline; } .gexp .pbtn small { font-size: 11px; opacity: .7; }
 @keyframes gIn { from { opacity: 0; transform: translateY(4px); } }
 .grev { width: 100%; text-align: left; border: 1.5px solid var(--line); border-radius: 6px; background: var(--panel); padding: 8px 12px; }
-.grev summary { cursor: pointer; font-weight: 800; }
+.grevh { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 4px; } .grevh .seg button { font-size: 13px; }
+.grn { display: inline-grid; place-items: center; min-width: 22px; height: 20px; margin-right: 4px; border-radius: 4px; background: var(--chip); font: 700 11px var(--font-data); color: var(--muted); vertical-align: 2px; }
+.grq b.ok { color: var(--ok); } .grq b.ng { color: var(--warm); }
 .grevi { border-top: 1px solid var(--line); padding: 8px 0; } .grevi:first-of-type { margin-top: 6px; }
 .grq { font-weight: 700; } .gra { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 4px 0; font-weight: 700; } .gra .ng { color: var(--warm); } .gra .ok { color: var(--ok); }
 .grevi p { margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--muted); }
@@ -8953,7 +8955,6 @@ const GAME = (() => {
     dlg.addEventListener('click', e => { if (e.target === dlg || e.target.closest('[data-x]')) dlg.close(); });
     root.addEventListener('click', onClick);
     root.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target.id === 'jName' || e.target.id === 'jCode')) join(); });
-    root.addEventListener('toggle', e => { if (G && e.target.classList && e.target.classList.contains('grev')) G.revOpen = e.target.open; }, true);
     root.addEventListener('change', e => {
       if (e.target.id === 'dbUrl') { S.db = e.target.value.trim().replace(/\/+$/, ''); save(); }
       if (e.target.dataset.tasel && e.target.value) soloRange('upto', e.target.value);
@@ -9337,10 +9338,10 @@ const GAME = (() => {
     } else {
       G.combo = 0; G.miss++; G.meter = Math.max(0, G.meter - 2); // ミスで メーターは 少し へるだけ
       if (solo()) { G.left -= RULE.miss; timePop('−' + RULE.miss / 1000 + '秒', 'tminus'); }
-      const ac = q.choices.find(x => (typeof x === 'string' ? x : x.v) === q.answer);
-      (G.wrong = G.wrong || []).push({ q: q.q, mine: typeof c === 'string' ? esc(c) : c.html, ans: typeof ac === 'string' ? esc(ac) : ac ? ac.html : esc(q.answer), ex: q.explain || '' });
       FX('miss'); drawQ(); flash('ng');
     }
+    const ac = q.choices.find(x => (typeof x === 'string' ? x : x.v) === q.answer);
+    (G.log = G.log || []).push({ ok: q.right, q: q.q, mine: typeof c === 'string' ? esc(c) : c.html, ans: typeof ac === 'string' ? esc(ac) : ac ? ac.html : esc(q.answer), ex: q.explain || '' });
     pushScore();
     // 解説あり：正解は少し見せて自動で次へ（タップで すぐ次へ）。まちがいは「次へ」をおすまで解説を出したまま
     const wait = !exOn() ? (q.right ? 300 : 1100) : q.right ? 1500 : 0;
@@ -9361,11 +9362,17 @@ const GAME = (() => {
     return `<div class="gexp ${q.right ? 'ok' : 'ng'}"><div class="gexh"><b>${q.right ? '⭕ 正解！' : '✕ ざんねん'}</b>${q.right ? '' : `<span>正しい答え：${(() => { const a = q.choices.find(x => (typeof x === 'string' ? x : x.v) === q.answer); return typeof a === 'string' ? esc(a) : a ? a.html : esc(q.answer); })()}</span>`}</div>
       ${q.explain ? `<p>${q.explain}</p>` : ''}<button type="button" class="pbtn${q.right ? ' ghost' : ' big'}" data-g="next">次へ ▶<small>Enter</small></button></div>`;
   }
+  // 終わったあとの ふりかえり：答えた問題を 全部（まちがえた／正解した で しぼれる）。どれも 解説つき
   function reviewHTML() {
-    const w = G.wrong || [];
-    if (!w.length) return G.ok ? '<p class="note">ミスなし！ 🎉</p>' : '';
-    return `<details class="grev"${(G.revOpen != null ? G.revOpen : w.length <= 5) ? ' open' : ''}><summary>📖 まちがえた問題の ふりかえり（${w.length}問）</summary>${w.map(x => `<div class="grevi"><div class="grq">${x.q}</div><div class="gra"><span class="ng">✕ ${x.mine}</span><span class="ok">⭕ ${x.ans}</span></div>${x.ex ? `<p>${x.ex}</p>` : ''}</div>`).join('')}</details>`;
+    const L = G.log || []; if (!L.length) return '';
+    const ng = L.filter(x => !x.ok).length, ok = L.length - ng;
+    const f = G.rv || (ng ? 'ng' : 'all'), list = L.map((x, n) => [x, n + 1]).filter(([x]) => f === 'all' || (f === 'ng' ? !x.ok : x.ok));
+    const tab = (k, label) => `<button type="button" data-g="rv:${k}" aria-pressed="${f === k}">${label}</button>`;
+    return `<section class="grev" id="gRev"><div class="grevh"><b>📖 ふりかえり（解説つき）</b><div class="seg wrap">${tab('ng', `✕ まちがえた ${ng}`)}${tab('ok', `⭕ 正解した ${ok}`)}${tab('all', `すべて ${L.length}`)}</div></div>
+      ${list.length ? list.map(([x, n]) => `<div class="grevi ${x.ok ? 'isok' : 'isng'}"><div class="grq"><span class="grn">${n}</span>${x.ok ? '<b class="ok">⭕</b>' : '<b class="ng">✕</b>'} ${x.q}</div>
+        <div class="gra">${x.ok ? `<span class="ok">⭕ ${x.ans}</span>` : `<span class="ng">✕ あなた：${x.mine}</span><span class="ok">⭕ 正解：${x.ans}</span>`}</div>${x.ex ? `<p>${x.ex}</p>` : ''}</div>`).join('') : `<p class="note">${f === 'ng' ? 'ミスなし！ 🎉' : 'まだありません'}</p>`}</section>`;
   }
+
   function playShell(title) {
     main.classList.add('rk');
     main.innerHTML = `<div class="gplay"><div class="ghud"><button type="button" class="pbtn ghost" data-g="quit" title="やめる">✕</button>
@@ -9836,6 +9843,7 @@ const GAME = (() => {
       case 'hub': location.hash = '#game'; renderHub(); break;
       case 'solo': if (location.hash === '#ta') startSolo(); else location.hash = '#ta'; break;
       case 'again': startSolo(); break;
+      case 'rv': if (G) { G.rv = arg; const el = $('gRev'); if (el) el.outerHTML = reviewHTML(); } break;
       case 'sfx': S.sfx = S.sfx === false; save(); renderHub(); break;
       case 'next': advance(); break;
       case 'brag': brag((G && G.share) || ''); break;
