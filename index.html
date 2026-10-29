@@ -885,7 +885,10 @@ body.gm-on { overflow: hidden; }
 .gexh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; font-size: 17px; }
 .gexp.ok .gexh b { color: var(--ok); } .gexp.ng .gexh b { color: var(--warm); } .gexh span { font-weight: 700; }
 .gexp p { margin: 6px 0 8px; font-size: 15.5px; line-height: 1.7; }
-.gexp .pbtn { margin-left: auto; display: flex; gap: 8px; align-items: baseline; } .gexp .pbtn small { font-size: 11px; opacity: .7; }
+.gnextbar { position: sticky; bottom: 0; z-index: 3; display: flex; justify-content: flex-end; margin: 10px -16px -16px; padding: 10px 16px; background: color-mix(in srgb, var(--panel) 96%, transparent); border-top: 1.5px solid var(--line); border-radius: 0 0 5px 5px; }
+.gnextbar .pbtn { display: flex; gap: 8px; align-items: baseline; justify-content: center; } .gnextbar .pbtn small { font-size: 11px; opacity: .7; }
+.gexp { scroll-margin-bottom: 76px; }
+@media (max-width: 720px) { .gnextbar { padding: 8px 16px; } .gnextbar .pbtn { width: 100%; padding: 12px; font-size: 17px; } }
 @keyframes gIn { from { opacity: 0; transform: translateY(4px); } }
 .grev { width: 100%; text-align: left; border: 1.5px solid var(--line); border-radius: 6px; background: var(--panel); padding: 8px 12px; }
 .grevh { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-bottom: 4px; } .grevh .seg button { font-size: 13px; }
@@ -9715,9 +9718,9 @@ const GAME = (() => {
   function exHTML(q) {
     if (q.pick < 0 || !exOn()) return '';
     if (q.steps) return `<div class="gexp ${q.right ? 'ok' : 'ng'}"><div class="gexh"><b>${q.right ? '⭕ 完答！' : '✕ ざんねん'}</b>${q.right ? '' : `<span>答え：${q.answer}</span>`}</div>
-      ${q.explain ? `<p>${q.explain}</p>` : ''}${q.steps.some(s2 => s2.why) ? `<ul class="gwhys">${q.steps.map((s2, j) => (s2.why ? `<li><b>${'①②③④⑤'[j]}</b> ${s2.why}</li>` : '')).join('')}</ul>` : ''}<button type="button" class="pbtn big" data-g="next">次へ ▶<small>Enter</small></button></div>`;
+      ${q.explain ? `<p>${q.explain}</p>` : ''}${q.steps.some(s2 => s2.why) ? `<ul class="gwhys">${q.steps.map((s2, j) => (s2.why ? `<li><b>${'①②③④⑤'[j]}</b> ${s2.why}</li>` : '')).join('')}</ul>` : ''}</div><div class="gnextbar"><button type="button" class="pbtn big" data-g="next">次へ ▶<small>Enter</small></button></div>`; // 「次へ」は 解説の外（カードの下に固定）：長い解説でも スクロールなしで おせる
     return `<div class="gexp ${q.right ? 'ok' : 'ng'}"><div class="gexh"><b>${q.right ? '⭕ 正解！' : '✕ ざんねん'}</b>${q.right ? '' : `<span>正しい答え：${(() => { const a = q.choices.find(x => (typeof x === 'string' ? x : x.v) === q.answer); return typeof a === 'string' ? esc(a) : a ? a.html : esc(q.answer); })()}</span>`}</div>
-      ${q.explain ? `<p>${q.explain}</p>` : ''}<button type="button" class="pbtn big" data-g="next">次へ ▶<small>Enter</small></button></div>`;
+      ${q.explain ? `<p>${q.explain}</p>` : ''}</div><div class="gnextbar"><button type="button" class="pbtn big" data-g="next">次へ ▶<small>Enter</small></button></div>`; // 「次へ」は 解説の外（カードの下に固定）：長い解説でも スクロールなしで おせる
   }
   // 終わったあとの ふりかえり：答えた問題を 全部（まちがえた／正解した で しぼれる）。どれも 解説つき
   function reviewHTML() {
@@ -9799,6 +9802,7 @@ const GAME = (() => {
         return `<button type="button" class="gbtn${cls}" data-gp="${i}"${cls === ' cut' ? ' disabled' : ''}><span class="kb">${i + 1}</span>${label}</button>`;
       }).join('')}</div>${exHTML(q)}`;
     const f3 = $('gFig3'); if (f3) fig3D(subjectsOf(q)[0], f3);
+    const ex = el.querySelector('.gexp'); if (ex) ex.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     drawHud();
   }
   function runClock(onEnd) {
