@@ -852,6 +852,27 @@ body.gm-on { overflow: hidden; }
 @keyframes gFxbig { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.3); } 30% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); } 70% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -70%) scale(1); } }
 @media (max-width: 720px) { .ghud { flex-wrap: wrap; row-gap: 4px; } .ghud .gtbar { order: 9; flex: 1 1 100%; } .gcombo { margin-left: auto; } .ghud2 { gap: 6px; } .gmeter span { font-size: 10px; } .gsky { font-size: 11.5px; gap: 6px; padding: 4px 8px; } .gsky .nxt { display: none; } .galt { font-size: 12.5px; } .garrive .ae { font-size: 48px; } .garrive .at b { font-size: 22px; } }
 @media (prefers-reduced-motion: reduce) { .gplay.boost .gcard::after, .gspd.fast, .gplay.boost .rkt { animation: none; } }
+/* 🪜 解き方ステップ：問題は小さく、いま答えるステップを大きく */
+.gsprob { display: flex; gap: 8px; align-items: baseline; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px 10px; margin-bottom: 8px; font-size: 15.5px; line-height: 1.6; font-weight: 600; }
+.gsprob > b { flex: none; font-size: 11px; color: var(--panel); background: var(--muted); border-radius: 3px; padding: 1px 6px; }
+.glab .pill.st { background: var(--warm); color: #fff; }
+.gws { display: flex; flex-direction: column; gap: 6px; }
+.gsr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline; gap: 8px; font-size: 14px; padding: 5px 10px; border-radius: 6px; background: color-mix(in srgb, var(--panel) 85%, transparent); }
+.gsr .no { font-weight: 800; } .gsr .sk { color: var(--muted); } .gsr .sa { font-weight: 800; text-align: right; }
+.gsr.ok { background: color-mix(in srgb, var(--ok) 12%, var(--panel)); } .gsr.ok .no, .gsr.ok .sa { color: var(--ok); }
+.gsr.ng { background: color-mix(in srgb, var(--warm) 12%, var(--panel)); } .gsr.ng .no, .gsr.ng .sa { color: var(--warm); }
+.gsr.fut { color: var(--muted); opacity: .75; }
+.gsr.cur { display: block; position: relative; background: var(--panel); border: 3px solid var(--warm); padding: 14px 12px 12px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--warm) 22%, transparent); margin-top: 6px; }
+.gsr.cur.ok { border-color: var(--ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 22%, transparent); }
+.gsh { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.gsh .no { font-size: 24px; color: var(--warm); line-height: 1; } .gsr.cur.ok .gsh .no { color: var(--ok); }
+.gsh .sk { font-size: 19px; font-weight: 800; color: var(--ink); line-height: 1.4; flex: 1; }
+.gsh .here { position: absolute; top: -11px; right: 12px; font-size: 12px; font-weight: 800; color: #fff; background: var(--warm); border-radius: 10px; padding: 2px 10px; } .gsr.cur.ok .here { background: var(--ok); }
+.gsr.cur.flash { animation: gFlash .6s ease-out; } @keyframes gFlash { from { transform: scale(.97); box-shadow: 0 0 0 12px color-mix(in srgb, var(--warm) 25%, transparent); } }
+.gsr.cur .gch { margin-top: 0; } .gsr.cur .gbtn { font-size: 16.5px; line-height: 1.4; min-height: 52px; }
+.gswhy { margin: 8px 0 0; font-size: 14px; line-height: 1.6; color: var(--muted); }
+.grtrail { margin: 4px 0 2px; padding-left: 1.4em; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+.grtrail li span { color: var(--muted); margin-right: 6px; } .grtrail li i { font-style: normal; font-weight: 800; } .grtrail li.ok i { color: var(--ok); } .grtrail li.ng i, .grtrail li.ng b { color: var(--warm); }
 .gexp { margin-top: 12px; padding: 12px 14px; border-radius: 6px; border: 1.5px solid var(--line); border-left-width: 6px; background: var(--panel); text-align: left; animation: gIn .18s; }
 .gexp.ok { border-color: var(--ok); } .gexp.ng { border-color: var(--warm); }
 .gexh { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; font-size: 17px; }
@@ -8201,6 +8222,244 @@ const GAME_BANK = {
     ["ヨウ素などを加えると金属に近い導電性を示す高分子は？", "ポリアセチレン", ["ポリエチレン", "ポリスチレン", "ポリプロピレン"], "共役二重結合をもつポリアセチレンは導電性高分子。白川英樹が開発しノーベル化学賞を受賞した。"],
   ],
 };
+/* 🪜 解き方ステップ（ゲーム用）
+   むずかしい計算問題を「考え方 → 式 → 計算」の小さな 4 択に分けて、順に答える（数学Aラボの「解き方ステップ」と同じ考え方）。
+   それぞれ { cat, q, ans（さいごの答え）, ex（解説）, steps: [{ ask, ans, wrong: [3つ], why }] } を返す。
+   数字や物質は 毎回かわる。乱数は Math.random だけを使う（クラス対戦では 全員に同じ問題が出るよう、ゲーム側が Math.random を入れかえる）。 */
+const STEPGEN = (() => {
+  const pk = a => a[Math.floor(Math.random() * a.length)];
+  const fm = (x, n = 3) => sig(x, n);                       // 有効数字つきの数（大きい・小さい数は ×10ⁿ の形）
+  const N = (x, unit, n) => fm(x, n) + (unit ? ' ' + unit : '');
+  const S = (ask, ans, wrong, why) => ({ ask, ans: String(ans), wrong: wrong.map(String), why: why || '' });
+  const sg = n => (n > 0 ? '＋' + n : n < 0 ? '−' + (-n) : '0');
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const frac = (a, b) => { const g = gcd(a, b); return `${a / g}/${b / g}`; };
+  // ことばの選択肢のほかに、数の選択肢（答えを 2 倍・半分・10 倍 … にしたもの）を つくる
+  const near = (a, unit, first, n) => { const out = (first || []).slice(); [2, 0.5, 10, 0.1, 3, 1 / 3, 1.5, 4, 0.25].forEach(f => out.push(N(a * f, unit, n))); return out; };
+  const SUB = [['水', 'H₂O', 18], ['二酸化炭素', 'CO₂', 44], ['酸素', 'O₂', 32], ['窒素', 'N₂', 28], ['メタン', 'CH₄', 16], ['アンモニア', 'NH₃', 17],
+    ['塩化ナトリウム', 'NaCl', 58.5], ['水酸化ナトリウム', 'NaOH', 40], ['グルコース', 'C₆H₁₂O₆', 180], ['エタノール', 'C₂H₅OH', 46], ['硫酸', 'H₂SO₄', 98]];
+  const GAS = SUB.filter(s => ['CO₂', 'O₂', 'N₂', 'CH₄', 'NH₃'].includes(s[1]));
+  const AW = { H: 1.0, C: 12, N: 14, O: 16, Na: 23, Mg: 24, Al: 27, S: 32, Cl: 35.5, Ca: 40 };
+  const AWt = k => (k === 'H' ? '1.0' : String(AW[k]));
+
+  const G = {
+    m2n() {
+      const [nm, f, M] = pk(SUB), n = pk([0.1, 0.2, 0.25, 0.5, 1.5, 2, 2.5, 3]), m = +(n * M).toPrecision(3);
+      return { cat: '物質量', q: `${nm} ${f} ${m} g は何 mol？（モル質量 ${M} g/mol）`, ans: N(n, 'mol'),
+        ex: `物質量 ＝ 質量 ÷ モル質量。${m} ÷ ${M} ＝ ${fm(n)} mol。`,
+        steps: [S('どの関係を使う？', '物質量 ＝ 質量 ÷ モル質量', ['物質量 ＝ 質量 × モル質量', '物質量 ＝ 粒子の数 × 6.0×10²³', '物質量 ＝ 体積 ÷ 22.4'], 'モル質量は 1 mol あたりの質量。質量が モル質量の何個分かが 物質量。'),
+          S('式は？', `${m} ÷ ${M}`, [`${m} × ${M}`, `${M} ÷ ${m}`, `${m} ÷ 22.4`]),
+          S('計算すると？', N(n, 'mol'), near(n, 'mol', [N(m * M, 'mol'), N(M / m, 'mol')]))] };
+    },
+    n2m() {
+      const [nm, f, M] = pk(SUB), n = pk([0.1, 0.2, 0.5, 1.5, 2, 3]);
+      return { cat: '物質量', q: `${nm} ${f} ${n} mol は何 g？（モル質量 ${M} g/mol）`, ans: N(n * M, 'g'),
+        ex: `質量 ＝ 物質量 × モル質量。${n} × ${M} ＝ ${fm(n * M)} g。`,
+        steps: [S('どの関係を使う？', '質量 ＝ 物質量 × モル質量', ['質量 ＝ 物質量 ÷ モル質量', '質量 ＝ 物質量 × 22.4', '質量 ＝ 物質量 × 6.0×10²³'], 'モル質量は 1 mol あたりの質量。n mol なら n 倍。'),
+          S('式は？', `${n} × ${M}`, [`${n} ÷ ${M}`, `${M} ÷ ${n}`, `${n} × 22.4`]),
+          S('計算すると？', N(n * M, 'g'), near(n * M, 'g', [N(n / M, 'g'), N(M / n, 'g')]))] };
+    },
+    n2N() {
+      const n = pk([0.1, 0.2, 0.5, 1.5, 2, 3, 0.25]), v = n * 6;
+      return { cat: '物質量', q: `${n} mol の分子は何個？（アボガドロ定数 6.0×10²³ /mol）`, ans: `${fm(v, 2)}×10²³ 個`,
+        ex: `粒子の数 ＝ 物質量 × 6.0×10²³。${n} × 6.0×10²³ ＝ ${fm(v, 2)}×10²³ 個。`,
+        steps: [S('どの関係を使う？', '粒子の数 ＝ 物質量 × 6.0×10²³', ['粒子の数 ＝ 物質量 ÷ 6.0×10²³', '粒子の数 ＝ 物質量 × 22.4', '粒子の数 ＝ 物質量 × モル質量'], '1 mol に 6.0×10²³ 個ふくまれる。'),
+          S('式は？', `${n} × 6.0×10²³`, [`${n} ÷ 6.0×10²³`, `${n} × 22.4`, `${n} × 6.0×10²²`]),
+          S('計算すると？', `${fm(v, 2)}×10²³ 個`, [`${fm(v * 10, 2)}×10²³ 個`, `${fm(v / 10, 2)}×10²³ 個`, `${fm(n / 6, 2)}×10⁻²³ 個`, `${fm(v * 2, 2)}×10²³ 個`])] };
+    },
+    gasV() {
+      const [nm, f, M] = pk(GAS), m = pk([0.5, 1, 2, 4]) * M / 2, n = m / M, V = n * 22.4;
+      return { cat: '物質量', q: `標準状態（0 ℃、1.013×10⁵ Pa）で、${nm} ${f} ${m} g の体積は何 L？（モル質量 ${M} g/mol）`, ans: N(V, 'L'),
+        ex: `物質量 ＝ ${m} ÷ ${M} ＝ ${fm(n)} mol。標準状態では 1 mol が 22.4 L なので ${fm(n)} × 22.4 ＝ ${fm(V)} L。`,
+        steps: [S('まず何を求める？', '物質量（質量 ÷ モル質量）', ['体積（質量 × 22.4）', '粒子の数（質量 × 6.0×10²³）', 'モル濃度（質量 ÷ 体積）'], '体積は「物質量 × 22.4」。だから 質量から 先に物質量を出す。'),
+          S(`${f} ${m} g は何 mol？`, N(n, 'mol'), near(n, 'mol', [N(m * M, 'mol'), N(M / m, 'mol')])),
+          S('体積は？（1 mol ＝ 22.4 L）', N(V, 'L'), near(V, 'L', [N(m * 22.4, 'L'), N(n / 22.4, 'L')]))] };
+    },
+    molar() {
+      const n = pk([0.05, 0.1, 0.2, 0.25]), V = pk([100, 200, 250, 500]), m = +(n * 58.5).toFixed(3), c = n / (V / 1000);
+      return { cat: '濃度', q: `塩化ナトリウム ${m} g（58.5 g/mol）を水に溶かして ${V} mL にした。モル濃度は何 mol/L？`, ans: N(c, 'mol/L'),
+        ex: `物質量 ＝ ${m} ÷ 58.5 ＝ ${fm(n)} mol、体積 ＝ ${V} mL ＝ ${V / 1000} L。${fm(n)} ÷ ${V / 1000} ＝ ${fm(c)} mol/L。`,
+        steps: [S('モル濃度の式は？', '物質量(mol) ÷ 溶液の体積(L)', ['物質量(mol) ÷ 溶液の体積(mL)', '溶質の質量(g) ÷ 溶液の体積(L)', '物質量(mol) × 溶液の体積(L)'], 'モル濃度は 溶液 1 L あたりの 溶質の物質量。体積は L にそろえる。'),
+          S('物質量と体積（L）は？', `${fm(n)} mol・${V / 1000} L`, [`${fm(n)} mol・${V} L`, `${m} mol・${V / 1000} L`, `${fm(n)} mol・${V * 1000} L`]),
+          S('モル濃度は？', N(c, 'mol/L'), near(c, 'mol/L', [N(n / V, 'mol/L'), N(c / 1000, 'mol/L')]))] };
+    },
+    percent() {
+      const a = pk([5, 10, 20, 25]), w = pk([45, 80, 95, 100, 150]), v = a / (a + w) * 100;
+      return { cat: '濃度', q: `水 ${w} g に塩化ナトリウム ${a} g を溶かした。質量パーセント濃度は何 %？`, ans: N(v, '%'),
+        ex: `溶液の質量 ＝ ${w} ＋ ${a} ＝ ${a + w} g。${a} ÷ ${a + w} × 100 ＝ ${fm(v)} %（水だけで割らない）。`,
+        steps: [S('分母にするのは？', '溶液全体の質量（溶質 ＋ 溶媒）', ['溶媒（水）の質量', '溶質の質量', '溶液の体積'], '質量パーセント濃度 ＝ 溶質の質量 ÷ 溶液の質量 × 100。溶液 ＝ 溶質 ＋ 溶媒。'),
+          S('溶液の質量は？', `${a + w} g`, [`${w} g`, `${a} g`, `${w - a} g`]),
+          S('濃度は？', N(v, '%'), near(v, '%', [N(a / w * 100, '%'), N(a / (a + w), '%')]))] };
+    },
+    dilute() {
+      const c1 = pk([1.0, 2.0, 0.5]), v1 = pk([10, 20, 50]), V = pk([100, 200, 250, 500]), c2 = c1 * v1 / V;
+      return { cat: '濃度', q: `${c1} mol/L の塩酸 ${v1} mL に水を加えて ${V} mL にした。何 mol/L？`, ans: N(c2, 'mol/L'),
+        ex: `うすめても溶質の物質量は変わらない：c₁V₁ ＝ c₂V₂。${c1} × ${v1} ＝ c₂ × ${V} より c₂ ＝ ${fm(c2)} mol/L。`,
+        steps: [S('うすめても変わらないものは？', '溶質の物質量（mol）', ['溶液の体積', 'モル濃度', '溶液の質量'], '水を足しても 中の HCl の量は同じ。だから「濃度 × 体積」が うすめる前後で等しい。'),
+          S('式は？', `${c1} × ${v1} ＝ c₂ × ${V}`, [`${c1} × ${V} ＝ c₂ × ${v1}`, `${c1} ＋ ${v1} ＝ c₂ ＋ ${V}`, `${c1} ÷ ${v1} ＝ c₂ ÷ ${V}`]),
+          S('c₂ は？', N(c2, 'mol/L'), near(c2, 'mol/L', [N(c1 * V / v1, 'mol/L')]))] };
+    },
+    stoich() {
+      const T = pk([
+        () => { const m = pk([8, 16, 32, 4]), n = m / 16; return { eq: 'CH₄ + 2O₂ → CO₂ + 2H₂O', who: 'メタン CH₄', f: 'CH₄', M: 16, m, n, to: 'CO₂', ratio: ['1 : 1', ['1 : 2', '2 : 1', '1 : 3']], k: 1, fac: 44, out: n * 44, unit: 'g', fin: `${fm(n)} × 44（CO₂＝44）`, ask: 'CO₂ は何 g できる？' }; },
+        () => { const m = pk([8, 16, 32]), n = m / 16; return { eq: 'CH₄ + 2O₂ → CO₂ + 2H₂O', who: 'メタン CH₄', f: 'CH₄', M: 16, m, n, to: 'O₂', ratio: ['1 : 2', ['1 : 1', '2 : 1', '1 : 3']], k: 2, fac: 22.4, out: n * 2 * 22.4, unit: 'L', fin: `${fm(n * 2)} × 22.4`, ask: '必要な酸素は 標準状態で何 L？' }; },
+        () => { const m = pk([2, 4, 8, 1]), n = m / 2; return { eq: '2H₂ + O₂ → 2H₂O', who: '水素 H₂', f: 'H₂', M: 2, m, n, to: 'H₂O', ratio: ['2 : 2', ['2 : 1', '1 : 2', '2 : 3']], k: 1, fac: 18, out: n * 18, unit: 'g', fin: `${fm(n)} × 18（H₂O＝18）`, ask: 'できる水は何 g？' }; },
+        () => { const m = pk([6.5, 13, 3.25]), n = m / 65; return { eq: 'Zn + 2HCl → ZnCl₂ + H₂', who: '亜鉛 Zn', f: 'Zn', M: 65, m, n, to: 'H₂', ratio: ['1 : 1', ['1 : 2', '2 : 1', '1 : 3']], k: 1, fac: 22.4, out: n * 22.4, unit: 'L', fin: `${fm(n)} × 22.4`, ask: '水素は 標準状態で何 L 出る？' }; },
+      ])();
+      const mol2 = T.n * T.k;
+      return { cat: '反応式と量', q: `${T.eq}。${T.who} ${T.m} g から、${T.ask}（${T.f}＝${T.M}）`, ans: N(T.out, T.unit),
+        ex: `① ${T.f} ${T.m} ÷ ${T.M} ＝ ${fm(T.n)} mol　② 係数の比 ${T.f} : ${T.to} ＝ ${T.ratio[0]} → ${T.to} ${fm(mol2)} mol　③ ${T.fin} ＝ ${fm(T.out)} ${T.unit}。`,
+        steps: [S(`係数の比 ${T.f} : ${T.to} は？`, T.ratio[0], T.ratio[1], '化学反応式の係数の比 ＝ 物質量の比。'),
+          S(`${T.f} ${T.m} g は何 mol？`, N(T.n, 'mol'), near(T.n, 'mol', [N(T.m * T.M, 'mol'), N(T.M / T.m, 'mol')])),
+          S(T.ask, N(T.out, T.unit), near(T.out, T.unit, [N(T.n * T.fac, T.unit), N(T.m * T.fac, T.unit)]))] };
+    },
+    phS() {
+      const k = pk([1, 2, 3, 4]), base = Math.random() < 0.4, c = sig(Math.pow(10, -k), 2), E = e => `1.0×10<sup>−${e}</sup> mol/L`;
+      if (!base) return { cat: 'pH', q: `${c} mol/L の塩酸の pH は？（完全に電離する）`, ans: String(k),
+        ex: `HCl → H⁺ ＋ Cl⁻ で [H⁺] ＝ ${E(k)}。pH ＝ −log[H⁺] ＝ ${k}。`,
+        steps: [S('[H⁺] は？', E(k), [E(k + 1), E(k > 1 ? k - 1 : k + 2), `1.0×10<sup>${k}</sup> mol/L`], '強酸は 完全に電離するので [H⁺] ＝ 酸の濃度（1 価の酸）。'),
+          S('pH ＝ −log[H⁺] は？', String(k), [String(k + 1), String(14 - k), '−' + k])] };
+      return { cat: 'pH', q: `${c} mol/L の水酸化ナトリウム水溶液の pH は？（完全に電離、水のイオン積 1.0×10⁻¹⁴）`, ans: String(14 - k),
+        ex: `[OH⁻] ＝ ${c} ＝ ${E(k)}。[H⁺] ＝ 1.0×10⁻¹⁴ ÷ [OH⁻] ＝ ${E(14 - k)}。pH ＝ ${14 - k}。`,
+        steps: [S('強塩基の水溶液で、まず わかるのは？', '[OH⁻] ＝ 濃度（完全に電離）', ['[H⁺] ＝ 濃度', 'pH ＝ 濃度', '[OH⁻] ＝ 1.0×10⁻¹⁴ ÷ 濃度'], 'NaOH → Na⁺ ＋ OH⁻ で 濃度と同じだけ OH⁻ ができる。'),
+          S('[H⁺] ＝ 1.0×10⁻¹⁴ ÷ [OH⁻] は？', E(14 - k), [E(k), E(15 - k), E(13 - k)]),
+          S('pH は？', String(14 - k), [String(k), String(15 - k), String(13 - k)])] };
+    },
+    neutV() {
+      const ac = pk([['塩酸', 1], ['硫酸', 2]]), ca = pk([0.1, 0.2, 0.05]), va = pk([10, 20, 25]), cb = pk([0.1, 0.2]), vb = ac[1] * ca * va / cb, a = ac[1], o = a === 1 ? 2 : 1;
+      const eq = (x, y, p, q2) => `${x} × ${ca} × ${p} ＝ ${y} × ${cb} × ${q2}`;
+      return { cat: '中和', q: `${ca} mol/L の${ac[0]} ${va} mL をちょうど中和するのに、${cb} mol/L の水酸化ナトリウム水溶液は何 mL 必要？`, ans: N(vb, 'mL'),
+        ex: `（酸の価数）×（濃度）×（体積）＝（塩基の価数）×（濃度）×（体積）。${a} × ${ca} × ${va} ＝ 1 × ${cb} × V より V ＝ ${fm(vb)} mL。`,
+        steps: [S('中和の条件は？', '酸が出す H⁺ の物質量 ＝ 塩基が出す OH⁻ の物質量', ['酸の体積 ＝ 塩基の体積', '酸の濃度 ＝ 塩基の濃度', '酸の質量 ＝ 塩基の質量'], 'H⁺ と OH⁻ が 同じ物質量のとき ちょうど中和。物質量 ＝ 価数 × 濃度 × 体積。'),
+          S('式は？', `${a} × ${ca} × ${va} ＝ 1 × ${cb} × V`, [`${o} × ${ca} × ${va} ＝ 1 × ${cb} × V`, `${a} × ${ca} × ${va} ＝ 2 × ${cb} × V`, `${a} × ${ca} × V ＝ 1 × ${cb} × ${va}`]),
+          S('V は？', N(vb, 'mL'), near(vb, 'mL', [N(ca * va / cb, 'mL'), N(a * ca * va * cb, 'mL')]))] };
+    },
+    mass() {
+      const L = [['エタノール', 'C₂H₅OH', { C: 2, H: 6, O: 1 }], ['酢酸', 'CH₃COOH', { C: 2, H: 4, O: 2 }], ['水酸化カルシウム', 'Ca(OH)₂', { Ca: 1, O: 2, H: 2 }],
+        ['硫酸アンモニウム', '(NH₄)₂SO₄', { N: 2, H: 8, S: 1, O: 4 }], ['炭酸水素ナトリウム', 'NaHCO₃', { Na: 1, H: 1, C: 1, O: 3 }], ['硫酸アルミニウム', 'Al₂(SO₄)₃', { Al: 2, S: 3, O: 12 }],
+        ['尿素', '(NH₂)₂CO', { N: 2, H: 4, C: 1, O: 1 }], ['グルコース', 'C₆H₁₂O₆', { C: 6, H: 12, O: 6 }], ['塩化マグネシウム', 'MgCl₂', { Mg: 1, Cl: 2 }], ['炭酸カルシウム', 'CaCO₃', { Ca: 1, C: 1, O: 3 }]];
+      const [nm, f, cnt] = pk(L), els = Object.keys(cnt);
+      const expr = c => els.map(e => `${AWt(e)}${c[e] > 1 ? '×' + c[e] : ''}`).join(' ＋ ');
+      const sum = c => els.reduce((s, e) => s + AW[e] * c[e], 0);
+      const alt = (e, d) => Object.assign({}, cnt, { [e]: Math.max(1, cnt[e] + d) });
+      const variants = []; els.forEach(e => { variants.push(alt(e, 1)); if (cnt[e] > 1) variants.push(alt(e, -1)); });
+      const seen = new Set([expr(cnt)]), wrongs = [];
+      variants.sort(() => Math.random() - 0.5).forEach(c => { const t = expr(c); if (!seen.has(t) && wrongs.length < 3) { seen.add(t); wrongs.push(c); } });
+      const val = sum(cnt);
+      return { cat: '原子量・式量', q: `${nm} ${f} の${['Ca(OH)₂', '(NH₄)₂SO₄', 'NaHCO₃', 'Al₂(SO₄)₃', 'MgCl₂', 'CaCO₃'].includes(f) ? '式量' : '分子量'}は？（${els.map(e => `${e}＝${AWt(e)}`).join('、')}）`, ans: fm(val),
+        ex: `式量 ＝（原子量 × 原子の数）の和。${expr(cnt)} ＝ ${fm(val)}。`,
+        steps: [S('求め方は？', '（原子量 × 原子の数）をすべて足す', ['原子量を すべてかけ合わせる', '原子の数だけを足す', '原子量の平均をとる'], f.includes('(') ? 'かっこの外の数字は かっこの中の 全部の原子にかかる。' : '化学式の右下の数字が 原子の数。'),
+          S(`${f} の式は？`, expr(cnt), wrongs.map(expr)),
+          S('計算すると？', fm(val), wrongs.map(c => fm(sum(c))).concat([fm(val * 2), fm(val / 2)]))] };
+    },
+    oxnum() {
+      // [式, 求める原子, 求める原子の数, [[原子, 酸化数, 数], ...], 電荷, 答え]
+      const L = [['KMnO₄', 'Mn', 1, [['K', 1, 1], ['O', -2, 4]], 0, 7], ['K₂Cr₂O₇', 'Cr', 2, [['K', 1, 2], ['O', -2, 7]], 0, 6], ['H₂SO₄', 'S', 1, [['H', 1, 2], ['O', -2, 4]], 0, 6],
+        ['HNO₃', 'N', 1, [['H', 1, 1], ['O', -2, 3]], 0, 5], ['NH₃', 'N', 1, [['H', 1, 3]], 0, -3], ['SO₄²⁻', 'S', 1, [['O', -2, 4]], -2, 6], ['NO₃⁻', 'N', 1, [['O', -2, 3]], -1, 5],
+        ['MnO₄⁻', 'Mn', 1, [['O', -2, 4]], -1, 7], ['Cr₂O₇²⁻', 'Cr', 2, [['O', -2, 7]], -2, 6], ['CO₂', 'C', 1, [['O', -2, 2]], 0, 4], ['SO₂', 'S', 1, [['O', -2, 2]], 0, 4],
+        ['H₂O₂', 'O', 2, [['H', 1, 2]], 0, -1], ['NH₄⁺', 'N', 1, [['H', 1, 4]], 1, -3], ['HClO₄', 'Cl', 1, [['H', 1, 1], ['O', -2, 4]], 0, 7], ['KClO₃', 'Cl', 1, [['K', 1, 1], ['O', -2, 3]], 0, 5]];
+      const [f, t, tn, kn, ch, x] = pk(L), rhs = ch === 0 ? '0' : sg(ch);
+      const part = (sym, ox, n) => (sym === t ? (n > 1 ? `${n}x` : 'x') : (n > 1 ? `${n}×(${sg(ox)})` : `(${sg(ox)})`));
+      const build = parts => parts.map(p => part(p[0], p[1], p[2])).join(' ＋ ') + ` ＝ ${rhs}`;
+      const base = kn.concat([[t, 0, tn]]);
+      // 化学式に出てくる順に ならべる（H が先、O が最後 など）
+      const order = f.replace(/[₀-₉⁺⁻²]/g, '').match(/[A-Z][a-z]?/g) || [];
+      base.sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
+      const ok = build(base), seen = new Set([ok]), wrongs = [];
+      const tryAdd = parts => { const s2 = build(parts); if (!seen.has(s2) && parts.length) { seen.add(s2); wrongs.push(s2); } };
+      kn.forEach(k => { tryAdd(base.map(p => (p[0] === k[0] ? [p[0], -p[1], p[2]] : p))); });   // 符号をまちがえる
+      kn.forEach(k => { tryAdd(base.map(p => (p[0] === k[0] ? [p[0], p[1], 1] : p))); });                               // 原子の数を わすれる
+      kn.forEach(k => { tryAdd(base.filter(p => p[0] !== k[0])); });                                                     // 原子を ひとつ わすれる
+      const tot = ch === 0 ? '0（中性の化合物なので、酸化数の合計は 0）' : `${sg(ch)}（イオンの電荷に等しい）`;
+      const w1 = ch === 0 ? ['＋1（水素と同じ）', '原子の数の合計', '−2（酸素と同じ）'] : ['0（中性の化合物と同じ）', `${sg(-ch)}（電荷と逆の符号）`, '原子の数の合計'];
+      return { cat: '酸化数', q: `${f} の ${t} の酸化数は？（${kn.map(k => `${k[0]} は ${sg(k[1])}`).join('、')} として）`, ans: sg(x),
+        ex: `${f} 全体で 酸化数の合計は ${ch === 0 ? '0' : sg(ch)}。${ok}　を解いて x ＝ ${sg(x)}。`,
+        steps: [S('全体の酸化数の合計は？', tot, w1, ch === 0 ? '化合物は 全体として 電気的に中性。' : 'イオンは 酸化数の合計が 電荷と等しい。'),
+          S(`${t} の酸化数を x とした式は？`, ok, wrongs.slice(0, 3)),
+          S('x は？', sg(x), [sg(x + 1), sg(-x), sg(x - 1), sg(x + 2)])] };
+    },
+    pvnrt() {
+      const n = pk([0.1, 0.2, 0.5, 1.0]), t = pk([27, 127, 0, 77]), V = pk([1.0, 2.0, 5.0, 10]), T = t + 273, P = n * 8.3e3 * T / V;
+      return { cat: '気体', q: `${n} mol の気体が ${t} ℃、${V} L の容器に入っている。圧力は何 Pa？（R ＝ 8.3×10³ Pa·L/(K·mol)）`, ans: N(P, 'Pa', 2),
+        ex: `T ＝ ${t} ＋ 273 ＝ ${T} K。PV ＝ nRT より P ＝ nRT ÷ V ＝ ${n} × 8.3×10³ × ${T} ÷ ${V} ＝ ${fm(P, 2)} Pa。`,
+        steps: [S(`${t} ℃ は絶対温度で何 K？`, `${T} K`, [`${t} K`, `${T + 100} K`, `${T + 273} K`], '気体の式の T は 絶対温度（セ氏温度 ＋ 273）。'),
+          S('PV ＝ nRT から P を求める式は？', `${n} × 8.3×10³ × ${T} ÷ ${V}`, [`${n} × 8.3×10³ × ${t} ÷ ${V}`, `${n} × 8.3×10³ × ${T} × ${V}`, `${n} × 8.3 × ${T} ÷ ${V}`]),
+          S('P は？', N(P, 'Pa', 2), near(P, 'Pa', [N(P * V * V, 'Pa', 2)], 2))] };
+    },
+    boyle() {
+      const P1 = pk([1.0, 2.0]), V1 = pk([2.0, 3.0, 6.0]), t1 = pk([27, 0]), t2 = pk([127, 327, 273]), P2 = pk([2.0, 4.0, 1.0]), T1 = t1 + 273, T2 = t2 + 273, V2 = P1 * V1 / T1 * T2 / P2;
+      return { cat: '気体', q: `${P1}×10⁵ Pa、${t1} ℃ で ${V1} L の気体を、${P2}×10⁵ Pa、${t2} ℃ にすると 何 L？`, ans: N(V2, 'L'),
+        ex: `P₁V₁/T₁ ＝ P₂V₂/T₂（温度は 絶対温度）。T₁ ＝ ${T1} K、T₂ ＝ ${T2} K。V₂ ＝ ${P1}×${V1}×${T2} ÷ (${T1}×${P2}) ＝ ${fm(V2)} L。`,
+        steps: [S('使う式は？', 'P₁V₁/T₁ ＝ P₂V₂/T₂（T は絶対温度）', ['P₁V₁/t₁ ＝ P₂V₂/t₂（t はセ氏温度）', 'P₁V₁ ＝ P₂V₂（温度は関係ない）', 'P₁/V₁ ＝ P₂/V₂'], '圧力も温度も変わるので ボイル・シャルルの法則。温度は 絶対温度で。'),
+          S('絶対温度 T₁、T₂ は？', `${T1} K と ${T2} K`, [`${t1} K と ${t2} K`, `${T2} K と ${T1} K`, `${T1} K と ${t2} K`]),
+          S('V₂ は？', N(V2, 'L'), near(V2, 'L', [N(P1 * V1 / P2, 'L'), N(P1 * V1 * T1 / T2 / P2, 'L')]))] };
+    },
+    partial() {
+      const a = pk([1, 2, 3]), b = pk([1, 2, 3, 4]), P = pk([1.0, 2.0, 1.5]), pa = P * a / (a + b);
+      return { cat: '気体', q: `窒素 ${a} mol と酸素 ${b} mol の混合気体の全圧が ${P}×10⁵ Pa。窒素の分圧は何 ×10⁵ Pa？`, ans: N(pa, '×10⁵ Pa'),
+        ex: `分圧 ＝ 全圧 × モル分率。窒素のモル分率は ${a}/(${a}＋${b}) ＝ ${frac(a, a + b)}。${P} × ${frac(a, a + b)} ＝ ${fm(pa)} ×10⁵ Pa。`,
+        steps: [S('分圧の求め方は？', '全圧 × 成分のモル分率', ['全圧 ÷ 成分のモル数', '全圧 ＋ 成分のモル分率', '全圧 × 成分のモル数'], '分圧は 全圧のうち その気体が占める割合ぶん。割合は モル分率。'),
+          S('窒素のモル分率は？', frac(a, a + b), [frac(a, b), a === b ? frac(a, a + b + 1) : frac(b, a + b), frac(a + b, a)]),
+          S('分圧は？', N(pa, '×10⁵ Pa'), near(pa, '×10⁵ Pa', [N(P * a / b, '×10⁵ Pa'), N(P * b / (a + b), '×10⁵ Pa')]))] };
+    },
+    bpe() {
+      const salt = Math.random() < 0.5, n = pk([0.05, 0.1, 0.2]), w = pk([100, 200, 500]), m = n / (w / 1000), i = salt ? 2 : 1, fp = Math.random() < 0.5, K = fp ? 1.85 : 0.52, dT = K * m * i;
+      return { cat: '溶液', q: `水 ${w} g に${salt ? '塩化ナトリウム（完全に電離）' : 'グルコース'} ${n} mol を溶かした。${fp ? '凝固点は何 K 下がる？（K_f ＝ 1.85 K·kg/mol）' : '沸点は何 K 上がる？（K_b ＝ 0.52 K·kg/mol）'}`, ans: N(dT, 'K'),
+        ex: `m ＝ ${n} ÷ ${w / 1000} kg ＝ ${fm(m)} mol/kg。${salt ? 'NaCl → Na⁺ ＋ Cl⁻ で 粒子は 2 倍。' : 'グルコースは電離しない。'}Δt ＝ K × m × ${i} ＝ ${fm(dT)} K。`,
+        steps: [S('溶けた粒子の物質量は 溶かした物質量の何倍？', salt ? '2 倍（Na⁺ と Cl⁻ に電離）' : '1 倍（電離しない）', salt ? ['1 倍（電離しない）', '3 倍', '0.5 倍'] : ['2 倍（Na⁺ と Cl⁻ に電離）', '3 倍', '0.5 倍'], '沸点上昇・凝固点降下は 溶けている粒子の数で決まる。電解質は 電離してふえる。'),
+          S('質量モル濃度 m は？（溶媒 1 kg あたり）', N(m, 'mol/kg'), near(m, 'mol/kg', [N(n / w, 'mol/kg'), N(m / 1000, 'mol/kg')])),
+          S(`${fp ? '凝固点降下度' : '沸点上昇度'} Δt ＝ K × m × ${i} は？`, N(dT, 'K'), near(dT, 'K', [N(K * m, 'K'), N(K * m * 2 * 2, 'K')]))] };
+    },
+    osm() {
+      const c = pk([0.01, 0.02, 0.05, 0.1]), t = pk([27, 37]), T = t + 273, P = c * 8.3e3 * T;
+      return { cat: '溶液', q: `${c} mol/L のスクロース水溶液の ${t} ℃ での浸透圧は何 Pa？（R ＝ 8.3×10³ Pa·L/(K·mol)）`, ans: N(P, 'Pa', 2),
+        ex: `ファントホッフの法則 Π ＝ cRT。T ＝ ${t} ＋ 273 ＝ ${T} K。${c} × 8.3×10³ × ${T} ＝ ${fm(P, 2)} Pa。`,
+        steps: [S('浸透圧の式は？', 'Π ＝ cRT（c：モル濃度、T：絶対温度）', ['Π ＝ cR（温度は関係ない）', 'Π ＝ c ÷ RT', 'Π ＝ cRt（t：セ氏温度）'], '浸透圧は 気体の圧力と同じ形（PV ＝ nRT → Π ＝ cRT）。'),
+          S(`T は？`, `${T} K`, [`${t} K`, `${t + 373} K`, `${t + 100} K`]),
+          S('Π は？', N(P, 'Pa', 2), near(P, 'Pa', [N(P / T * t, 'Pa', 2)], 2))] };
+    },
+    faraday() {
+      const I = pk([1.0, 2.0, 5.0]), t = pk([965, 1930, 3860]), Q = I * t, e = Q / 96500, cu = e / 2, g = cu * 63.5;
+      return { cat: '電気分解', q: `硫酸銅(II)水溶液を ${I} A で ${t} 秒 電気分解した。陰極に出る銅は何 g？（ファラデー定数 9.65×10⁴ C/mol、Cu＝63.5）`, ans: N(g, 'g'),
+        ex: `Q ＝ ${I} × ${t} ＝ ${Q} C。電子 ${Q} ÷ 96500 ＝ ${fm(e)} mol。Cu²⁺ ＋ 2e⁻ → Cu なので Cu は ${fm(cu)} mol。${fm(cu)} × 63.5 ＝ ${fm(g)} g。`,
+        steps: [S('流れた電気量 Q は？（Q ＝ I × t）', `${Q} C`, [`${I + t} C`, N(t / I, 'C'), N(Q / 60, 'C'), N(Q * 10, 'C')], '電気量(C) ＝ 電流(A) × 時間(秒)。'),
+          S('流れた電子は何 mol？（1 mol ＝ 96500 C）', N(e, 'mol'), near(e, 'mol', [N(Q * 96500, 'mol', 2)])),
+          S('Cu²⁺ ＋ 2e⁻ → Cu。銅は何 mol？', N(cu, 'mol'), near(cu, 'mol', [N(e, 'mol'), N(e * 2, 'mol')]), '電子 2 mol で 銅 1 mol。'),
+          S('銅の質量は？', N(g, 'g'), near(g, 'g', [N(cu / 63.5, 'g'), N(e * 63.5, 'g')]))] };
+    },
+    kc() {
+      const a = pk([0.2, 0.4, 0.5]), b = pk([0.2, 0.5, 1.0]), c = pk([0.4, 0.8, 1.0, 2.0]), K = c * c / (a * b);
+      return { cat: '平衡', q: `H₂ ＋ I₂ ⇄ 2HI が平衡のとき、[H₂] ＝ ${a}、[I₂] ＝ ${b}、[HI] ＝ ${c} mol/L だった。平衡定数 K は？`, ans: fm(K),
+        ex: `K ＝ [HI]² ÷ ([H₂][I₂])（係数 2 は 2 乗）。${c}² ÷ (${a} × ${b}) ＝ ${fm(K)}。`,
+        steps: [S('K の式は？', 'K ＝ [HI]² ÷ ([H₂][I₂])', ['K ＝ [HI] ÷ ([H₂][I₂])', 'K ＝ ([H₂][I₂]) ÷ [HI]²', 'K ＝ 2[HI] ÷ ([H₂][I₂])'], '生成物の濃度（係数乗）÷ 反応物の濃度（係数乗）。2HI の係数 2 は 2 乗。'),
+          S('数字を入れた式は？', `${c}² ÷ (${a} × ${b})`, [`${c} ÷ (${a} × ${b})`, `(${a} × ${b}) ÷ ${c}²`, `${c}² ÷ (${a} ＋ ${b})`]),
+          S('K は？', fm(K), [fm(c / (a * b)), fm(a * b / (c * c)), fm(c * c / (a + b)), fm(K * 2), fm(K / 2)])] };
+    },
+    weakpH() {
+      const c = pk([0.1, 0.01]), Ka = 2.7e-5, h = Math.sqrt(c * Ka);
+      return { cat: '電離平衡', q: `${c} mol/L の酢酸水溶液の [H⁺] は何 mol/L？（Ka ＝ 2.7×10⁻⁵ mol/L、電離度は 1 より十分小さい）`, ans: N(h, 'mol/L', 2),
+        ex: `[H⁺] ＝ √(c·Ka) ＝ √(${c} × 2.7×10⁻⁵) ＝ ${fm(h, 2)} mol/L。`,
+        steps: [S('弱酸の [H⁺] の式は？', '[H⁺] ＝ √(c × Ka)', ['[H⁺] ＝ c × Ka', '[H⁺] ＝ c ÷ Ka', '[H⁺] ＝ c（完全に電離）'], '弱酸は わずかしか電離しない。Ka ＝ [H⁺]² ÷ c から [H⁺] ＝ √(c·Ka)。'),
+          S('数字を入れた式は？', `√(${c} × 2.7×10⁻⁵)`, [`${c} × 2.7×10⁻⁵`, `√(${c} ÷ 2.7×10⁻⁵)`, `√${c} × 2.7×10⁻⁵`]),
+          S('[H⁺] は？', N(h, 'mol/L', 2), near(h, 'mol/L', [N(c * Ka, 'mol/L', 2), N(c, 'mol/L', 2)], 2))] };
+    },
+  };
+  return G;
+})();
+// ステップにした問題の選択肢を 4 つに（同じ見た目のものは のぞく）
+const stepChoices = st => {
+  const plain = t => String(t).replace(/<[^>]+>/g, '').replace(/\s+/g, '');
+  const out = [st.ans];
+  st.wrong.forEach(w => { if (w && !out.some(o => plain(o) === plain(w))) out.push(w); });
+  return shuffle(out.slice(0, 4));
+};
+// 計算ドリル → ステップ（ない型は 今までどおり）
+const STEP_DRILLS = ['m2n', 'n2m', 'n2N', 'gasV', 'molar', 'percent', 'dilute', 'stoich', 'phS', 'neutV', 'pvnrt', 'boyle', 'partial', 'bpe', 'osm', 'faraday', 'kc', 'weakpH'];
+const STEP_EXTRA = { 'ls-amass': ['mass'], 'ls-redox': ['oxnum'], 'ls-metalion': ['oxnum'] };
+function stepQ(t) {
+  const g = STEPGEN[t]();
+  return { stepq: true, key: t, cat: g.cat, q: g.q, answer: g.ans, explain: g.ex, choices: [], steps: g.steps.map(s => ({ ask: s.ask, ans: s.ans, why: s.why, ch: stepChoices(s) })), si: 0, sres: [], mines: [] };
+}
 /* 分子ラボ：化学ロケットの 背景（論理表現ラボの英文ロケットと同じ）（リアル版 2）
    ・建物は 地面に 建っている（東京タワー・スカイツリーの 横を 上って、てっぺんを 追いこす）
    ・富士山と 遠くの街は 地平線に。遠いほど ゆっくり 流れる（奥行き）
@@ -9086,6 +9345,12 @@ const GAME = (() => {
     'ls-ionic': ['bondtype', 'ionformula', 'ionname'], 'ls-cov': ['bondtype', 'shape', 'lp'], 'ls-shape': ['shape', 'lp'], 'ls-polar': ['polar', 'en'],
     'ls-hbond': ['hbond', 'boil'], 'ls-cryst': ['bondtype'], 'ls-metal': ['bondtype'], 'ls-amass': ['mass', 'count'], 'ls-mol': ['mol', 'count'], 'ls-rx': ['coef'], 'ls-qty': ['coef'],
     'ls-acid': ['acidval'], 'ls-neut': ['acidval'], 'ls-redox': ['oxnum'], 'ls-metalion': ['oxnum'] };
+  // 🪜 解き方ステップ：むずかしい計算問題は「考え方 → 式 → 計算」の小さな 4 択に分けて 順に答える（オフなら 今までどおり 答えだけ）
+  const stepOn = cfg => cfg.st !== 0;
+  function pushCalc(out, cfg, t, nDrill, nStep) {
+    const step = stepOn(cfg) && STEPGEN[t];
+    for (let i = 0; i < (step ? nStep : nDrill); i++) out.push(step ? { k: 'step', t } : { k: 'drill', t }); // むずかしい計算は ステップ（考え方 → 式 → 計算）で 多めに出す
+  }
   // 出題のもと：確認テストの問題（1つずつ）＋ 自動でつくる問題・計算ドリル（数字が毎回かわるので多めに）
   function unitDeck(cfg, R) {
     const out = [];
@@ -9093,7 +9358,8 @@ const GAME = (() => {
       (LESSON_QUIZ[l.id] || []).forEach(x => out.push({ k: 'quiz', x }));
       bankOf(l.id).forEach(x => out.push({ k: 'quiz', x }));
       (UNIT_TYPES[l.id] || []).forEach(t => out.push({ k: 'gen', t }, { k: 'gen', t }));
-      ((typeof DRILL_OF !== 'undefined' && DRILL_OF[l.id]) || []).forEach(t => { if (DRILLS[t]) out.push({ k: 'drill', t }, { k: 'drill', t }); });
+      ((typeof DRILL_OF !== 'undefined' && DRILL_OF[l.id]) || []).forEach(t => { if (DRILLS[t]) pushCalc(out, cfg, t, 2, 3); });
+      if (stepOn(cfg)) (STEP_EXTRA[l.id] || []).forEach(t => pushCalc(out, cfg, t, 2, 3));
     });
     return shuffleR(out, R);
   }
@@ -9104,7 +9370,8 @@ const GAME = (() => {
     LESSONS.filter(l => (Array.isArray(ids) ? ids.includes(l.id) : l.course === (ids || 'kiso'))).forEach(l => {
       (LESSON_QUIZ[l.id] || []).forEach(x => out.push({ k: 'quiz', x }));
       bankOf(l.id).forEach(x => out.push({ k: 'quiz', x }));
-      if (cfg.m === 'calc' || cfg.m === 'mix' || cfg.m === 'chem') ((typeof DRILL_OF !== 'undefined' && DRILL_OF[l.id]) || []).forEach(t => { if (DRILLS[t]) out.push({ k: 'drill', t }); });
+      if (cfg.m === 'calc' || cfg.m === 'mix' || cfg.m === 'chem') ((typeof DRILL_OF !== 'undefined' && DRILL_OF[l.id]) || []).forEach(t => { if (DRILLS[t]) pushCalc(out, cfg, t, 1, 5); });
+      if (stepOn(cfg)) (STEP_EXTRA[l.id] || []).forEach(t => pushCalc(out, cfg, t, 1, 5));
     });
     return shuffleR(out, R);
   }
@@ -9228,6 +9495,7 @@ const GAME = (() => {
   function fromSource(src) {
     if (src.k === 'quiz') { const [q, a, w, ex] = src.x; return { q: esc(q), choices: shuffle([a].concat(w)), answer: a, explain: ex }; }
     if (src.k === 'drill') return drillChoice(src.t);
+    if (src.k === 'step') return stepQ(src.t);
     return genQ(src.t);
   }
   function openRewards() {
@@ -9316,6 +9584,7 @@ const GAME = (() => {
   function timePop(text, cls) { const t = g$('.gplay .gtbar'); if (t && window.MLFX) MLFX.popAt(t, text, cls); }
   function pick(i) {
     const q = G.q; if (!G || G.lock || q.pick >= 0 || now() < G.startAt) return;
+    if (q.steps) return pickStep(i);
     q.pick = i;
     const c = q.choices[i], v = typeof c === 'string' ? c : c.v, btn = g$(`[data-gp="${i}"]`);
     q.right = v === q.answer; G.lock = true;
@@ -9355,10 +9624,65 @@ const GAME = (() => {
   }
   function advance() {
     clearTimeout(G && G.adv);
-    if (G && !G.over && G.q.pick >= 0) { nextQ(); drawQ(); }
+    if (!G || G.over || G.q.pick < 0) return;
+    if (G.q.steps && !G.q.fin) { stepNext(); return; } // 🪜 途中のステップ：次のステップへ
+    nextQ(); drawQ();
+  }
+  /* ---------- 🪜 解き方ステップ：1 問を 3〜4 つの小さな 4 択に分けて 順に答える ---------- */
+  function stepNext() { const q = G.q; q.si++; q.pick = -1; G.lock = false; drawQ(); }
+  function pickStep(i) {
+    const q = G.q, n = q.steps.length, st = q.steps[q.si], ok = st.ch[i] === st.ans, last = q.si === n - 1, before = altOf(G.score).i;
+    q.pick = i; G.lock = true; q.sres[q.si] = ok; q.mines[q.si] = st.ch[i];
+    if (last) { q.fin = true; q.right = q.sres.every(Boolean); } // 先に「おしまい」にしてから 描く（解説と「次へ」が出る）
+    if (ok) {
+      G.combo++; if (G.combo > G.maxCombo) G.maxCombo = G.combo;
+      let p = Math.round(60 * mult()); const all = last && q.right;
+      if (all) { p += Math.round(60 * mult()); G.ok++; }
+      G.score += p;
+      drawQ(); // 先に 正解の色を出してから 演出
+      const b2 = g$(`[data-gp="${i}"]`);
+      if (window.MLFX && b2) { MLFX.sparks(b2, 1 + Math.min(7, Math.floor(G.combo / 3)) * (fever() ? 2 : 1)); MLFX.popAt(b2, (all ? '🪜 完答！ 🚀 +' : '🚀 +') + fmt(p), 'up'); }
+      if (!fever()) { G.meter++; if (G.meter >= RULE.fever) startFever(); }
+      if ([5, 10, 25, 50].includes(G.combo) || (G.combo > 50 && G.combo % 25 === 0)) { FX('combo'); const m = cardMid(); if (m && window.MLFX) { MLFX.pop(G.combo + ' COMBO!  ×' + comboX(), m[0], m[1], 'big'); MLFX.burst(40, m[0], m[1] + 20); } } else FX('ok');
+      const al = altOf(G.score); G.alt = Math.max(G.alt, al.i);
+      if (al.i > before) { const m = cardMid(0.25); setTimeout(() => { if (m && window.MLFX) MLFX.pop(al.here[2] + ' ' + al.here[3] + ' 突破！', m[0], m[1] + 40, 'big'); FX('lead'); }, 250); }
+      if (solo()) { const b = all ? 3 : 1; G.left += b * 1000; timePop('⛽+' + b + '秒', 'tplus'); }
+      flash('ok');
+    } else {
+      G.combo = 0; G.miss++; G.meter = Math.max(0, G.meter - 2);
+      if (solo()) { G.left -= RULE.miss; timePop('−' + RULE.miss / 1000 + '秒', 'tminus'); }
+      FX('miss'); drawQ(); flash('ng');
+    }
+    if (last) {
+      (G.log = G.log || []).push({ ok: q.right, q: q.q, trail: q.steps.map((s2, j) => ({ ask: s2.ask, ans: s2.ans, mine: q.mines[j], ok: q.sres[j] })), ans: q.answer, ex: q.explain || '' });
+    }
+    pushScore();
+    // 途中のステップ：正解はすぐ、まちがいは 正しい答えを少し見せて 次へ。さいごのステップ：解説（まちがえたら「次へ」まで）
+    const wait = !last ? (ok ? 420 : 1500) : !exOn() ? (q.right ? 450 : 1300) : q.right ? 1800 : 0;
+    clearTimeout(G.adv);
+    if (wait) G.adv = setTimeout(advance, wait);
+  }
+  function drawStepQ(el, q) {
+    const n = q.steps.length, si = q.si, done = q.pick >= 0, NUM = '①②③④⑤';
+    const rows = q.steps.map((s2, j) => {
+      if (j < si) return `<div class="gsr ${q.sres[j] ? 'ok' : 'ng'}"><span class="no">${NUM[j]}</span><span class="sk">${s2.ask}</span><span class="sa">${q.sres[j] ? '✓' : '✕ →'} ${s2.ans}</span></div>`;
+      if (j === si) {
+        const ch = s2.ch.map((c2, i) => `<button type="button" class="gbtn${!done ? '' : c2 === s2.ans ? ' ok' : i === q.pick ? ' ng' : ' dim'}" data-gp="${i}"${done ? ' disabled' : ''}><span class="kb">${i + 1}</span>${c2}</button>`).join('');
+        return `<div class="gsr cur${done ? (q.sres[j] ? ' ok' : ' ng') : ''}${q.lastSi === si ? '' : ' flash'}"><div class="gsh"><span class="no">${NUM[j]}</span><span class="sk">${s2.ask}</span><span class="here">${done ? (q.sres[j] ? '✓ 正解' : '✕ ざんねん') : 'いまここ'}</span></div><div class="gch">${ch}</div>${done && s2.why && (!q.sres[j] || q.fin) ? `<p class="gswhy">💡 ${s2.why}</p>` : ''}</div>`;
+      }
+      return `<div class="gsr fut"><span class="no">${NUM[j]}</span><span class="sk">次のステップ</span></div>`; // これから答えるステップは 問いを見せない（前の答えが 問いに入っていることがあるため）
+    }).join('');
+    q.lastSi = si;
+    el.innerHTML = `${belt()}<div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span><span class="pill st">🪜 解き方ステップ（${n}）</span><span class="pill">${esc(q.cat)}</span></div>
+      <div class="gsprob"><b>問題</b><span>${q.q}</span></div><div class="gws">${rows}</div>${q.fin ? exHTML(q) : ''}`;
+    const cur = el.querySelector('.gsr.cur'), ex = el.querySelector('.gexp'); // スマホで 見えない所に出たら 見える位置へ
+    if (ex) ex.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    else if (cur && !done && cur.getBoundingClientRect().bottom > innerHeight - 10) cur.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
   function exHTML(q) {
     if (q.pick < 0 || !exOn()) return '';
+    if (q.steps) return `<div class="gexp ${q.right ? 'ok' : 'ng'}"><div class="gexh"><b>${q.right ? '⭕ 完答！' : '✕ ざんねん'}</b>${q.right ? '' : `<span>答え：${q.answer}</span>`}</div>
+      ${q.explain ? `<p>${q.explain}</p>` : ''}<button type="button" class="pbtn${q.right ? ' ghost' : ' big'}" data-g="next">次へ ▶<small>Enter</small></button></div>`;
     return `<div class="gexp ${q.right ? 'ok' : 'ng'}"><div class="gexh"><b>${q.right ? '⭕ 正解！' : '✕ ざんねん'}</b>${q.right ? '' : `<span>正しい答え：${(() => { const a = q.choices.find(x => (typeof x === 'string' ? x : x.v) === q.answer); return typeof a === 'string' ? esc(a) : a ? a.html : esc(q.answer); })()}</span>`}</div>
       ${q.explain ? `<p>${q.explain}</p>` : ''}<button type="button" class="pbtn${q.right ? ' ghost' : ' big'}" data-g="next">次へ ▶<small>Enter</small></button></div>`;
   }
@@ -9370,7 +9694,7 @@ const GAME = (() => {
     const tab = (k, label) => `<button type="button" data-g="rv:${k}" aria-pressed="${f === k}">${label}</button>`;
     return `<section class="grev" id="gRev"><div class="grevh"><b>📖 ふりかえり（解説つき）</b><div class="seg wrap">${tab('ng', `✕ まちがえた ${ng}`)}${tab('ok', `⭕ 正解した ${ok}`)}${tab('all', `すべて ${L.length}`)}</div></div>
       ${list.length ? list.map(([x, n]) => `<div class="grevi ${x.ok ? 'isok' : 'isng'}"><div class="grq"><span class="grn">${n}</span>${x.ok ? '<b class="ok">⭕</b>' : '<b class="ng">✕</b>'} ${x.q}</div>
-        <div class="gra">${x.ok ? `<span class="ok">⭕ ${x.ans}</span>` : `<span class="ng">✕ あなた：${x.mine}</span><span class="ok">⭕ 正解：${x.ans}</span>`}</div>${x.ex ? `<p>${x.ex}</p>` : ''}</div>`).join('') : `<p class="note">${f === 'ng' ? 'ミスなし！ 🎉' : 'まだありません'}</p>`}</section>`;
+        ${x.trail ? `<ol class="grtrail">${x.trail.map(t => `<li class="${t.ok ? 'ok' : 'ng'}"><span>${t.ask}</span> ${t.ok ? `<i>⭕ ${t.ans}</i>` : `<i>✕ ${t.mine}</i> → <b>${t.ans}</b>`}</li>`).join('')}</ol>` : `<div class="gra">${x.ok ? `<span class="ok">⭕ ${x.ans}</span>` : `<span class="ng">✕ あなた：${x.mine}</span><span class="ok">⭕ 正解：${x.ans}</span>`}</div>`}${x.ex ? `<p>${x.ex}</p>` : ''}</div>`).join('') : `<p class="note">${f === 'ng' ? 'ミスなし！ 🎉' : 'まだありません'}</p>`}</section>`;
   }
 
   function playShell(title) {
@@ -9426,11 +9750,13 @@ const GAME = (() => {
       const n = Math.ceil((G.startAt - t) / 1000);
       if (n !== G.lastN) {
         G.lastN = n; if (n <= 3) FX('beep');
-        el.innerHTML = `<div class="gcount"><small>${esc(cfgName(G.cfg, solo()))}</small><b>${n > 3 ? '…' : n}</b><small>${solo() ? '🚀 正解するたびに 燃料（H₂＋O₂）を積んで 打ち上げ！ 続けて正解すると コンボで加速、8 問正解で 🔥ブースト。燃料（時間）は 正解でふえて、ミスで −2 秒。高く上がるほど 燃料の減りが速くなる' : '🚀 正しい答えを どんどんタップ！ 続けて正解すると コンボで加速、8 問正解で 🔥ブースト'}</small></div>`;
+        el.innerHTML = `<div class="gcount"><small>${esc(cfgName(G.cfg, solo()))}</small><b>${n > 3 ? '…' : n}</b><small>${solo() ? '🚀 正解するたびに 燃料（H₂＋O₂）を積んで 打ち上げ！ 続けて正解すると コンボで加速、8 問正解で 🔥ブースト。燃料（時間）は 正解でふえて、ミスで −2 秒。高く上がるほど 燃料の減りが速くなる' + (stepOn(G.cfg) ? '　🪜 むずかしい計算は「考え方 → 式 → 計算」の順に 1 つずつ答える' : '') : '🚀 正しい答えを どんどんタップ！ 続けて正解すると コンボで加速、8 問正解で 🔥ブースト'}</small></div>`;
       }
       drawHud(); return;
     }
-    const q = G.q, ansI = q.choices.findIndex(c => (typeof c === 'string' ? c : c.v) === q.answer);
+    const q = G.q;
+    if (q.steps) { drawStepQ(el, q); drawHud(); return; }
+    const ansI = q.choices.findIndex(c => (typeof c === 'string' ? c : c.v) === q.answer);
     if (q.figH === undefined) q.figH = figHTML(q, G.cfg); // 図は問題ごとに1回だけつくる
     const fresh = !q.shown; q.shown = true;
     el.innerHTML = `${belt()}<div class="gmid${fresh ? ' slidein' : ''}"><div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span></div><h2 class="gqt">${q.q}</h2>${q.figH}</div>
@@ -9468,7 +9794,7 @@ const GAME = (() => {
   function startSolo() {
     const c = taCfg();
     if (c.r === 'unit' && !unitList(c).length) { toast('単元をえらんでください'); renderHub(); return; }
-    newGame({ r: c.r, m: c.m, u: c.u, t: +c.t, fig: c.fig ? 1 : 0, d3: c.d3 ? 1 : 0, fx: c.fx === 0 ? 0 : 1, ex: c.ex === 0 ? 0 : 1 }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
+    newGame({ r: c.r, m: c.m, u: c.u, t: +c.t, fig: c.fig ? 1 : 0, d3: c.d3 ? 1 : 0, fx: c.fx === 0 ? 0 : 1, ex: c.ex === 0 ? 0 : 1, st: c.st === 0 ? 0 : 1 }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
     playShell('スコア');
     runClock(endSolo);
   }
@@ -9521,8 +9847,8 @@ const GAME = (() => {
     if (attr === 'ta') h += `<div class="gfld"><span class="gfl">時間</span><span class="note">⛽ 燃料制：60 秒分の燃料でスタート。正解すると燃料がふえる</span></div>`;
     else h += `<div class="gfld"><span class="gfl">時間</span>${seg('t', TIMES.map(t => [t, tLabel(t)]), cfg.t)}</div>`;
     const tg = (k, label, on) => `<button type="button" data-${attr}="vf:${k}" aria-pressed="${on}"${dis}>${on ? '✓ ' : ''}${label}</button>`;
-    h += `<div class="gfld"><span class="gfl">表示</span><div class="seg wrap gvis">${tg('fig', '図', !!cfg.fig)}${tg('d3', '3D', !!cfg.d3)}${tg('fx', '式', cfg.fx !== 0)}${tg('ex', '解説', cfg.ex !== 0)}</div></div>
-      <p class="note gvnote">図：分子の構造図・原子の電子殻の図　3D：くるくる回る模型　式：問題文に化学式を出す（オフにすると名前だけ）　解説：答えたあとに解説を出す（まちがえたら「次へ」をおすまで表示）</p>`;
+    h += `<div class="gfld"><span class="gfl">表示</span><div class="seg wrap gvis">${tg('fig', '図', !!cfg.fig)}${tg('d3', '3D', !!cfg.d3)}${tg('fx', '式', cfg.fx !== 0)}${tg('ex', '解説', cfg.ex !== 0)}${tg('st', '🪜 ステップ', cfg.st !== 0)}</div></div>
+      <p class="note gvnote">図：分子の構造図・原子の電子殻の図　3D：くるくる回る模型　式：問題文に化学式を出す（オフにすると名前だけ）　解説：答えたあとに解説を出す（まちがえたら「次へ」をおすまで表示）　🪜 ステップ：むずかしい計算問題を「考え方 → 式 → 計算」に分けて、順に答える</p>`;
     return h;
   }
   // えらんだものを cfg の変更にする（uc は画面だけの状態）
@@ -9535,7 +9861,7 @@ const GAME = (() => {
     if (key === 'ut') { if (sel.has(val)) sel.delete(val); else sel.add(val); return { r: 'unit', u: join() }; }
     if (key === 'ua') { LESSONS.filter(l => l.course === val).forEach(l => sel.add(l.id)); return { r: 'unit', u: join() }; }
     if (key === 'un') return { u: '' };
-    if (key === 'vf') { const o = {}; o[val] = (val === 'fx' || val === 'ex' ? cfg[val] !== 0 : !!cfg[val]) ? 0 : 1; return o; }
+    if (key === 'vf') { const o = {}; o[val] = (val === 'fx' || val === 'ex' || val === 'st' ? cfg[val] !== 0 : !!cfg[val]) ? 0 : 1; return o; }
     if (key === 'upto') { const l = LESSONS.find(x => x.id === val); if (!l) return null; const list = LESSONS.filter(x => x.course === l.course); return { r: 'unit', u: list.slice(0, list.indexOf(l) + 1).map(x => x.id).join(',') }; }
     return null;
   }
@@ -9613,7 +9939,7 @@ const GAME = (() => {
   /* 先生：部屋 */
   let H = null;
   function makeRoom() {
-    const cfg = { r: 'fld', m: 'mix', u: '', t: 60, fig: 0, d3: 0, fx: 1, ex: 1 };
+    const cfg = { r: 'fld', m: 'mix', u: '', t: 60, fig: 0, d3: 0, fx: 1, ex: 1, st: 1 };
     const tryOne = n => {
       const code = String(1000 + Math.floor(Math.random() * 9000));
       return api('GET', ROOM(code)).then(v => {
@@ -9883,6 +10209,8 @@ const GAME = (() => {
     check: checkBadges,
     sfxOff: () => S.sfx === false,
     _g: () => G, // テスト用
+    _answer(ok) { const q = G.q, st = q.steps ? q.steps[q.si] : null, chs = st ? st.ch : q.choices.map(c => (typeof c === 'string' ? c : c.v)), ai = chs.indexOf(st ? st.ans : q.answer); pick(ok ? ai : (ai + 1) % chs.length); }, // テスト用
+    _set(q) { G.q = q; q.pick = -1; G.lock = false; drawQ(); }, // テスト用：問題を差しかえる
     _extra(t, n) { const out = []; for (let i = 0; i < n; i++) out.push(EXTRA[t]()); return out; },
     _sample(cfg, n) { const keep = G; G = { cfg, R: rng(7) }; const out = []; for (let i = 0; i < n; i++) out.push(seededQuestion(G.R, cfg)); G = keep; return out; }, // テスト用
   };
