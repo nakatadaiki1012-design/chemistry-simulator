@@ -856,6 +856,13 @@ body.gm-on { overflow: hidden; }
 .gsprob { display: flex; gap: 8px; align-items: baseline; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 6px 10px; margin-bottom: 8px; font-size: 15.5px; line-height: 1.6; font-weight: 600; }
 .gsprob > b { flex: none; font-size: 11px; color: var(--panel); background: var(--muted); border-radius: 3px; padding: 1px 6px; }
 .glab .pill.st { background: var(--warm); color: #fff; }
+.glab { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ghint { font: 700 12.5px var(--font-body); border: 1.5px solid #e0a100; background: color-mix(in srgb, #ffd166 35%, var(--panel)); color: var(--ink); border-radius: 999px; padding: 3px 12px; cursor: pointer; margin-left: auto; }
+.ghint b { font-weight: 700; color: var(--warm); margin-left: 6px; font-size: 11.5px; }
+.ghint.used { cursor: default; border-style: dashed; background: transparent; color: var(--muted); }
+.gbtn.cut { opacity: .3; text-decoration: line-through; pointer-events: none; }
+.grh { display: inline-block; margin: 0 4px; padding: 0 6px; border-radius: 4px; background: color-mix(in srgb, #ffd166 40%, var(--panel)); font-size: 11px; font-weight: 700; vertical-align: 2px; }
+.gwhys { margin: 4px 0 8px; padding-left: 0; list-style: none; font-size: 14px; line-height: 1.65; color: var(--muted); } .gwhys b { color: var(--warm); margin-right: 4px; }
 .gws { display: flex; flex-direction: column; gap: 6px; }
 .gsr { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline; gap: 8px; font-size: 14px; padding: 5px 10px; border-radius: 6px; background: color-mix(in srgb, var(--panel) 85%, transparent); }
 .gsr .no { font-weight: 800; } .gsr .sk { color: var(--muted); } .gsr .sa { font-weight: 800; text-align: right; }
@@ -9223,6 +9230,7 @@ const GAME = (() => {
       if (root.hidden || !G || G.over || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName || '')) return;
       if (/^[1-4]$/.test(e.key) && now() >= G.startAt && !G.lock) pick(+e.key - 1);
       else if ((e.key === 'Enter' || e.key === ' ') && G.lock && G.q.pick >= 0) { e.preventDefault(); advance(); }
+      else if ((e.key === 'h' || e.key === 'H') && now() >= G.startAt) useHint();
     });
   }
   function topChip() { const c = root && root.querySelector('.gchip'); if (c) { const r = rw(); c.innerHTML = `🪙<b>${fmt(r.coins)}</b><span class="lv">${levelOf(r.coins).name}</span>`; } }
@@ -9579,8 +9587,33 @@ const GAME = (() => {
   }
   function nextQ() { G.q = seededQuestion(G.R, G.cfg); G.q.pick = -1; G.lock = false; }
   const exOn = () => G.cfg.ex !== 0;
+  const exrOn = () => G.cfg.exr !== 0;   // 正解したときも「次へ」をおすまで解説を出す（ひとりでは 読んでいる間 時間がへらない）
+  const hnOn = () => G.cfg.hn !== 0;     // 💡 ヒント（点数・時間を へらして 2 つ消す）
+  const hintCost = () => (solo() ? { pts: 30, sec: 3 } : { pts: 60, sec: 0 }); // 対戦は 時間が全員同じなので 点数だけ多めに
   const cardMid = dy => { const c = $('gQ'), r = c && c.getBoundingClientRect(); return r ? [r.left + r.width / 2, r.top + r.height * (dy || 0.35)] : null; };
   function flash(k) { const c = $('gQ'); if (!c) return; c.classList.remove('f-ok', 'f-ng'); void c.offsetWidth; c.classList.add('f-' + k); }
+  /* ---------- 💡 ヒント：点数と時間を へらして、まちがいの選択肢を 2 つ消す（ステップでは 考え方のポイントも出る） ---------- */
+  const hintTarget = () => { const q = G.q; return q.steps ? q.steps[q.si] : q; };
+  const hintChoices = () => { const q = G.q; return q.steps ? q.steps[q.si].ch : q.choices.map(c => (typeof c === 'string' ? c : c.v)); };
+  function canHint() { return !!(G && !G.over && hnOn() && now() >= G.startAt && !G.lock && !hintTarget().hint && hintChoices().length >= 3); }
+  function useHint() {
+    if (!canHint()) return;
+    const q = G.q, t = hintTarget(), chs = hintChoices(), right = q.steps ? t.ans : q.answer;
+    const wrong = chs.map((c, i) => i).filter(i => chs[i] !== right);
+    t.hint = { cut: shuffle(wrong).slice(0, Math.min(2, chs.length - 2)) }; q.hinted = true; G.hints = (G.hints || 0) + 1;
+    const c = hintCost(); G.score = Math.max(0, G.score - c.pts);
+    if (c.sec && solo()) G.left -= c.sec * 1000;
+    FX('beep'); timePop(`💡 −${c.pts}点${c.sec ? `・−${c.sec}秒` : ''}`, 'tminus');
+    drawQ(); pushScore();
+  }
+  function hintBtn() {
+    if (!hnOn() || hintChoices().length < 3) return '';
+    const c = hintCost(), cost = `−${c.pts}点${c.sec ? `・−${c.sec}秒` : ''}`;
+    if (hintTarget().hint) return `<span class="ghint used">💡 ヒント使用ずみ（${cost}）</span>`;
+    if (G.lock) return '';
+    return `<button type="button" class="ghint" data-g="hint">💡 ヒント（2つ消す）<b>${cost}</b></button>`;
+  }
+  const isCut = (t, i) => !!(t.hint && t.hint.cut.includes(i));
   function timePop(text, cls) { const t = g$('.gplay .gtbar'); if (t && window.MLFX) MLFX.popAt(t, text, cls); }
   function pick(i) {
     const q = G.q; if (!G || G.lock || q.pick >= 0 || now() < G.startAt) return;
@@ -9610,10 +9643,10 @@ const GAME = (() => {
       FX('miss'); drawQ(); flash('ng');
     }
     const ac = q.choices.find(x => (typeof x === 'string' ? x : x.v) === q.answer);
-    (G.log = G.log || []).push({ ok: q.right, q: q.q, mine: typeof c === 'string' ? esc(c) : c.html, ans: typeof ac === 'string' ? esc(ac) : ac ? ac.html : esc(q.answer), ex: q.explain || '' });
+    (G.log = G.log || []).push({ ok: q.right, hint: !!q.hint, q: q.q, mine: typeof c === 'string' ? esc(c) : c.html, ans: typeof ac === 'string' ? esc(ac) : ac ? ac.html : esc(q.answer), ex: q.explain || '' });
     pushScore();
     // 解説あり：正解は少し見せて自動で次へ（タップで すぐ次へ）。まちがいは「次へ」をおすまで解説を出したまま
-    const wait = !exOn() ? (q.right ? 300 : 1100) : q.right ? 1500 : 0;
+    const wait = !exOn() ? (q.right ? 300 : 1100) : q.right ? (exrOn() ? 0 : 1500) : 0;
     clearTimeout(G.adv);
     if (wait) G.adv = setTimeout(advance, wait);
   }
@@ -9654,11 +9687,11 @@ const GAME = (() => {
       FX('miss'); drawQ(); flash('ng');
     }
     if (last) {
-      (G.log = G.log || []).push({ ok: q.right, q: q.q, trail: q.steps.map((s2, j) => ({ ask: s2.ask, ans: s2.ans, mine: q.mines[j], ok: q.sres[j] })), ans: q.answer, ex: q.explain || '' });
+      (G.log = G.log || []).push({ ok: q.right, hint: q.steps.some(s2 => s2.hint), q: q.q, trail: q.steps.map((s2, j) => ({ ask: s2.ask, ans: s2.ans, mine: q.mines[j], ok: q.sres[j] })), ans: q.answer, ex: q.explain || '' });
     }
     pushScore();
     // 途中のステップ：正解はすぐ、まちがいは 正しい答えを少し見せて 次へ。さいごのステップ：解説（まちがえたら「次へ」まで）
-    const wait = !last ? (ok ? 420 : 1500) : !exOn() ? (q.right ? 450 : 1300) : q.right ? 1800 : 0;
+    const wait = !last ? (ok ? 420 : 1500) : !exOn() ? (q.right ? 450 : 1300) : q.right ? (exrOn() ? 0 : 1800) : 0;
     clearTimeout(G.adv);
     if (wait) G.adv = setTimeout(advance, wait);
   }
@@ -9667,13 +9700,13 @@ const GAME = (() => {
     const rows = q.steps.map((s2, j) => {
       if (j < si) return `<div class="gsr ${q.sres[j] ? 'ok' : 'ng'}"><span class="no">${NUM[j]}</span><span class="sk">${s2.ask}</span><span class="sa">${q.sres[j] ? '✓' : '✕ →'} ${s2.ans}</span></div>`;
       if (j === si) {
-        const ch = s2.ch.map((c2, i) => `<button type="button" class="gbtn${!done ? '' : c2 === s2.ans ? ' ok' : i === q.pick ? ' ng' : ' dim'}" data-gp="${i}"${done ? ' disabled' : ''}><span class="kb">${i + 1}</span>${c2}</button>`).join('');
-        return `<div class="gsr cur${done ? (q.sres[j] ? ' ok' : ' ng') : ''}${q.lastSi === si ? '' : ' flash'}"><div class="gsh"><span class="no">${NUM[j]}</span><span class="sk">${s2.ask}</span><span class="here">${done ? (q.sres[j] ? '✓ 正解' : '✕ ざんねん') : 'いまここ'}</span></div><div class="gch">${ch}</div>${done && s2.why && (!q.sres[j] || q.fin) ? `<p class="gswhy">💡 ${s2.why}</p>` : ''}</div>`;
+        const ch = s2.ch.map((c2, i) => `<button type="button" class="gbtn${!done ? (isCut(s2, i) ? ' cut' : '') : c2 === s2.ans ? ' ok' : i === q.pick ? ' ng' : ' dim'}" data-gp="${i}"${done || isCut(s2, i) ? ' disabled' : ''}><span class="kb">${i + 1}</span>${c2}</button>`).join('');
+        return `<div class="gsr cur${done ? (q.sres[j] ? ' ok' : ' ng') : ''}${q.lastSi === si ? '' : ' flash'}"><div class="gsh"><span class="no">${NUM[j]}</span><span class="sk">${s2.ask}</span><span class="here">${done ? (q.sres[j] ? '✓ 正解' : '✕ ざんねん') : 'いまここ'}</span></div><div class="gch">${ch}</div>${s2.why && ((done && (!q.sres[j] || q.fin)) || (!done && s2.hint)) ? `<p class="gswhy">💡 ${s2.why}</p>` : ''}</div>`;
       }
       return `<div class="gsr fut"><span class="no">${NUM[j]}</span><span class="sk">次のステップ</span></div>`; // これから答えるステップは 問いを見せない（前の答えが 問いに入っていることがあるため）
     }).join('');
     q.lastSi = si;
-    el.innerHTML = `${belt()}<div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span><span class="pill st">🪜 解き方ステップ（${n}）</span><span class="pill">${esc(q.cat)}</span></div>
+    el.innerHTML = `${belt()}<div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span><span class="pill st">🪜 解き方ステップ（${n}）</span><span class="pill">${esc(q.cat)}</span>${hintBtn()}</div>
       <div class="gsprob"><b>問題</b><span>${q.q}</span></div><div class="gws">${rows}</div>${q.fin ? exHTML(q) : ''}`;
     const cur = el.querySelector('.gsr.cur'), ex = el.querySelector('.gexp'); // スマホで 見えない所に出たら 見える位置へ
     if (ex) ex.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -9682,9 +9715,9 @@ const GAME = (() => {
   function exHTML(q) {
     if (q.pick < 0 || !exOn()) return '';
     if (q.steps) return `<div class="gexp ${q.right ? 'ok' : 'ng'}"><div class="gexh"><b>${q.right ? '⭕ 完答！' : '✕ ざんねん'}</b>${q.right ? '' : `<span>答え：${q.answer}</span>`}</div>
-      ${q.explain ? `<p>${q.explain}</p>` : ''}<button type="button" class="pbtn${q.right ? ' ghost' : ' big'}" data-g="next">次へ ▶<small>Enter</small></button></div>`;
+      ${q.explain ? `<p>${q.explain}</p>` : ''}${q.steps.some(s2 => s2.why) ? `<ul class="gwhys">${q.steps.map((s2, j) => (s2.why ? `<li><b>${'①②③④⑤'[j]}</b> ${s2.why}</li>` : '')).join('')}</ul>` : ''}<button type="button" class="pbtn big" data-g="next">次へ ▶<small>Enter</small></button></div>`;
     return `<div class="gexp ${q.right ? 'ok' : 'ng'}"><div class="gexh"><b>${q.right ? '⭕ 正解！' : '✕ ざんねん'}</b>${q.right ? '' : `<span>正しい答え：${(() => { const a = q.choices.find(x => (typeof x === 'string' ? x : x.v) === q.answer); return typeof a === 'string' ? esc(a) : a ? a.html : esc(q.answer); })()}</span>`}</div>
-      ${q.explain ? `<p>${q.explain}</p>` : ''}<button type="button" class="pbtn${q.right ? ' ghost' : ' big'}" data-g="next">次へ ▶<small>Enter</small></button></div>`;
+      ${q.explain ? `<p>${q.explain}</p>` : ''}<button type="button" class="pbtn big" data-g="next">次へ ▶<small>Enter</small></button></div>`;
   }
   // 終わったあとの ふりかえり：答えた問題を 全部（まちがえた／正解した で しぼれる）。どれも 解説つき
   function reviewHTML() {
@@ -9693,7 +9726,7 @@ const GAME = (() => {
     const f = G.rv || (ng ? 'ng' : 'all'), list = L.map((x, n) => [x, n + 1]).filter(([x]) => f === 'all' || (f === 'ng' ? !x.ok : x.ok));
     const tab = (k, label) => `<button type="button" data-g="rv:${k}" aria-pressed="${f === k}">${label}</button>`;
     return `<section class="grev" id="gRev"><div class="grevh"><b>📖 ふりかえり（解説つき）</b><div class="seg wrap">${tab('ng', `✕ まちがえた ${ng}`)}${tab('ok', `⭕ 正解した ${ok}`)}${tab('all', `すべて ${L.length}`)}</div></div>
-      ${list.length ? list.map(([x, n]) => `<div class="grevi ${x.ok ? 'isok' : 'isng'}"><div class="grq"><span class="grn">${n}</span>${x.ok ? '<b class="ok">⭕</b>' : '<b class="ng">✕</b>'} ${x.q}</div>
+      ${list.length ? list.map(([x, n]) => `<div class="grevi ${x.ok ? 'isok' : 'isng'}"><div class="grq"><span class="grn">${n}</span>${x.ok ? '<b class="ok">⭕</b>' : '<b class="ng">✕</b>'}${x.hint ? '<span class="grh">💡 ヒント</span>' : ''} ${x.q}</div>
         ${x.trail ? `<ol class="grtrail">${x.trail.map(t => `<li class="${t.ok ? 'ok' : 'ng'}"><span>${t.ask}</span> ${t.ok ? `<i>⭕ ${t.ans}</i>` : `<i>✕ ${t.mine}</i> → <b>${t.ans}</b>`}</li>`).join('')}</ol>` : `<div class="gra">${x.ok ? `<span class="ok">⭕ ${x.ans}</span>` : `<span class="ng">✕ あなた：${x.mine}</span><span class="ok">⭕ 正解：${x.ans}</span>`}</div>`}${x.ex ? `<p>${x.ex}</p>` : ''}</div>`).join('') : `<p class="note">${f === 'ng' ? 'ミスなし！ 🎉' : 'まだありません'}</p>`}</section>`;
   }
 
@@ -9759,11 +9792,11 @@ const GAME = (() => {
     const ansI = q.choices.findIndex(c => (typeof c === 'string' ? c : c.v) === q.answer);
     if (q.figH === undefined) q.figH = figHTML(q, G.cfg); // 図は問題ごとに1回だけつくる
     const fresh = !q.shown; q.shown = true;
-    el.innerHTML = `${belt()}<div class="gmid${fresh ? ' slidein' : ''}"><div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span></div><h2 class="gqt">${q.q}</h2>${q.figH}</div>
+    el.innerHTML = `${belt()}<div class="gmid${fresh ? ' slidein' : ''}"><div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span>${hintBtn()}</div><h2 class="gqt">${q.q}</h2>${q.figH}</div>
       <div class="gch">${q.choices.map((c, i) => {
         const label = typeof c === 'string' ? esc(c) : c.html;
-        const cls = q.pick < 0 ? '' : i === ansI ? ' ok' : i === q.pick ? ' ng' : ' dim';
-        return `<button type="button" class="gbtn${cls}" data-gp="${i}"><span class="kb">${i + 1}</span>${label}</button>`;
+        const cls = q.pick < 0 ? (isCut(q, i) ? ' cut' : '') : i === ansI ? ' ok' : i === q.pick ? ' ng' : ' dim';
+        return `<button type="button" class="gbtn${cls}" data-gp="${i}"${cls === ' cut' ? ' disabled' : ''}><span class="kb">${i + 1}</span>${label}</button>`;
       }).join('')}</div>${exHTML(q)}`;
     const f3 = $('gFig3'); if (f3) fig3D(subjectsOf(q)[0], f3);
     drawHud();
@@ -9794,7 +9827,7 @@ const GAME = (() => {
   function startSolo() {
     const c = taCfg();
     if (c.r === 'unit' && !unitList(c).length) { toast('単元をえらんでください'); renderHub(); return; }
-    newGame({ r: c.r, m: c.m, u: c.u, t: +c.t, fig: c.fig ? 1 : 0, d3: c.d3 ? 1 : 0, fx: c.fx === 0 ? 0 : 1, ex: c.ex === 0 ? 0 : 1, st: c.st === 0 ? 0 : 1 }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
+    newGame({ r: c.r, m: c.m, u: c.u, t: +c.t, fig: c.fig ? 1 : 0, d3: c.d3 ? 1 : 0, fx: c.fx === 0 ? 0 : 1, ex: c.ex === 0 ? 0 : 1, st: c.st === 0 ? 0 : 1, exr: c.exr === 0 ? 0 : 1, hn: c.hn === 0 ? 0 : 1 }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
     playShell('スコア');
     runClock(endSolo);
   }
@@ -9809,7 +9842,7 @@ const GAME = (() => {
       <div class="gscore">${fmt(G.score)}<small> 点</small></div>
       ${arrival(al)}
       <p class="gphrase">⚗️ <b>${G.ok}</b> 問正解　⏱ <b>${mm}</b>　🔥 ブースト <b>${G.feverN}</b> 回</p>
-      <p class="note">✕ ミス ${G.miss}　⚡ 最大 ${G.maxCombo} コンボ　⏩ 燃料の減り 最高 ×${G.maxSpeed.toFixed(1)}　🪙 +${coins}</p>
+      <p class="note">✕ ミス ${G.miss}　💡 ヒント ${G.hints || 0} 回　⚡ 最大 ${G.maxCombo} コンボ　⏩ 燃料の減り 最高 ×${G.maxSpeed.toFixed(1)}　🪙 +${coins}</p>
       <p class="note">${esc(cfgName(G.cfg, true))} のベスト：${fmt(Math.max(prev, G.score))} 点</p>
       ${reviewHTML()}
       <div class="grow"><button type="button" class="pbtn big" data-g="again">↺ もう一度</button><button type="button" class="pbtn ghost" data-g="brag">📣 自慢する</button><button type="button" class="pbtn ghost" data-g="hub">◀ もどる</button></div></div>`;
@@ -9847,8 +9880,8 @@ const GAME = (() => {
     if (attr === 'ta') h += `<div class="gfld"><span class="gfl">時間</span><span class="note">⛽ 燃料制：60 秒分の燃料でスタート。正解すると燃料がふえる</span></div>`;
     else h += `<div class="gfld"><span class="gfl">時間</span>${seg('t', TIMES.map(t => [t, tLabel(t)]), cfg.t)}</div>`;
     const tg = (k, label, on) => `<button type="button" data-${attr}="vf:${k}" aria-pressed="${on}"${dis}>${on ? '✓ ' : ''}${label}</button>`;
-    h += `<div class="gfld"><span class="gfl">表示</span><div class="seg wrap gvis">${tg('fig', '図', !!cfg.fig)}${tg('d3', '3D', !!cfg.d3)}${tg('fx', '式', cfg.fx !== 0)}${tg('ex', '解説', cfg.ex !== 0)}${tg('st', '🪜 ステップ', cfg.st !== 0)}</div></div>
-      <p class="note gvnote">図：分子の構造図・原子の電子殻の図　3D：くるくる回る模型　式：問題文に化学式を出す（オフにすると名前だけ）　解説：答えたあとに解説を出す（まちがえたら「次へ」をおすまで表示）　🪜 ステップ：むずかしい計算問題を「考え方 → 式 → 計算」に分けて、順に答える</p>`;
+    h += `<div class="gfld"><span class="gfl">表示</span><div class="seg wrap gvis">${tg('fig', '図', !!cfg.fig)}${tg('d3', '3D', !!cfg.d3)}${tg('fx', '式', cfg.fx !== 0)}${tg('ex', '解説', cfg.ex !== 0)}${tg('st', '🪜 ステップ', cfg.st !== 0)}${tg('exr', '📖 正解も読む', cfg.exr !== 0)}${tg('hn', '💡 ヒント', cfg.hn !== 0)}</div></div>
+      <p class="note gvnote">図：分子の構造図・原子の電子殻の図　3D：くるくる回る模型　式：問題文に化学式を出す（オフにすると名前だけ）　解説：答えたあとに解説を出す（まちがえたら「次へ」をおすまで表示）　🪜 ステップ：むずかしい計算問題を「考え方 → 式 → 計算」に分けて、順に答える　📖 正解も読む：正解したときも「次へ」をおすまで解説を出す（ひとりでは 読んでいる間は時間がへらない。対戦では 時間は進む）　💡 ヒント：点数と時間を へらして、まちがいの選択肢を 2 つ消す</p>`;
     return h;
   }
   // えらんだものを cfg の変更にする（uc は画面だけの状態）
@@ -9861,7 +9894,7 @@ const GAME = (() => {
     if (key === 'ut') { if (sel.has(val)) sel.delete(val); else sel.add(val); return { r: 'unit', u: join() }; }
     if (key === 'ua') { LESSONS.filter(l => l.course === val).forEach(l => sel.add(l.id)); return { r: 'unit', u: join() }; }
     if (key === 'un') return { u: '' };
-    if (key === 'vf') { const o = {}; o[val] = (val === 'fx' || val === 'ex' || val === 'st' ? cfg[val] !== 0 : !!cfg[val]) ? 0 : 1; return o; }
+    if (key === 'vf') { const o = {}; o[val] = (val === 'fx' || val === 'ex' || val === 'st' || val === 'exr' || val === 'hn' ? cfg[val] !== 0 : !!cfg[val]) ? 0 : 1; return o; }
     if (key === 'upto') { const l = LESSONS.find(x => x.id === val); if (!l) return null; const list = LESSONS.filter(x => x.course === l.course); return { r: 'unit', u: list.slice(0, list.indexOf(l) + 1).map(x => x.id).join(',') }; }
     return null;
   }
@@ -9939,7 +9972,7 @@ const GAME = (() => {
   /* 先生：部屋 */
   let H = null;
   function makeRoom() {
-    const cfg = { r: 'fld', m: 'mix', u: '', t: 60, fig: 0, d3: 0, fx: 1, ex: 1, st: 1 };
+    const cfg = { r: 'fld', m: 'mix', u: '', t: 60, fig: 0, d3: 0, fx: 1, ex: 1, st: 1, exr: 1, hn: 1 };
     const tryOne = n => {
       const code = String(1000 + Math.floor(Math.random() * 9000));
       return api('GET', ROOM(code)).then(v => {
@@ -10172,6 +10205,7 @@ const GAME = (() => {
       case 'rv': if (G) { G.rv = arg; const el = $('gRev'); if (el) el.outerHTML = reviewHTML(); } break;
       case 'sfx': S.sfx = S.sfx === false; save(); renderHub(); break;
       case 'next': advance(); break;
+      case 'hint': useHint(); break;
       case 'brag': brag((G && G.share) || ''); break;
       case 'quit': leave(); leaveBattle(); location.hash = '#game'; renderHub(); break;
       case 'rewards': openRewards(); break;
