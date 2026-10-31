@@ -8468,8 +8468,246 @@ const STEP_DRILLS = ['m2n', 'n2m', 'n2N', 'gasV', 'molar', 'percent', 'dilute', 
 const STEP_EXTRA = { 'ls-amass': ['mass'], 'ls-redox': ['oxnum'], 'ls-metalion': ['oxnum'] };
 function stepQ(t) {
   const g = STEPGEN[t]();
-  return { stepq: true, key: t, cat: g.cat, q: g.q, answer: g.ans, explain: g.ex, choices: [], steps: g.steps.map(s => ({ ask: s.ask, ans: s.ans, why: s.why, ch: stepChoices(s) })), si: 0, sres: [], mines: [] };
+  return { stepq: true, key: t, cat: g.cat, q: g.q, answer: g.ans, explain: g.ex, subject: g.subject, subjects: g.subjects, figWhen: g.figWhen, choices: [], steps: g.steps.map(s => ({ ask: s.ask, ans: s.ans, why: s.why, ch: stepChoices(s) })), si: 0, sres: [], mines: [] };
 }
+/* 🪜 考え方のステップ（概念の問題）：「こうなるから、こう」と 順に考えて答える（数学Aラボと同じ考え方）
+   形・極性・イオン・組成式・電子配置・価電子・中性子・水素結合・結合の種類・周期と族 の 10 種類。
+   steps.js の STEPGEN に 足す。分子のデータ（結合・非共有電子対・電気陰性度）は 分子ラボの 3D 模型と同じものを使う。 */
+(() => {
+  const pk = a => a[Math.floor(Math.random() * a.length)];
+  const S = (ask, ans, wrong, why) => ({ ask, ans: String(ans), wrong: wrong.map(String), why: why || '' });
+  const SH = { '正三角形': '平面三角形', '四面体形': '正四面体形' };
+  const SHAPES = ['直線形', '折れ線形', '三角錐形', '正四面体形', '平面三角形'];
+  const LM = id => getModel(LIB.find(e => e.id === id));
+  const supc = c => `<sup>${Math.abs(c) > 1 ? Math.abs(c) : ''}${c > 0 ? '＋' : '−'}</sup>`;
+  const cnt = (xs, unit) => xs.map(x => x + ' ' + unit);
+  const near = (n, lo, hi, unit) => { const o = []; for (let k = lo; k <= hi; k++) if (k !== n) o.push(k + ' ' + unit); return o; };
+  // 電子配置の まちがい（電子を 1 つ となりの殻へ ずらす・原子番号 ±1）
+  function cfgWrongs(Z, c) {
+    const w = new Set();
+    for (let i = 0; i < 4; i++) for (const d of [-1, 1]) {
+      const x = c.slice(), j = i + d;
+      if (j < 0 || j > 3 || !x[i]) continue;
+      x[i]--; x[j]++;
+      if (x[j] <= SHELL_MAX[j] && !(x[3] && !x[2])) w.add(configText(x));
+    }
+    w.add(configText(shellCounts(Z + 1))); w.add(configText(shellCounts(Math.max(1, Z - 1))));
+    ['L2', 'M1', 'K1 L1'].forEach(x => { if (w.size < 4) w.add(x); }); // 水素・ヘリウムなど 少ないとき
+    w.delete(configText(c));
+    return [...w];
+  }
+  const G = STEPGEN;
+
+  /* 形：つながる原子の数 → 非共有電子対の数 → 形 */
+  G.cshape = () => {
+    const e = LM(pk(['water', 'ammonia', 'methane', 'co2', 'h2s', 'so2', 'formaldehyde', 'ccl4', 'nh4', 'h3o', 'co3'])), m = e.model;
+    const c = m.atoms.map((_, i) => i).filter(i => m.nb[i].length >= 2)[0], el = m.atoms[c].el, n = m.nb[c].length, lp = m.atoms[c].lp, tot = n + lp;
+    const ans = SH[e.an.shape] || e.an.shape;
+    return { cat: '分子の形', subject: e.id, figWhen: 'after', q: `「${e.name}」${fq(e)} の形は？（電子対の反発から 順に考えよう）`, ans,
+      ex: `${el} のまわりに 結合 ${n} ＋ 非共有電子対 ${lp} ＝ ${tot} 組。電子対どうしは 反発して 離れ、原子の並びは ${ans} になる。`,
+      steps: [S(`中心の ${el} 原子に つながっている原子は いくつ？`, `${n} 個`, near(n, 1, 4, '個'), '二重結合・三重結合も 1 つの方向として 数える。'),
+        S(`${el} 原子のまわりの 非共有電子対は 何組？`, `${lp} 組`, near(lp, 0, 3, '組'), '電子式で、結合に使われていない 電子対（点 2 つのペア）の数。'),
+        S(`つながる原子 ${n} 個・非共有電子対 ${lp} 組（電子対は ${tot} 組）。原子の並びの 形は？`, ans, SHAPES.filter(x => x !== ans), '電子対（結合＋非共有）どうしは 反発して 離れる：2 組＝直線、3 組＝平面三角形、4 組＝正四面体の向き。形は 原子の並びだけで 呼ぶ（非共有電子対は ふくめない）。')] };
+  };
+
+  /* 極性：結合の極性 → 形で 打ち消し合うか → 分子の極性 */
+  G.cpolar = () => {
+    const e = LM(pk(['water', 'ammonia', 'methane', 'co2', 'hcl', 'h2s', 'ccl4', 'chcl3', 'nitrogen', 'oxygen', 'so2', 'formaldehyde', 'benzene'])), m = e.model;
+    const pol = m.bonds.filter(b => { const x = m.atoms[b.a].el, y = m.atoms[b.b].el; if ((x === 'C' && y === 'H') || (x === 'H' && y === 'C')) return false; return Math.abs(EL[x].en - EL[y].en) >= 0.05; }).length;
+    const sh = SH[e.an.shape] || e.an.shape, polar = e.an.polarity === '極性分子', ans = e.an.polarity;
+    const last = S('分子全体では？', ans, ['極性分子', '無極性分子', 'イオン結合の物質', '原子 1 個の粒子'].filter(x => x !== ans), polar ? '結合の極性が 打ち消し合わずに 残ると 極性分子。' : '結合に極性がない、または 打ち消し合うと 無極性分子。');
+    const s1 = S('結合に 電子のかたより（極性）は ある？', pol ? 'ある（原子の電気陰性度が ちがう）' : 'ほとんどない（同じ原子どうし など）',
+      pol ? ['ほとんどない（同じ原子どうし）', '二重結合だから ない', 'イオン結合なので 考えない'] : ['ある（原子の電気陰性度が ちがう）', '必ず 大きくある', 'イオン結合なので 考えない'], '電気陰性度がちがう原子どうしの結合は 電子がかたよる（O−H・N−H・C=O など）。C−H は ほぼ かたよらない。');
+    return { cat: '極性', subject: e.id, figWhen: 'after', q: `「${e.name}」${fq(e)} は 極性分子？ 無極性分子？（結合 → 形 の順に考えよう）`, ans,
+      ex: `${e.name}は ${ans}。${e.an.polarNote}`,
+      steps: pol ? [s1, S(`形は ${sh}。結合の極性は 分子全体で どうなる？`, polar ? '打ち消し合わず 残る' : '打ち消し合う', polar ? ['打ち消し合う', '強め合って 2 倍になる', '電子がなくなる'] : ['打ち消し合わず 残る', '強め合って 2 倍になる', '電子がなくなる'], '同じ大きさの極性が 対称に並ぶと 打ち消し合う（CO₂・CH₄・CCl₄）。折れ線形・三角錐形・ちがう原子どうしの 2 原子分子は 残る。'), last] : [s1, last] };
+  };
+
+  /* イオン：価電子 → 貴ガスの配置になるには → イオン */
+  G.cion = () => {
+    const el = pk(Object.keys(ION_OF).filter(x => x !== 'H')), Z = EL[el].z, ion = ION_OF[el], v = valenceElectrons(Z), nm = EL[el].n;
+    const ans = `${el}${supc(ion)}`, a = Math.abs(ion), verb = ion > 0 ? '放出する' : '受け取る', other = ion > 0 ? '受け取る' : '放出する';
+    return { cat: 'イオン', subject: 'atom-' + el, figWhen: 'after', q: `${nm}（${el}）がなりやすいイオンは？（価電子から 順に考えよう）`, ans,
+      ex: ion > 0 ? `価電子 ${v} 個のうち ${a} 個の電子を 放出して ${el}${supc(ion)} になり、貴ガスと同じ電子配置になる。` : `電子を ${a} 個 受け取って ${el}${supc(ion)} になり、最外殻が 8 個になる。`,
+      steps: [S(`${nm}（${el}）の 価電子（最外殻の電子）は 何個？`, `${v} 個`, near(v, 1, 7, '個'), '最外殻の電子の数 ＝ 価電子。電子配置から 数える。'),
+        S('貴ガスと同じ 電子配置になるには？', `電子を ${a} 個 ${verb}`, [`電子を ${a} 個 ${other}`, `電子を ${a + 1} 個 ${verb}`, `電子を ${Math.max(1, a - 1) === a ? a + 2 : Math.max(1, a - 1)} 個 ${other}`], '少ない数で 貴ガスの配置になる向きを えらぶ：価電子が 1〜3 個 → 放出（陽イオン）、6〜7 個 → 受け取る（陰イオン）。'),
+        S(`電子を ${a} 個 ${verb} と、${nm} は どんなイオン？`, ans, [`${el}${supc(-ion)}`, `${el}${supc(ion > 0 ? ion + 1 : ion - 1)}`, `${el}${supc(ion > 0 ? -(ion + 1) : -(ion - 1))}`], '放出 → 電子が へって 正（＋）のイオン、受け取る → 負（−）のイオン。電荷の大きさは 出入りした電子の数。')] };
+  };
+
+  /* 組成式：電荷 → 電荷の合計が 0 になる比 → 組成式 */
+  G.cionf = () => {
+    const cat = [['Na', 1, 'ナトリウムイオン'], ['K', 1, 'カリウムイオン'], ['Mg', 2, 'マグネシウムイオン'], ['Ca', 2, 'カルシウムイオン'], ['Al', 3, 'アルミニウムイオン'], ['NH4', 1, 'アンモニウムイオン'], ['Fe', 3, '鉄(III)イオン'], ['Cu', 2, '銅(II)イオン']];
+    const an = [['Cl', 1, '塩化物イオン'], ['O', 2, '酸化物イオン'], ['OH', 1, '水酸化物イオン'], ['SO4', 2, '硫酸イオン'], ['NO3', 1, '硝酸イオン'], ['CO3', 2, '炭酸イオン'], ['S', 2, '硫化物イオン']];
+    const c = pk(cat), a = pk(an), g = (x, y) => (y ? g(y, x % y) : x), Lc = c[1] * a[1] / g(c[1], a[1]), nc = Lc / c[1], na = Lc / a[1];
+    const part = (sym, k) => (k === 1 ? sym : (/[A-Z].*[A-Z]|\d/.test(sym) ? `(${sym})${k}` : sym + k));
+    const f = (x, y) => formulaHTML(part(c[0], x) + part(a[0], y)), ans = f(nc, na);
+    const ion = (s, k, sg) => formulaHTML(s) + `<sup>${k > 1 ? k : ''}${sg}</sup>`;
+    return { cat: '組成式', q: `${c[2]}（${ion(c[0], c[1], '＋')}）と ${a[2]}（${ion(a[0], a[1], '−')}）からできる物質の 組成式は？（電荷から 順に考えよう）`, ans,
+      ex: `正の電荷 ${c[1]}×${nc} ＝ 負の電荷 ${a[1]}×${na} になるように 数をそろえる → ${ans}。`,
+      steps: [S('それぞれの イオンの電荷は？', `陽イオン ＋${c[1]}　陰イオン −${a[1]}`, [`陽イオン ＋${a[1]}　陰イオン −${c[1]}`, `陽イオン ＋${c[1]}　陰イオン −${c[1] === a[1] ? c[1] + 1 : c[1]}`, `陽イオン ＋${c[1] + 1}　陰イオン −${a[1]}`, '陽イオン ＋1　陰イオン −2', '陽イオン ＋2　陰イオン −2', '陽イオン ＋3　陰イオン −1', '陽イオン ＋1　陰イオン −3', '陽イオン ＋2　陰イオン −3'], '電荷の大きさは 化学式の右上を 見る（Na⁺ は ＋1、Al³⁺ は ＋3、SO₄²⁻ は −2）。'),
+        S('電荷の合計が 0 になる 数の比（陽イオン : 陰イオン）は？', `${nc} : ${na}`, [`${na} : ${nc}`, `${c[1]} : ${a[1]}`, '1 : 1', `${nc * 2} : ${na * 2}`, '1 : 2', '2 : 1', '1 : 3', '3 : 1'], '（陽イオンの電荷 × 数）＝（陰イオンの電荷 × 数）になる いちばん小さい整数比。'),
+        S(`${nc} : ${na} の比を 組成式に すると？`, ans, [f(na, nc), f(1, 1), f(nc * 2, na * 2), f(nc, na * 2), f(nc * 2, na)], '陽イオンを 先に書く。原子団（SO₄・OH・NO₃・CO₃・NH₄）が 2 個以上のときは かっこで くくって 数字を つける。')] };
+  };
+
+  /* 電子配置：電子の数 → 最外殻 → 電子配置 */
+  G.cconfig = () => {
+    const el = pk(ELEMENTS_20.slice(2)), Z = EL[el].z, c = shellCounts(Z), ans = configText(c), idx = c.filter(Boolean).length - 1, NM = ['K', 'L', 'M', 'N'];
+    return { cat: '電子配置', subject: 'atom-' + el, figWhen: 'after', q: `${EL[el].n}（${el}、原子番号 ${Z}）の電子配置は？（順に考えよう）`, ans,
+      ex: `電子 ${Z} 個を 内側の殻から 順に入れる（K 2 → L 8 → M 8 → N …）：${ans}。${Z >= 19 ? 'K・Ca では、M 殻に 8 個入ったところで N 殻に入る。' : ''}`,
+      steps: [S(`${EL[el].n}の 電子は 何個？（原子番号 ${Z} の中性の原子）`, `${Z} 個`, [`${Z + 1} 個`, `${Z - 1} 個`, `${Z * 2} 個`, `${Z + 2} 個`], '中性の原子では 電子の数 ＝ 陽子の数 ＝ 原子番号。'),
+        S('電子は K 殻（最大 2）→ L 殻（最大 8）→ M 殻（8 まで）→ N 殻 … の順に入る。いちばん外側の殻は？', `${NM[idx]} 殻`, NM.filter((_, i) => i !== idx).map(x => x + ' 殻'), '内側の殻が いっぱいになってから 外側に入る。'),
+        S(`電子 ${Z} 個を 順に入れた 電子配置は？`, ans, cfgWrongs(Z, c), 'K 殻 2 個、L 殻 8 個 …と 順に入れて、のこりを 最外殻に。')] };
+  };
+
+  /* 価電子：電子配置 → 最外殻の電子 → 価電子 */
+  G.cval = () => {
+    const el = pk(ELEMENTS_20), Z = EL[el].z, c = shellCounts(Z), v = valenceElectrons(Z), outer = c.filter(Boolean).slice(-1)[0], noble = v === 0;
+    return { cat: '価電子', subject: 'atom-' + el, figWhen: 'after', q: `${EL[el].n}（${el}）原子の価電子の数は？（順に考えよう）`, ans: `${v} 個`,
+      ex: v === 0 ? '貴ガスは 安定な電子配置なので、価電子は 0 とする。' : `最外殻の電子が ${v} 個（${configText(c)}）なので、価電子は ${v} 個。`,
+      steps: [S(`${EL[el].n}（原子番号 ${Z}）の 電子配置は？`, configText(c), cfgWrongs(Z, c), '電子を K 殻 2 → L 殻 8 → M 殻 8 → … の順に入れる。'),
+        S('いちばん外側の殻（最外殻）の 電子は 何個？', `${outer} 個`, near(outer, 1, 8, '個'), '電子が入っている いちばん外側の殻の 電子の数。'),
+        S('価電子の数は？', `${v} 個`, noble ? [`${outer} 個`, '1 個', '4 個', '6 個'] : near(v, 1, 7, '個').concat(['0 個']), '価電子 ＝ 最外殻の電子の数。ただし 貴ガス（He・Ne・Ar）は 安定なので 0 とする。')] };
+  };
+
+  /* 中性子の数：陽子の数 → 式 → 計算 */
+  G.cnuc = () => {
+    const iso = [['H', 1, 2], ['C', 6, 12], ['C', 6, 13], ['C', 6, 14], ['N', 7, 14], ['O', 8, 16], ['O', 8, 18], ['F', 9, 19], ['Na', 11, 23], ['Mg', 12, 24], ['Al', 13, 27], ['S', 16, 32], ['Cl', 17, 35], ['Cl', 17, 37], ['K', 19, 39], ['Ca', 20, 40]];
+    const [el, Z, A] = pk(iso), n = A - Z;
+    return { cat: '原子の構造', subject: 'atom-' + el, figWhen: 'after', q: `<sup>${A}</sup>${el}（原子番号 ${Z}）の原子 1 個にふくまれる 中性子の数は？（順に考えよう）`, ans: `${n} 個`,
+      ex: `陽子の数 ＝ 原子番号 ${Z}。中性子の数 ＝ 質量数 − 陽子の数 ＝ ${A} − ${Z} ＝ ${n}。`,
+      steps: [S('陽子の数は？', `${Z} 個`, [`${A} 個`, `${n} 個`, `${Z + 1} 個`, `${Z * 2} 個`, `${Z + 2} 個`, `${Z + 3} 個`, `${Z + 4} 個`], '陽子の数 ＝ 原子番号。（電子の数も 同じ）'),
+        S('中性子の数を 求める式は？', '質量数 − 陽子の数', ['質量数 ＋ 陽子の数', '陽子の数 − 質量数', '質量数 ÷ 陽子の数'], '質量数 ＝ 陽子の数 ＋ 中性子の数 だから。'),
+        S(`${A} − ${Z} ＝ ？`, `${n} 個`, [`${A + Z} 個`, `${Z} 個`, `${A} 個`, `${n + 1} 個`, `${n - 1} 個`])] };
+  };
+
+  /* 水素結合：H は 何に結合？ → 水素結合 */
+  G.chb = () => {
+    const e = LM(pk(['water', 'ammonia', 'methane', 'hf', 'hcl', 'ethanol', 'dme', 'methanol', 'acetic', 'h2s', 'acetone', 'glucose', 'formaldehyde', 'octane'])), m = e.model;
+    const hasH = m.atoms.some(a => a.el === 'H'), onf = m.bonds.some(b => { const x = m.atoms[b.a].el, y = m.atoms[b.b].el; return (x === 'H' && 'ONF'.includes(y)) || (y === 'H' && 'ONF'.includes(x)); });
+    const A = 'O・N・F に結合した H がある', B = 'H はあるが C（や S・Cl）に結合している', C = 'H をもたない', D = 'H は すべて 金属に結合している';
+    const ans1 = onf ? A : hasH ? B : C, ans = e.hb ? 'つくる' : 'つくらない';
+    return { cat: '分子間力', subject: e.id, figWhen: 'after', q: `「${e.name}」${fq(e)} の分子どうしは、水素結合をつくる？（順に考えよう）`, ans,
+      ex: e.hb ? 'O・N・F に結合した H をもつので、となりの分子の O・N・F と 水素結合をつくる。' : 'O・N・F に結合した H がないので、水素結合はつくらない。',
+      steps: [S(`${e.name} の分子の中の H（水素原子）は、何に結合している？`, ans1, [A, B, C, D].filter(x => x !== ans1), '水素結合は「O・N・F に 結合した H」と「となりの分子の O・N・F」のあいだに はたらく。C−H や H−Cl の H は 対象外。'),
+        S('分子どうしの 水素結合は？', ans, ['つくる', 'つくらない'].filter(x => x !== ans), 'O・N・F に結合した H があるか どうかで 決まる。')] };
+  };
+
+  /* 結合の種類：元素の種類 → 結合 */
+  G.cbond = () => {
+    const list = [['nacl', 'イオン結合'], ['naoh', 'イオン結合'], ['caco3', 'イオン結合'], ['copper', '金属結合'], ['iron', '金属結合'], ['diamond', '共有結合'], ['water', '共有結合'], ['co2', '共有結合'], ['methane', '共有結合'], ['graphite', '共有結合']];
+    const [id, ans] = pk(list), e = LM(id);
+    const el = { 'イオン結合': '金属元素 と 非金属元素', '金属結合': '金属元素だけ', '共有結合': '非金属元素だけ' }[ans];
+    return { cat: '化学結合', subject: id, figWhen: 'after', q: `「${e.name}」${fq(e)} をつくっている結合（主なもの）は？（元素から 順に考えよう）`, ans,
+      ex: { 'イオン結合': '金属元素と非金属元素 → 陽イオンと陰イオンが クーロン力で引き合う イオン結合。', '金属結合': '金属元素だけ → 自由電子による 金属結合。', '共有結合': '非金属元素どうし → 電子対を共有する 共有結合。' }[ans],
+      steps: [S(`${e.name} は 何の元素で できている？`, el, ['金属元素 と 非金属元素', '金属元素だけ', '非金属元素だけ', '貴ガスだけ'].filter(x => x !== el), '金属元素：Na・Ca・Cu・Fe など。非金属元素：H・C・N・O・Cl など。'),
+        S(`${el} の物質に ふつう はたらく 結合は？`, ans, ['共有結合', 'イオン結合', '金属結合'].filter(x => x !== ans), '金属＋非金属 → イオン結合、非金属どうし → 共有結合、金属だけ → 金属結合。')] };
+  };
+
+  /* 周期・族：電子配置 → 殻の数／最外殻の電子 → 周期／族 */
+  G.cper = () => {
+    const el = pk(ELEMENTS_20.slice(1)), Z = EL[el].z, c = shellCounts(Z), per = c.filter(Boolean).length;
+    const grp = Z <= 2 ? (Z === 1 ? 1 : 18) : (() => { const v = c.filter(Boolean).slice(-1)[0]; return per === 4 ? v : v <= 2 ? v : v + 10; })();
+    const outer = c.filter(Boolean).slice(-1)[0], s1 = S(`${EL[el].n}（原子番号 ${Z}）の 電子配置は？`, configText(c), cfgWrongs(Z, c), '電子を K 殻 2 → L 殻 8 → M 殻 8 → … の順に入れる。');
+    if (Math.random() < 0.5) return { cat: '周期表', subject: 'atom-' + el, figWhen: 'after', q: `${EL[el].n}（${el}、原子番号 ${Z}）は 第何周期？（順に考えよう）`, ans: `第${per}周期`, ex: `電子が入っている殻の数（${configText(c)}）＝ 周期 ${per}。`,
+      steps: [s1, S('電子が入っている 殻は いくつ？', `${per} 個`, near(per, 1, 4, '個'), '殻の数 ＝ 周期。'), S('第何周期？', `第${per}周期`, [1, 2, 3, 4].filter(x => x !== per).map(x => `第${x}周期`))] };
+    return { cat: '周期表', subject: 'atom-' + el, figWhen: 'after', q: `${EL[el].n}（${el}、原子番号 ${Z}）は 何族？（順に考えよう）`, ans: `${grp}族`, ex: `最外殻の電子（${configText(c)}）から、${grp} 族。`,
+      steps: [s1, S('最外殻の電子は 何個？', `${outer} 個`, near(outer, 1, 8, '個'), '電子が入っている いちばん外側の殻の 電子の数。'),
+        S('何族？', `${grp}族`, ['1族', '2族', '13族', '14族', '15族', '16族', '17族', '18族'].filter(x => x !== `${grp}族`), '最外殻の電子が 1・2 個 → 1・2 族、3〜8 個 → 13〜18 族（＋10）。He は 2 個でも 18 族。')] };
+  };
+})();
+// ゲームの 問題の種類 → 考え方のステップ版（ある型だけ）
+const CSTEP = { shape: 'cshape', polar: 'cpolar', ion: 'cion', ionformula: 'cionf', config: 'cconfig', valence: 'cval', nucleon: 'cnuc', hbond: 'chb', bondtype: 'cbond', period: 'cper' };
+/* 💡 考え方のヒント（ゲーム用）：答えを言わずに「どう考えるか」を 1 〜 2 文で。点数と時間をへらして 見られる。
+   gen：自動でつくる問題の型ごと／drill：計算の型ごと／unit：単元ごと（確認テスト・ゲーム用の問題集） */
+const GAME_TIPS = {
+  gen: {
+    shape: '中心原子のまわりの「結合の数」と「非共有電子対の数」を数える → 電子対どうしの反発で 形が決まる。',
+    polar: '① 結合に極性（電気陰性度の差）はあるか ② 形が対称で 打ち消し合うか、の順に考える。',
+    mass: '（原子の種類ごとの）原子量 × 原子の数 を すべて 足す。',
+    config: '電子の数 ＝ 原子番号。内側の殻から K 2 → L 8 → M 8 → N … の順に入れる。',
+    valence: '最外殻の電子の数 ＝ 価電子の数。貴ガス（He・Ne・Ar）だけは 0 とする。',
+    ion: '価電子が 1〜3 個 → 放出して 陽イオン、6〜7 個 → 受け取って 陰イオン。貴ガスと同じ配置になる。',
+    bondtype: '金属 ＋ 非金属 → イオン結合、非金属どうし → 共有結合、金属だけ → 金属結合。',
+    mol: 'mol を 中心に 換算する：質量 ÷ モル質量、個数 ÷ 6.0×10²³、気体の体積 ÷ 22.4 L（標準状態）。',
+    coef: '左右で 各原子の数が そろうように 係数をつける（いちばん複雑な物質の係数を 1 とおくと 楽）。',
+    state: '常温（25 ℃）が 融点より低ければ 固体、融点と沸点のあいだなら 液体、沸点より高ければ 気体。',
+    hbond: '「O・N・F に結合した H」が あるかどうかを 調べる。',
+    boil: '水素結合がある ほうが 沸点が高い。どちらも なければ 分子量の大きいほうが 高い。',
+    nucleon: '陽子の数 ＝ 原子番号 ＝ 電子の数。中性子の数 ＝ 質量数 − 陽子の数。',
+    lp: '電子式で、結合に使われていない 電子対が 非共有電子対。二重結合は 共有電子対 2 組。',
+    ionformula: '（陽イオンの電荷 × 数）＝（陰イオンの電荷 × 数）になる いちばん小さい整数比。',
+    ionname: '陰イオンは「〜化物イオン」、酸素を ふくむ原子団は「〜酸イオン」。',
+    oxnum: '化合物全体で 酸化数の合計は 0（イオンは その電荷）。H は ＋1、O は −2 が 基本。',
+    acidval: '酸が 出せる H⁺ の数（塩基は OH⁻ の数）が 価数。強い・弱いとは 別の話。',
+    count: '化学式の右下の数字が 原子の数。かっこの外の数字は かっこの中の 全部に かかる。',
+    flame: 'Li 赤、Na 黄、K 赤紫、Ca 橙赤、Sr 紅、Ba 黄緑、Cu 青緑。',
+    en: '周期表の 右上（F）ほど 電気陰性度が 大きい（貴ガスを のぞく）。',
+    period: '周期 ＝ 電子の入っている殻の数。族 ＝ 最外殻の電子の数（1・2 個 → 1・2 族、3〜8 個 → 13〜18 族）。',
+  },
+  drill: {
+    m2n: '物質量 ＝ 質量 ÷ モル質量。', n2m: '質量 ＝ 物質量 × モル質量。', n2N: '粒子の数 ＝ 物質量 × 6.0×10²³。',
+    gasV: '先に 物質量（質量 ÷ モル質量）を 出す。標準状態では 1 mol ＝ 22.4 L。', molar: 'モル濃度 ＝ 溶質の mol ÷ 溶液の L（mL を L に直す）。',
+    percent: '分母は 溶液全体の質量（溶質 ＋ 溶媒）。', dilute: 'うすめても 溶質の物質量は 変わらない：c₁V₁ ＝ c₂V₂。',
+    stoich: '質量 → mol → 係数の比 → mol → 質量・体積 の順に換算する。', phS: 'pH ＝ −log[H⁺]。塩基は [H⁺] ＝ 1.0×10⁻¹⁴ ÷ [OH⁻]。',
+    neutV: '（酸の価数 × 濃度 × 体積）＝（塩基の価数 × 濃度 × 体積）。', pvnrt: 'PV ＝ nRT。T は 絶対温度（セ氏 ＋ 273）。',
+    boyle: 'P₁V₁/T₁ ＝ P₂V₂/T₂。温度は 絶対温度で。', partial: '分圧 ＝ 全圧 × モル分率。', bpe: 'Δt ＝ K × m × i。電解質は 電離した粒子の数（i）を かける。',
+    osm: 'Π ＝ cRT。T は 絶対温度。', hess: '求める式を 与えられた式の 足し算・引き算で つくる。', faraday: '電気量 ＝ 電流 × 時間 → ÷ 96500 で 電子の mol → 反応式の係数で 物質の mol。',
+    weakpH: '弱酸の [H⁺] ＝ √(c × Ka)。', kc: 'K ＝ 生成物の濃度（係数乗）÷ 反応物の濃度（係数乗）。',
+  },
+  unit: {
+    'ls-pure': '純物質は 1 種類の物質、混合物は 2 種類以上。分離は 性質のちがい（粒の大きさ・沸点・溶解度・昇華…）を 使う。',
+    'ls-elem': '単体は 1 種類の元素、化合物は 2 種類以上の元素。同素体は 同じ元素の単体で 性質がちがう（S・C・O・P）。',
+    'ls-state': '固体 → 液体 → 気体 の順に 粒子の運動が 激しい。状態変化の間は 温度が 一定になる。',
+    'ls-atom': '陽子の数 ＝ 原子番号 ＝ 電子の数。質量数 ＝ 陽子 ＋ 中性子。同位体は 陽子が同じで 中性子がちがう。',
+    'ls-shell': '電子は 内側の殻（K 2・L 8・M 8…）から 順に入る。最外殻の電子の数が 族と性質を 決める。',
+    'ls-ion': '価電子が少ない原子は 放出して 陽イオン、多い原子は 受け取って 陰イオン。貴ガスと同じ配置に なる。',
+    'ls-ionic': '金属 ＋ 非金属 → イオン結合。陽イオンと陰イオンが クーロン力で 引き合う。組成式は 電荷の合計が 0 になる比。',
+    'ls-cov': '非金属どうしは 電子対を 共有する（共有結合）。電子式で 不対電子の数 ＝ つくれる結合の数。',
+    'ls-shape': '中心原子のまわりの 電子対（結合 ＋ 非共有）は 反発して 離れる。2 組＝直線、3 組＝平面三角形、4 組＝四面体の向き。',
+    'ls-polar': '電気陰性度の差が 大きいと 結合に極性。分子全体は 形が対称なら 打ち消し合って 無極性。',
+    'ls-hbond': '分子間力は 水素結合（O・N・F に結合した H）が 強い。それ以外は 分子量が大きいほど 強く、沸点が高い。',
+    'ls-cryst': '共有結合の結晶は 非常にかたく 融点が高い（C・SiO₂）。分子結晶は 分子間力だけで 弱く、融点が低い。',
+    'ls-metal': '金属結合は 自由電子が 全体を 結びつける。電気・熱をよく通し、展性・延性がある。',
+    'ls-amass': '原子量は ¹²C ＝ 12 を 基準にした 相対的な質量。分子量・式量は 原子量の 和。',
+    'ls-mol': '1 mol ＝ 6.0×10²³ 個 ＝ 質量が モル質量 g ＝ 気体なら 標準状態で 22.4 L。mol を 中心に 換算する。',
+    'ls-conc': 'モル濃度 ＝ 溶質の mol ÷ 溶液の L。質量パーセント濃度 ＝ 溶質 ÷ 溶液 × 100。うすめても 溶質の mol は 変わらない。',
+    'ls-rx': '反応式は 左右で 原子の種類と数が 同じになるように 係数をつける。係数の比 ＝ 物質量の比。',
+    'ls-qty': '質量 → mol →（係数の比）→ mol → 質量・体積 の順に 換算する。',
+    'ls-acid': '酸は H⁺ を出す、塩基は OH⁻ を出す（または H⁺ を受け取る）。強弱は 電離度、価数とは 別。',
+    'ls-ph': 'pH ＝ −log[H⁺]。pH が 1 小さいと [H⁺] は 10 倍。pH 7 が 中性、小さいほど 酸性。',
+    'ls-neut': '中和は 酸の H⁺ ＝ 塩基の OH⁻ の物質量。（価数 × 濃度 × 体積）が 等しい。塩の液性は 強いほうで 決まる。',
+    'ls-redox': '酸化 ＝ 酸素を得る・水素を失う・電子を失う（酸化数が増える）。還元は その逆。化合物の酸化数の合計は 0。',
+    'ls-metalion': 'イオン化傾向が大きい金属ほど 陽イオンに なりやすい（酸化されやすい）。K Ca Na Mg Al Zn Fe Ni Sn Pb (H) Cu Hg Ag Pt Au。',
+    'ls-life': '酸化還元は 電池・金属の製錬・さび・漂白剤などに 利用される。電池は イオン化傾向の大きいほうが 負極。',
+    'ls-c-vapor': '蒸気圧は 温度が高いほど 大きい。蒸気圧が 外圧と等しくなると 沸騰する。',
+    'ls-c-gas': '気体の状態方程式 PV ＝ nRT。温度は 絶対温度（セ氏 ＋ 273）。ボイル：PV 一定、シャルル：V/T 一定。',
+    'ls-c-lattice': '単位格子の原子の数 ＝ 頂点 1/8、辺 1/4、面 1/2、内部 1 を 足す。配位数・充填率は 結晶ごとに ちがう。',
+    'ls-c-real': '実在気体は 分子間力と 分子の大きさのため 理想気体から ずれる。低温・高圧ほど ずれが大きい。',
+    'ls-c-solution': '溶解度は 温度で 変わる（固体は 高温ほど大、気体は 低温・高圧ほど大）。ヘンリーの法則：溶ける物質量は 圧力に比例。',
+    'ls-c-colligative': '沸点上昇・凝固点降下は 溶けた粒子の数（質量モル濃度）に 比例。電解質は 電離した数を 数える。',
+    'ls-c-enthalpy': 'ΔH ＜ 0 は 発熱、＞ 0 は 吸熱。ヘスの法則：途中の道すじに よらず 総エンタルピー変化は 同じ。',
+    'ls-c-cell': '電池：負極で 酸化・正極で 還元。電気分解：陽極で 酸化・陰極で 還元。電気量 ＝ 電流 × 時間。',
+    'ls-c-rate': '反応速度は 濃度・温度・触媒で 変わる。活性化エネルギーが 小さいほど 速い。',
+    'ls-c-equil': 'ルシャトリエの原理：条件を変えると その変化を やわらげる向きに 平衡が移動。K ＝ 生成物 ÷ 反応物（係数乗）。',
+    'ls-c-ion': '弱酸の [H⁺] ＝ √(c·Ka)。緩衝液は 弱酸とその塩（または 弱塩基とその塩）の混合で pH が 変わりにくい。',
+    'ls-c-ksp': '溶解度積 Ksp ＝ イオン濃度の積。[A][B] ＞ Ksp なら 沈殿する。共通イオンが あると 溶けにくい。',
+    'ls-c-nonmetal': '非金属元素の 単体・化合物の 性質と 製法。ハロゲンは 原子番号が小さいほど 酸化力が強い。',
+    'ls-c-metal': '典型金属と 遷移金属。アルカリ金属は 水と激しく反応、遷移金属は 錯イオン・有色イオンが 多い。両性金属：Al・Zn・Sn・Pb。',
+    'ls-c-gasprep': '気体の製法：弱酸・弱塩基の遊離、酸化還元、熱分解。捕集は 水への溶けやすさと 空気（29）との 重さの比で えらぶ。',
+    'ls-c-ionsep': '系統分析：沈殿の色と、試薬（HCl・H₂S・NH₃ 水・NaOH）への 溶け方で 金属イオンを 分ける。',
+    'ls-c-material': 'セラミックス・金属の利用：製錬（還元）、合金の性質、アルミニウムの 溶融塩電解 など。',
+    'ls-c-hc': '炭化水素：アルカン（単結合）・アルケン（二重結合）・アルキン（三重結合）。不飽和 → 付加、飽和 → 置換。',
+    'ls-c-oxy': 'アルコール・アルデヒド・ケトン・カルボン酸・エステルの 官能基と 反応（酸化・脱水・けん化）を 整理。',
+    'ls-c-arom': 'ベンゼンは 平面で 安定、置換反応が 起こりやすい（付加は 起こりにくい）。置換基の位置：o・m・p。',
+    'ls-c-fat': '油脂 ＝ グリセリン ＋ 高級脂肪酸（エステル）。けん化で セッケンと グリセリン。不飽和度は ヨウ素価で 表す。',
+    'ls-c-phenol': 'フェノール類は 弱い酸性、FeCl₃ で 呈色、臭素水で 白色沈殿。サリチル酸は フェノール性 OH と カルボキシ基をもつ。',
+    'ls-c-nitrogen': 'アニリンは 弱塩基。ジアゾカップリングで アゾ染料。ニトロ化 → 還元で アニリンが できる。',
+    'ls-c-organicsep': '分離は 液性（酸・塩基）と 溶け方で。構造決定は 元素分析（C・H の質量）→ 組成式 → 分子式 → 官能基の反応。',
+    'ls-c-poly': '付加重合（二重結合が 開く）と 縮合重合（水などが とれてつながる）。単量体と 重合体の 対応を 覚える。',
+    'ls-c-natural': '糖は 単糖・二糖・多糖。タンパク質は アミノ酸が ペプチド結合。ビウレット反応・キサントプロテイン反応で 検出。',
+    'ls-c-polymer2': '熱可塑性樹脂は 加熱でやわらかく、熱硬化性樹脂は 立体網目で かたい。ゴムは 加硫で 弾性が ます。',
+  },
+};
 /* 分子ラボ：化学ロケットの 背景（論理表現ラボの英文ロケットと同じ）（リアル版 2）
    ・建物は 地面に 建っている（東京タワー・スカイツリーの 横を 上って、てっぺんを 追いこす）
    ・富士山と 遠くの街は 地平線に。遠いほど ゆっくり 流れる（奥行き）
@@ -9233,7 +9471,7 @@ const GAME = (() => {
       if (root.hidden || !G || G.over || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName || '')) return;
       if (/^[1-4]$/.test(e.key) && now() >= G.startAt && !G.lock) pick(+e.key - 1);
       else if ((e.key === 'Enter' || e.key === ' ') && G.lock && G.q.pick >= 0) { e.preventDefault(); advance(); }
-      else if ((e.key === 'h' || e.key === 'H') && now() >= G.startAt) useHint();
+      else if ((e.key === 'h' || e.key === 'H') && now() >= G.startAt) { if (canTip()) useTip(); else useHint(); } // H：まず 考え方のヒント → つぎに 2 つ消す
     });
   }
   function topChip() { const c = root && root.querySelector('.gchip'); if (c) { const r = rw(); c.innerHTML = `🪙<b>${fmt(r.coins)}</b><span class="lv">${levelOf(r.coins).name}</span>`; } }
@@ -9358,6 +9596,11 @@ const GAME = (() => {
     'ls-acid': ['acidval'], 'ls-neut': ['acidval'], 'ls-redox': ['oxnum'], 'ls-metalion': ['oxnum'] };
   // 🪜 解き方ステップ：むずかしい計算問題は「考え方 → 式 → 計算」の小さな 4 択に分けて 順に答える（オフなら 今までどおり 答えだけ）
   const stepOn = cfg => cfg.st !== 0;
+  // 自動の問題：考え方のステップ版（「こうなるから こう」）が ある型は、そのうち nStep 個を ステップにする
+  function pushGen(out, cfg, t, n, nStep) {
+    const cs = stepOn(cfg) && CSTEP[t] && STEPGEN[CSTEP[t]];
+    for (let i = 0; i < n; i++) out.push(cs && i < nStep ? { k: 'step', t: CSTEP[t] } : { k: 'gen', t });
+  }
   function pushCalc(out, cfg, t, nDrill, nStep) {
     const step = stepOn(cfg) && STEPGEN[t];
     for (let i = 0; i < (step ? nStep : nDrill); i++) out.push(step ? { k: 'step', t } : { k: 'drill', t }); // むずかしい計算は ステップ（考え方 → 式 → 計算）で 多めに出す
@@ -9366,9 +9609,9 @@ const GAME = (() => {
   function unitDeck(cfg, R) {
     const out = [];
     unitList(cfg).forEach(l => {
-      (LESSON_QUIZ[l.id] || []).forEach(x => out.push({ k: 'quiz', x }));
-      bankOf(l.id).forEach(x => out.push({ k: 'quiz', x }));
-      (UNIT_TYPES[l.id] || []).forEach(t => out.push({ k: 'gen', t }, { k: 'gen', t }));
+      (LESSON_QUIZ[l.id] || []).forEach(x => out.push({ k: 'quiz', x, l: l.id }));
+      bankOf(l.id).forEach(x => out.push({ k: 'quiz', x, l: l.id }));
+      (UNIT_TYPES[l.id] || []).forEach(t => pushGen(out, cfg, t, 2, 1));
       ((typeof DRILL_OF !== 'undefined' && DRILL_OF[l.id]) || []).forEach(t => { if (DRILLS[t]) pushCalc(out, cfg, t, 2, 3); });
       if (stepOn(cfg)) (STEP_EXTRA[l.id] || []).forEach(t => pushCalc(out, cfg, t, 2, 3));
     });
@@ -9377,10 +9620,10 @@ const GAME = (() => {
   // 分野で選んだとき：自動の問題（種類ごとに3つ）＋ その分野の授業の確認テスト ＋ 計算ドリル
   function fieldDeck(cfg, R) {
     const out = [], ids = FIELD_LESSONS[cfg.m] || null;
-    (TYPES[cfg.m] || TYPES.mix).forEach(t => out.push({ k: 'gen', t }, { k: 'gen', t }, { k: 'gen', t }));
+    (TYPES[cfg.m] || TYPES.mix).forEach(t => pushGen(out, cfg, t, 3, 2));
     LESSONS.filter(l => (Array.isArray(ids) ? ids.includes(l.id) : l.course === (ids || 'kiso'))).forEach(l => {
-      (LESSON_QUIZ[l.id] || []).forEach(x => out.push({ k: 'quiz', x }));
-      bankOf(l.id).forEach(x => out.push({ k: 'quiz', x }));
+      (LESSON_QUIZ[l.id] || []).forEach(x => out.push({ k: 'quiz', x, l: l.id }));
+      bankOf(l.id).forEach(x => out.push({ k: 'quiz', x, l: l.id }));
       if (cfg.m === 'calc' || cfg.m === 'mix' || cfg.m === 'chem') ((typeof DRILL_OF !== 'undefined' && DRILL_OF[l.id]) || []).forEach(t => { if (DRILLS[t]) pushCalc(out, cfg, t, 1, 5); });
       if (stepOn(cfg)) (STEP_EXTRA[l.id] || []).forEach(t => pushCalc(out, cfg, t, 1, 5));
     });
@@ -9404,6 +9647,48 @@ const GAME = (() => {
 
   /* ---------- 問題といっしょに出す「図」「3D」（先生がえらぶ） ---------- */
   const subjectsOf = q => (q.subjects || (q.subject ? [q.subject] : [])).filter(id => id && (/^atom-/.test(id) || LIB.some(e => e.id === id && e.kind === 'mol')));
+  /* ---------- 図・3D を できるだけ つける ----------
+     問題文に出てくる物質（名前・化学式）を さがして、分子の図・3D 模型を つける（確認テスト・問題集・計算・ステップも）。
+     図を見ると 答えがわかってしまう問題（形・極性・電子配置 など）は、答えたあとに 下へ 出す。 */
+  const plainTxt = h => String(h || '').replace(/<sub>(\d+)<\/sub>/g, (_, d) => d.replace(/\d/g, c => '₀₁₂₃₄₅₆₇₈₉'[c])).replace(/<sup>([^<]*)<\/sup>/g, '$1').replace(/<[^>]+>/g, '').replace(/&amp;/g, '&');
+  const REVEAL_TYPES = new Set(['shape', 'polar', 'config', 'valence', 'ion', 'hbond', 'lp', 'nucleon', 'period', 'element', 'bondtype']);
+  const REVEAL_RE = /形|結合角|極性|非共有|共有電子対|電子配置|電子殻|価電子|不対電子|原子価|電子式|構造|異性体|何本|何組|原子の数|何個の原子|水素結合|結晶/;
+  let SUBJ_IDX = null;
+  function subjIndex() {
+    if (SUBJ_IDX) return SUBJ_IDX;
+    SUBJ_IDX = [];
+    LIB.forEach(e => {
+      if (e.kind !== 'mol' || e.custom || e.cat === 'quiz') return;
+      try { getModel(e); } catch (x) { return; }
+      const keys = new Set();
+      [e.name, e.f, e.rational, displayFormula(e)].forEach(k => { k = k && plainTxt(k); if (k && (k.length >= 3 || (/[A-Z]/.test(k) && /[₀-₉]/.test(k)))) keys.add(k); });
+      keys.forEach(k => SUBJ_IDX.push({ id: e.id, k, f: /^[A-Za-z0-9₀-₉()⁺⁻²³·]+$/.test(k) }));
+    });
+    SUBJ_IDX.sort((a, b) => b.k.length - a.k.length);
+    return SUBJ_IDX;
+  }
+  // 文章の中から 物質を さがす（前後が 名前・式の一部でない ものだけ。長い名前から 順に 見つけて 消す）
+  function findSubjects(text, max = 2) {
+    let t = plainTxt(text); const out = [], WORD = /[ァ-ヶー一-龥A-Za-z0-9₀-₉()⁺⁻]/;
+    for (const it of subjIndex()) {
+      if (out.length >= max) break;
+      let at = t.indexOf(it.k);
+      while (at >= 0) {
+        const pre = t[at - 1] || '', post = t[at + it.k.length] || '';
+        if (!(pre && WORD.test(pre)) && !(post && (it.f ? /[A-Za-z0-9₀-₉()⁺⁻]/ : WORD).test(post))) { if (!out.includes(it.id)) out.push(it.id); t = t.slice(0, at) + '　'.repeat(it.k.length) + t.slice(at + it.k.length); break; }
+        at = t.indexOf(it.k, at + 1);
+      }
+    }
+    return out;
+  }
+  const LISTQ = /([A-Z][A-Za-z₀-₉]*[、，,・]\s*){2,}[A-Z]/; // 「HF、HCl、HBr、HI」のように 物質を 3 つ以上ならべた問題には 図をつけない（1 つだけ出すと 誤解のもと）
+  function decorateQ(q, src) {
+    if (!subjectsOf(q).length && !q.noFig && !LISTQ.test(plainTxt(q.q))) { const ids = findSubjects(q.q); if (ids.length) q.subjects = ids; }
+    const ans = plainTxt(q.answer);
+    { const a = findSubjects(ans, 1).filter(id => !subjectsOf(q).includes(id)); if (a.length) q.ansSubjects = a; } // 答えの物質は 答えたあとに 出す
+    if (!q.figWhen) q.figWhen = (src && src.k === 'gen' && REVEAL_TYPES.has(src.t)) || REVEAL_RE.test(plainTxt(q.q)) ? 'after' : 'before';
+    return q;
+  }
   const atomEl = id => (/^atom-/.test(id) ? id.slice(5) : null);
   // 分子・結晶の図：いちばん原子どうしが重ならない向きから見た、平面の構造図（SVG）
   function fig2D(id) {
@@ -9495,19 +9780,23 @@ const GAME = (() => {
     }
     host.appendChild(R3.renderer.domElement);
   }
-  function figHTML(q, cfg) {
-    const ids = subjectsOf(q);
-    if (!ids.length || !(cfg.fig || cfg.d3) || q.hideShells) return ''; // 電子配置を問う問題は、図を出すと答えになるので出さない
-    return `<div class="gfigs">${ids.map(id => {
+  // phase：'before'（問題の下に 先に出す）／'after'（答えたあとに 出す。答えが わかってしまう図）
+  function figHTML(q, cfg, phase) {
+    const ids = phase === 'after' ? [...new Set(subjectsOf(q).concat(q.ansSubjects || []))].slice(0, 2) : q.figWhen === 'after' ? [] : subjectsOf(q);
+    if (!ids.length || !(cfg.fig || cfg.d3)) return '';
+    return `<div class="gfigs${phase === 'after' ? ' after' : ''}">${phase === 'after' ? '<small class="gfigcap">📐 図・3D でたしかめよう</small>' : ''}${ids.map(id => {
       const name = atomEl(id) ? EL[atomEl(id)].n : LIB.find(e => e.id === id).name;
-      return `<figure class="gfig">${cfg.fig ? `<div class="gfig2">${fig2D(id)}</div>` : ''}${cfg.d3 && ids.length === 1 ? '<div class="gfig3" id="gFig3"></div>' : ''}${ids.length > 1 ? `<figcaption>${esc(name)}</figcaption>` : ''}</figure>`;
+      return `<figure class="gfig">${cfg.fig ? `<div class="gfig2">${fig2D(id)}</div>` : ''}${cfg.d3 && ids.length === 1 ? `<div class="gfig3" id="gFig3" data-fs="${id}"></div>` : ''}${ids.length > 1 ? `<figcaption>${esc(name)}</figcaption>` : ''}</figure>`;
     }).join('')}</div>`;
   }
+  const mount3D = el => { const f3 = el.querySelector('#gFig3'); if (f3) fig3D(f3.dataset.fs, f3); };
   function fromSource(src) {
-    if (src.k === 'quiz') { const [q, a, w, ex] = src.x; return { q: esc(q), choices: shuffle([a].concat(w)), answer: a, explain: ex }; }
-    if (src.k === 'drill') return drillChoice(src.t);
-    if (src.k === 'step') return stepQ(src.t);
-    return genQ(src.t);
+    let q;
+    if (src.k === 'quiz') { const [qq, a, w, ex] = src.x; q = { q: esc(qq), choices: shuffle([a].concat(w)), answer: a, explain: ex, tip: GAME_TIPS.unit[src.l] || '' }; }
+    else if (src.k === 'drill') { q = drillChoice(src.t); q.tip = GAME_TIPS.drill[src.t] || ''; }
+    else if (src.k === 'step') q = stepQ(src.t);
+    else { q = genQ(src.t); q.tip = GAME_TIPS.gen[src.t] || ''; }
+    return decorateQ(q, src);
   }
   function openRewards() {
     shell();
@@ -9592,30 +9881,42 @@ const GAME = (() => {
   const exOn = () => G.cfg.ex !== 0;
   const exrOn = () => G.cfg.exr !== 0;   // 正解したときも「次へ」をおすまで解説を出す（ひとりでは 読んでいる間 時間がへらない）
   const hnOn = () => G.cfg.hn !== 0;     // 💡 ヒント（点数・時間を へらして 2 つ消す）
-  const hintCost = () => (solo() ? { pts: 30, sec: 3 } : { pts: 60, sec: 0 }); // 対戦は 時間が全員同じなので 点数だけ多めに
   const cardMid = dy => { const c = $('gQ'), r = c && c.getBoundingClientRect(); return r ? [r.left + r.width / 2, r.top + r.height * (dy || 0.35)] : null; };
   function flash(k) { const c = $('gQ'); if (!c) return; c.classList.remove('f-ok', 'f-ng'); void c.offsetWidth; c.classList.add('f-' + k); }
-  /* ---------- 💡 ヒント：点数と時間を へらして、まちがいの選択肢を 2 つ消す（ステップでは 考え方のポイントも出る） ---------- */
+  /* ---------- 💡 ヒント（2 だんかい）：① 考え方のヒント（どう考えるか）② 2 つ消す（まちがいの選択肢を 2 つ けす）。点数と時間を へらして 見る ---------- */
   const hintTarget = () => { const q = G.q; return q.steps ? q.steps[q.si] : q; };
   const hintChoices = () => { const q = G.q; return q.steps ? q.steps[q.si].ch : q.choices.map(c => (typeof c === 'string' ? c : c.v)); };
-  function canHint() { return !!(G && !G.over && hnOn() && now() >= G.startAt && !G.lock && !hintTarget().hint && hintChoices().length >= 3); }
+  // ① の文章：ステップは その段階の「考え方のポイント」、ふつうの問題は 型ごと・単元ごとの ポイント
+  function tipOf(q, j) {
+    if (q.steps) { const st = q.steps[j == null ? q.si : j], last = (j == null ? q.si : j) === q.steps.length - 1; return st.why || ((j == null ? q.si : j) === 0 ? '問題文から「何を求めるのか」を整理して、使う関係（式）を 思い出そう。' : last ? '前のステップの答えを 使って 計算する。単位と 桁に 気をつけよう。' : '前のステップの答えを 数字として 使おう。'); }
+    return q.tip || '';
+  }
+  const HCOST = () => (solo() ? { tip: { pts: 10, sec: 1 }, cut: { pts: 30, sec: 3 } } : { tip: { pts: 20, sec: 0 }, cut: { pts: 60, sec: 0 } }); // 対戦は 時間が全員同じなので 点数だけ
+  const costTxt = c => `−${c.pts}点${c.sec ? `・−${c.sec}秒` : ''}`;
+  const hintOk = () => !!(G && !G.over && hnOn() && now() >= G.startAt && !G.lock);
+  const canTip = () => hintOk() && !hintTarget().tipUsed && !!tipOf(G.q);
+  const canHint = () => hintOk() && !hintTarget().hint && hintChoices().length >= 3;
+  function payHint(c, label) {
+    G.score = Math.max(0, G.score - c.pts); if (c.sec && solo()) G.left -= c.sec * 1000;
+    G.q.hinted = true; G.hints = (G.hints || 0) + 1;
+    FX('beep'); timePop(`${label} ${costTxt(c)}`, 'tminus'); drawQ(); pushScore();
+  }
+  function useTip() { if (!canTip()) return; hintTarget().tipUsed = true; payHint(HCOST().tip, '💡'); }
   function useHint() {
     if (!canHint()) return;
     const q = G.q, t = hintTarget(), chs = hintChoices(), right = q.steps ? t.ans : q.answer;
     const wrong = chs.map((c, i) => i).filter(i => chs[i] !== right);
-    t.hint = { cut: shuffle(wrong).slice(0, Math.min(2, chs.length - 2)) }; q.hinted = true; G.hints = (G.hints || 0) + 1;
-    const c = hintCost(); G.score = Math.max(0, G.score - c.pts);
-    if (c.sec && solo()) G.left -= c.sec * 1000;
-    FX('beep'); timePop(`💡 −${c.pts}点${c.sec ? `・−${c.sec}秒` : ''}`, 'tminus');
-    drawQ(); pushScore();
+    t.hint = { cut: shuffle(wrong).slice(0, Math.min(2, chs.length - 2)) };
+    payHint(HCOST().cut, '💡');
   }
   function hintBtn() {
-    if (!hnOn() || hintChoices().length < 3) return '';
-    const c = hintCost(), cost = `−${c.pts}点${c.sec ? `・−${c.sec}秒` : ''}`;
-    if (hintTarget().hint) return `<span class="ghint used">💡 ヒント使用ずみ（${cost}）</span>`;
-    if (G.lock) return '';
-    return `<button type="button" class="ghint" data-g="hint">💡 ヒント（2つ消す）<b>${cost}</b></button>`;
+    if (!hnOn()) return '';
+    const t = hintTarget(), C = HCOST(), out = [];
+    if (tipOf(G.q)) out.push(t.tipUsed ? `<span class="ghint used">💡 考え方 使用ずみ</span>` : G.lock ? '' : `<button type="button" class="ghint" data-g="tip">💡 考え方のヒント<b>${costTxt(C.tip)}</b></button>`);
+    if (hintChoices().length >= 3) out.push(t.hint ? `<span class="ghint used">💡 2つ消した</span>` : G.lock ? '' : `<button type="button" class="ghint" data-g="hint">💡 2つ消す<b>${costTxt(C.cut)}</b></button>`);
+    return out.join('');
   }
+  const tipBox = q => (q.tipUsed && q.tip ? `<div class="gtip">💡 <b>考え方のヒント</b>　${q.tip}</div>` : '');
   const isCut = (t, i) => !!(t.hint && t.hint.cut.includes(i));
   function timePop(text, cls) { const t = g$('.gplay .gtbar'); if (t && window.MLFX) MLFX.popAt(t, text, cls); }
   function pick(i) {
@@ -9704,13 +10005,16 @@ const GAME = (() => {
       if (j < si) return `<div class="gsr ${q.sres[j] ? 'ok' : 'ng'}"><span class="no">${NUM[j]}</span><span class="sk">${s2.ask}</span><span class="sa">${q.sres[j] ? '✓' : '✕ →'} ${s2.ans}</span></div>`;
       if (j === si) {
         const ch = s2.ch.map((c2, i) => `<button type="button" class="gbtn${!done ? (isCut(s2, i) ? ' cut' : '') : c2 === s2.ans ? ' ok' : i === q.pick ? ' ng' : ' dim'}" data-gp="${i}"${done || isCut(s2, i) ? ' disabled' : ''}><span class="kb">${i + 1}</span>${c2}</button>`).join('');
-        return `<div class="gsr cur${done ? (q.sres[j] ? ' ok' : ' ng') : ''}${q.lastSi === si ? '' : ' flash'}"><div class="gsh"><span class="no">${NUM[j]}</span><span class="sk">${s2.ask}</span><span class="here">${done ? (q.sres[j] ? '✓ 正解' : '✕ ざんねん') : 'いまここ'}</span></div><div class="gch">${ch}</div>${s2.why && ((done && (!q.sres[j] || q.fin)) || (!done && s2.hint)) ? `<p class="gswhy">💡 ${s2.why}</p>` : ''}</div>`;
+        return `<div class="gsr cur${done ? (q.sres[j] ? ' ok' : ' ng') : ''}${q.lastSi === si ? '' : ' flash'}"><div class="gsh"><span class="no">${NUM[j]}</span><span class="sk">${s2.ask}</span><span class="here">${done ? (q.sres[j] ? '✓ 正解' : '✕ ざんねん') : 'いまここ'}</span></div><div class="gch">${ch}</div>${(!done && s2.tipUsed) ? `<div class="gtip">💡 <b>考え方のヒント</b>　${tipOf(q, j)}</div>` : (s2.why && done && (!q.sres[j] || q.fin)) ? `<p class="gswhy">💡 ${s2.why}</p>` : ''}</div>`;
       }
       return `<div class="gsr fut"><span class="no">${NUM[j]}</span><span class="sk">次のステップ</span></div>`; // これから答えるステップは 問いを見せない（前の答えが 問いに入っていることがあるため）
     }).join('');
     q.lastSi = si;
+    if (q.figH === undefined) q.figH = figHTML(q, G.cfg, 'before');
+    if (q.fin && q.figA === undefined) q.figA = figHTML(q, G.cfg, 'after');
     el.innerHTML = `${belt()}<div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span><span class="pill st">🪜 解き方ステップ（${n}）</span><span class="pill">${esc(q.cat)}</span>${hintBtn()}</div>
-      <div class="gsprob"><b>問題</b><span>${q.q}</span></div><div class="gws">${rows}</div>${q.fin ? exHTML(q) : ''}`;
+      <div class="gsprob"><b>問題</b><span>${q.q}</span></div>${q.figH || ''}<div class="gws">${rows}</div>${q.fin ? (q.figA || '') + exHTML(q) : ''}`;
+    mount3D(el);
     const cur = el.querySelector('.gsr.cur'), ex = el.querySelector('.gexp'); // スマホで 見えない所に出たら 見える位置へ
     if (ex) ex.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     else if (cur && !done && cur.getBoundingClientRect().bottom > innerHeight - 10) cur.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -9793,15 +10097,16 @@ const GAME = (() => {
     const q = G.q;
     if (q.steps) { drawStepQ(el, q); drawHud(); return; }
     const ansI = q.choices.findIndex(c => (typeof c === 'string' ? c : c.v) === q.answer);
-    if (q.figH === undefined) q.figH = figHTML(q, G.cfg); // 図は問題ごとに1回だけつくる
+    if (q.figH === undefined) q.figH = figHTML(q, G.cfg, 'before'); // 図は問題ごとに1回だけつくる
+    if (q.pick >= 0 && q.figA === undefined) q.figA = figHTML(q, G.cfg, 'after'); // 答えが わかってしまう図は 答えたあとに 下へ
     const fresh = !q.shown; q.shown = true;
-    el.innerHTML = `${belt()}<div class="gmid${fresh ? ' slidein' : ''}"><div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span>${hintBtn()}</div><h2 class="gqt">${q.q}</h2>${q.figH}</div>
+    el.innerHTML = `${belt()}<div class="gmid${fresh ? ' slidein' : ''}"><div class="glab"><span class="pill">✅ ${G.ok}　✕ ${G.miss}</span>${hintBtn()}</div><h2 class="gqt">${q.q}</h2>${tipBox(q)}${q.figH}</div>
       <div class="gch">${q.choices.map((c, i) => {
         const label = typeof c === 'string' ? esc(c) : c.html;
         const cls = q.pick < 0 ? (isCut(q, i) ? ' cut' : '') : i === ansI ? ' ok' : i === q.pick ? ' ng' : ' dim';
         return `<button type="button" class="gbtn${cls}" data-gp="${i}"${cls === ' cut' ? ' disabled' : ''}><span class="kb">${i + 1}</span>${label}</button>`;
-      }).join('')}</div>${exHTML(q)}`;
-    const f3 = $('gFig3'); if (f3) fig3D(subjectsOf(q)[0], f3);
+      }).join('')}</div>${q.pick >= 0 ? q.figA || '' : ''}${exHTML(q)}`;
+    mount3D(el);
     const ex = el.querySelector('.gexp'); if (ex) ex.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     drawHud();
   }
@@ -9831,7 +10136,7 @@ const GAME = (() => {
   function startSolo() {
     const c = taCfg();
     if (c.r === 'unit' && !unitList(c).length) { toast('単元をえらんでください'); renderHub(); return; }
-    newGame({ r: c.r, m: c.m, u: c.u, t: +c.t, fig: c.fig ? 1 : 0, d3: c.d3 ? 1 : 0, fx: c.fx === 0 ? 0 : 1, ex: c.ex === 0 ? 0 : 1, st: c.st === 0 ? 0 : 1, exr: c.exr === 0 ? 0 : 1, hn: c.hn === 0 ? 0 : 1 }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
+    newGame({ r: c.r, m: c.m, u: c.u, t: +c.t, fig: c.fig === 0 ? 0 : 1, d3: c.d3 === 0 ? 0 : 1, fx: c.fx === 0 ? 0 : 1, ex: c.ex === 0 ? 0 : 1, st: c.st === 0 ? 0 : 1, exr: c.exr === 0 ? 0 : 1, hn: c.hn === 0 ? 0 : 1 }, Math.floor(Math.random() * 1e9), 'solo', Date.now() + 3200);
     playShell('スコア');
     runClock(endSolo);
   }
@@ -9884,8 +10189,8 @@ const GAME = (() => {
     if (attr === 'ta') h += `<div class="gfld"><span class="gfl">時間</span><span class="note">⛽ 燃料制：60 秒分の燃料でスタート。正解すると燃料がふえる</span></div>`;
     else h += `<div class="gfld"><span class="gfl">時間</span>${seg('t', TIMES.map(t => [t, tLabel(t)]), cfg.t)}</div>`;
     const tg = (k, label, on) => `<button type="button" data-${attr}="vf:${k}" aria-pressed="${on}"${dis}>${on ? '✓ ' : ''}${label}</button>`;
-    h += `<div class="gfld"><span class="gfl">表示</span><div class="seg wrap gvis">${tg('fig', '図', !!cfg.fig)}${tg('d3', '3D', !!cfg.d3)}${tg('fx', '式', cfg.fx !== 0)}${tg('ex', '解説', cfg.ex !== 0)}${tg('st', '🪜 ステップ', cfg.st !== 0)}${tg('exr', '📖 正解も読む', cfg.exr !== 0)}${tg('hn', '💡 ヒント', cfg.hn !== 0)}</div></div>
-      <p class="note gvnote">図：分子の構造図・原子の電子殻の図　3D：くるくる回る模型　式：問題文に化学式を出す（オフにすると名前だけ）　解説：答えたあとに解説を出す（まちがえたら「次へ」をおすまで表示）　🪜 ステップ：むずかしい計算問題を「考え方 → 式 → 計算」に分けて、順に答える　📖 正解も読む：正解したときも「次へ」をおすまで解説を出す（ひとりでは 読んでいる間は時間がへらない。対戦では 時間は進む）　💡 ヒント：点数と時間を へらして、まちがいの選択肢を 2 つ消す</p>`;
+    h += `<div class="gfld"><span class="gfl">表示</span><div class="seg wrap gvis">${tg('fig', '図', cfg.fig !== 0)}${tg('d3', '3D', cfg.d3 !== 0)}${tg('fx', '式', cfg.fx !== 0)}${tg('ex', '解説', cfg.ex !== 0)}${tg('st', '🪜 ステップ', cfg.st !== 0)}${tg('exr', '📖 正解も読む', cfg.exr !== 0)}${tg('hn', '💡 ヒント', cfg.hn !== 0)}</div></div>
+      <p class="note gvnote">図：分子の構造図・原子の電子殻の図　3D：くるくる回る模型（答えが わかってしまう問題では 答えたあとに 下に出る）　式：問題文に化学式を出す（オフにすると名前だけ）　解説：答えたあとに解説を出す（まちがえたら「次へ」をおすまで表示）　🪜 ステップ：むずかしい計算問題を「考え方 → 式 → 計算」に分けて、順に答える　📖 正解も読む：正解したときも「次へ」をおすまで解説を出す（ひとりでは 読んでいる間は時間がへらない。対戦では 時間は進む）　💡 ヒント：点数と時間を へらして ① 考え方のヒントを見る ② まちがいの選択肢を 2 つ消す</p>`;
     return h;
   }
   // えらんだものを cfg の変更にする（uc は画面だけの状態）
@@ -9898,7 +10203,7 @@ const GAME = (() => {
     if (key === 'ut') { if (sel.has(val)) sel.delete(val); else sel.add(val); return { r: 'unit', u: join() }; }
     if (key === 'ua') { LESSONS.filter(l => l.course === val).forEach(l => sel.add(l.id)); return { r: 'unit', u: join() }; }
     if (key === 'un') return { u: '' };
-    if (key === 'vf') { const o = {}; o[val] = (val === 'fx' || val === 'ex' || val === 'st' || val === 'exr' || val === 'hn' ? cfg[val] !== 0 : !!cfg[val]) ? 0 : 1; return o; }
+    if (key === 'vf') { const o = {}; o[val] = cfg[val] !== 0 ? 0 : 1; return o; }
     if (key === 'upto') { const l = LESSONS.find(x => x.id === val); if (!l) return null; const list = LESSONS.filter(x => x.course === l.course); return { r: 'unit', u: list.slice(0, list.indexOf(l) + 1).map(x => x.id).join(',') }; }
     return null;
   }
@@ -9976,7 +10281,7 @@ const GAME = (() => {
   /* 先生：部屋 */
   let H = null;
   function makeRoom() {
-    const cfg = { r: 'fld', m: 'mix', u: '', t: 60, fig: 0, d3: 0, fx: 1, ex: 1, st: 1, exr: 1, hn: 1 };
+    const cfg = { r: 'fld', m: 'mix', u: '', t: 60, fig: 1, d3: 1, fx: 1, ex: 1, st: 1, exr: 1, hn: 1 };
     const tryOne = n => {
       const code = String(1000 + Math.floor(Math.random() * 9000));
       return api('GET', ROOM(code)).then(v => {
@@ -10210,6 +10515,7 @@ const GAME = (() => {
       case 'sfx': S.sfx = S.sfx === false; save(); renderHub(); break;
       case 'next': advance(); break;
       case 'hint': useHint(); break;
+      case 'tip': useTip(); break;
       case 'brag': brag((G && G.share) || ''); break;
       case 'quit': leave(); leaveBattle(); location.hash = '#game'; renderHub(); break;
       case 'rewards': openRewards(); break;

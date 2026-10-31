@@ -171,6 +171,18 @@ ul.caution li b.o { background: var(--ok); } ul.caution li b.x { background: var
 .series .me { background: #f59e0b; color: #fff; font-weight: 700; }
 .series .ion { background: #3b82f6; color: #fff; font-weight: 700; }
 .purpose > b:first-child { display: block; font-size: 12px; color: var(--accent); }
+/* 仮説を立てる */
+.hyp { border: 1.5px solid var(--accent); border-radius: 12px; padding: 8px 10px; margin: 8px 0 10px; background: color-mix(in srgb, var(--accent) 6%, var(--panel)); }
+.hypflow { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: 11.5px; color: var(--muted); margin-bottom: 4px; } .hypflow i { font-style: normal; opacity: .6; }
+.hypflow span { padding: 0 8px; border-radius: 999px; border: 1px solid var(--line); } .hypflow span.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.hyph { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; } .hyph b { font-size: 14px; color: var(--accent); } .hyph small { color: var(--muted); font-size: 12px; }
+.hypq { margin: 4px 0 6px; font-weight: 700; font-size: 14.5px; line-height: 1.6; }
+.hypch { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+.hypch button { text-align: left; font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+.hypch button[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--panel)); font-weight: 700; }
+.hypch button:disabled { cursor: default; opacity: .85; }
+.hypmine { margin: 4px 0; font-size: 14px; line-height: 1.6; } .hypmine b { color: var(--accent); }
+.hypres { margin: 6px 0; font-size: 14px; line-height: 1.65; } .hypres b { display: inline-block; margin-right: 6px; color: var(--accent); }
 .purpose b { color: var(--accent); }
 ol.whysteps { margin: 6px 0 0; padding-left: 22px; font-size: 14px; }
 ol.whysteps li { margin-bottom: 8px; }
@@ -1881,11 +1893,52 @@ function showPractice(id) {
   PR[id].init();
   renderCard();
 }
+
+// ===== 仮説を立てる（実験の最初の手順）：どうなるか 予想 → 実験 → 答え合わせ =====
+// HYP[id] = { q: 予想する問い, ch: 3 つの予想, a: 正しい予想の番号, res: 結果と理由 }
+const HYP = {
+  'p-burner': { q: '空気調節ねじを、少しずつ開いていくと、炎の色はどうなる？', ch: ['オレンジ色のまま変わらない', 'オレンジ色から、青い色の炎に変わる', '青い炎から、赤い炎に変わる'], a: 1, res: '空気（酸素）が十分入ると 完全燃焼して、青く温度の高い炎になる。オレンジ色の炎は 空気が足りないしるし。' },
+  'p-lamp': { q: 'アルコールランプの火を、ふたを横からかぶせて消せるのは なぜ？', ch: ['空気（酸素）がしゃ断されるから', 'アルコールがなくなるから', 'ふたが熱を吸いとるから'], a: 0, res: '燃えるには 酸素が必要。ふたをかぶせると 酸素が入らなくなり、火が消える。息で吹き消すと 炎が横にゆれて危ない。' },
+  'p-cylinder': { q: 'メスシリンダーの液面を、真横ではなく 上から見おろして読むと、読みはどうなる？', ch: ['実際より 大きく読んでしまう', '実際と同じ', '実際より 小さく読んでしまう'], a: 0, res: '上から見ると 実際より大きく読んでしまう。真横から、液面のへこんだ下の面を読む。' },
+  'p-filter': { q: 'ろうとの足の先を ビーカーのかべにつけないで、ろ過すると どうなる？', ch: ['液がはねて、ろ過もおそくなる', 'とくに変わらない', 'ろ過が 速く終わる'], a: 0, res: '足の先を かべにつけると、液がかべを伝って落ち、はねずに 吸いこむように速く流れる。つけないと はねて おそくなる。' },
+  'p-tube': { q: '試験管の液体を 加熱するとき、口を人のほうに向けておくと どうなる？', ch: ['突沸で 液が飛び出して 危ない', 'よくあたたまる', '変わらない'], a: 0, res: '急に沸騰（突沸）すると 液が飛び出す。口は人のいない方に向け、試験管をふりながら 加熱する。' },
+  'p-balance': { q: '薬包紙をのせてから ゼロ（風袋）ボタンをおして 薬品を入れると、表示は？', ch: ['薬品だけの質量', '薬包紙 ＋ 薬品の質量', '0 のまま'], a: 0, res: 'ゼロにすると 薬包紙の質量が 引かれるので、薬品だけの質量が表示される。' },
+  'p-volflask': { q: 'メスフラスコに水を入れすぎて、標線を こえてしまった。できた溶液の濃度は？', ch: ['正しい濃度より うすくなる', '正しい濃度より こくなる', '変わらない'], a: 0, res: '体積が 標線より多いので、溶質の物質量は同じでも 濃度はうすくなる（c ＝ n ÷ V で V が大きい）。' },
+  'p-titr': { q: '中和滴定で、うすい赤色が 消えなくなったとき（終点）、酸と塩基は どうなっている？', ch: ['ちょうど（ほぼ）中和している', 'まだ酸が たくさん のこっている', '塩基が 大量にあまっている'], a: 0, res: '指示薬の色が 変わった点が 終点で、酸の H⁺ と塩基の OH⁻ が ほぼ同じ物質量。ここから 濃度を計算できる。' },
+  'p-gas': { q: 'アンモニアは 水にとても溶け、空気より軽い。どの集め方がよい？', ch: ['水上置換', '上方置換', '下方置換'], a: 1, res: '水に溶けるので 水上置換は不可。空気（29）より軽い（17）ので 上方置換で 集める。' },
+  'p-kipp': { q: 'ふたまた試験管で、液体を 固体のほうから もどすと 反応は どうなる？', ch: ['反応が 止まる', '反応が はげしくなる', '変わらない'], a: 0, res: '液体と固体が はなれると 反応が止まる。くびれが 固体を止めるので、必要なときだけ 気体を出せる。' },
+  'p-distill': { q: '水とエタノールの混合物を 加熱していくと、先に出てくるのは？', ch: ['エタノール（沸点が低い）', '水（沸点が高い）', '同じ割合で同時に出る'], a: 0, res: 'エタノール（約78 ℃）のほうが 水（100 ℃）より沸点が低いので、先に気体になって 出てくる。' },
+  'p-recryst': { q: '熱い硝酸カリウム水溶液を ゆっくり冷やすと どうなる？', ch: ['溶けきれなくなった分が 結晶になって出る', '何も変わらない', 'もっと たくさん溶ける'], a: 0, res: '温度が下がると 溶解度が小さくなり、溶けきれない分が 結晶として出てくる。' },
+  'p-chroma': { q: '水性ペンの黒インクを ろ紙につけて、下の端を 水にひたすと？', ch: ['いくつかの色に 分かれる', '黒いまま 上がっていく', '色が 消える'], a: 0, res: '色素ごとに ろ紙への吸着されやすさと 水への溶けやすさがちがうので、別々の位置まで移動して 分かれる。' },
+  'p-sublime': { q: 'ヨウ素と砂の混合物を 加熱すると、ヨウ素は どうなる？', ch: ['固体から 直接 気体になる', '液体になってから 蒸発する', '変わらない'], a: 0, res: 'ヨウ素は 昇華しやすい。気体になって 冷たい面で 固体にもどるので、砂と分けられる。' },
+  'p-cuox': { q: '銅の粉を 加熱して質量をはかる。1回目・2回目・3回目…と くり返すと、質量は どう変わる？', ch: ['ふえつづける', 'ふえるが だんだん小さくなり、やがて一定になる', 'へっていく'], a: 1, res: '銅が酸素と結びついて 質量がふえる（2Cu ＋ O₂ → 2CuO）。銅が のこり少なくなると ふえ方が小さくなり、すべて酸化銅になると 一定になる。' },
+  'p-fes': { q: '鉄粉と硫黄の混合物を加熱して 反応が始まったら 火を止める。反応は？', ch: ['熱が出るので 反応は続く', 'すぐ止まる', '爆発する'], a: 0, res: 'この反応は 発熱反応で、出た熱で 反応が進んでいく。できた硫化鉄は 磁石につかない。' },
+  'p-nahco3': { q: '炭酸水素ナトリウムを 加熱すると 出てくる気体は？（石灰水を白くにごらせる）', ch: ['二酸化炭素', '酸素', '水素'], a: 0, res: '2NaHCO₃ → Na₂CO₃ ＋ H₂O ＋ CO₂。CO₂ が 石灰水を白くにごらせる。' },
+  'p-flame': { q: '塩化ナトリウムの水溶液を 炎に入れると、炎の色は？', ch: ['黄色', '赤紫色', '青緑色'], a: 0, res: 'ナトリウム Na は 黄色。（K は赤紫、Cu は青緑、Li は赤、Ca は橙赤）' },
+  'p-elec': { q: '水を電気分解したとき、陰極と陽極に出る 気体の体積の比は？', ch: ['水素 : 酸素 ＝ 2 : 1', '水素 : 酸素 ＝ 1 : 2', '水素 : 酸素 ＝ 1 : 1'], a: 0, res: '2H₂O → 2H₂ ＋ O₂。水素は 陰極、酸素は 陽極に出て、体積比は 2 : 1。' },
+  'p-ionize': { q: '亜鉛板を 硫酸銅(II)水溶液に ひたすと、表面は どうなる？', ch: ['赤かっ色の銅が 出てくる', '変化しない', '亜鉛が 出てくる'], a: 0, res: '亜鉛のほうが イオン化傾向が大きいので、Zn が Zn²⁺ になって溶け、Cu²⁺ が Cu になって 表面に出る。' },
+};
+const hypState = () => (state.hyp = state.hyp || {});
+function hypHTML(id) {
+  const H = HYP[id]; if (!H) return '';
+  const st = hypState()[id] || {}, picked = st.pick != null, shown = !!st.show, ok = picked && st.pick === H.a;
+  const flow = [['① 仮説', picked], ['② 実験', done.has(id)], ['③ 結果', shown], ['④ 考察', shown]];
+  return `<div class="hyp${shown ? ' shown' : ''}"><div class="hypflow">${flow.map(([n, on], i) => `<span class="${on ? 'on' : ''}">${n}</span>${i < 3 ? '<i>›</i>' : ''}`).join('')}</div>
+    <div class="hyph"><b>🔍 ① 仮説を立てよう</b><small>実験の前に、結果を予想する</small></div>
+    <p class="hypq">${esc(H.q)}</p>
+    ${picked ? `<p class="hypmine">あなたの予想：<b>${'ア イ ウ'.split(' ')[st.pick]}　${esc(H.ch[st.pick])}</b>${shown ? '' : ' <button type="button" class="btn" data-hypshow="0">予想を変える</button>'}</p>`
+      : `<div class="hypch">${H.ch.map((c, i) => `<button type="button" data-hyp="${i}">${'ア イ ウ'.split(' ')[i]}　${esc(c)}</button>`).join('')}</div><p class="note">どうなると思う？ 予想をえらんでから、下の「やってみる」で たしかめよう。</p>`}
+    ${!picked ? '' : !shown ? `<p class="note">② 実験でたしかめて、できたら <button type="button" class="btn" data-hypshow="1">答え合わせ</button></p>`
+      : `<div class="verdict ${ok ? 'ok' : 'ng'}">${ok ? '⭕ 予想は 当たり！' : `✕ 予想は ちがった（正しくは ${'ア イ ウ'.split(' ')[H.a]}）`}</div>
+        <p class="hypres"><b>③ 結果・④ 考察</b>${esc(H.res)}</p>${ok ? '' : '<p class="note">予想とちがったときこそ チャンス。なぜ ちがったのか 考えてみよう。</p>'}<button type="button" class="btn" data-hypshow="0">予想をやりなおす</button>`}
+  </div>`;
+}
+
 function practiceCardHTML(p) {
   const it = ITEMS.find(x => x.id === p.item), info = INFO[p.id], tab = state.ptab || 'op';
   let h = `<div class="card-head"><div><div class="eyebrow">${esc(catOf(p.id))}${done.has(p.id) ? ' ・ ✓ クリア' : ''}${done.has(p.id + ':order') ? ' ・ ✓ 手順' : ''}</div><h2 class="name">${esc(p.name)}</h2></div></div>
     <div class="tabs" role="tablist">${[['op', 'やってみる'], ['steps', '手順とわけ'], ['care', '注意']].map(([k, n]) => `<button type="button" role="tab" data-ptab="${k}" aria-selected="${tab === k}">${n}</button>`).join('')}</div><div class="body">`;
-  if (tab === 'op') h += PR[p.id].html();
+  if (tab === 'op') h += hypHTML(p.id) + PR[p.id].html();
   else if (tab === 'steps') {
     if (state.order && state.order.id === p.id) h += orderHTML();
     else {
@@ -2643,11 +2696,31 @@ function svgGraph(w, h, pts, line, xLab, yLab, xMax, yMax, extra) {
   return s + '</svg>';
 }
 
+// 加熱の回数（横）と はかった質量（縦）：1 回めごとに 点をうち、線でむすぶ。前にやった銅の質量のぶんも うすく のこす
+function cuRunsGraph(s) {
+  const all = s.runs.flatMap(r => r.pts).concat(s.cur), top = Math.max(1, ...all.map(p => p[1]), s.m0 * 1.25), yMax = Math.ceil(top * 1.12 * 2) / 2; // 縦の はば：いちばん大きい質量に合わせる
+  const w = 300, h = 160, xMax = 6, X = v => 34 + v / xMax * (w - 44), Y = v => h - 24 - v / yMax * (h - 44), COL = ['#8e9ab0', '#2f9e8f', '#c35fa8', '#e0a100'];
+  let g = `<svg class="tcurve" viewBox="0 0 ${w} ${h}" role="img"><line x1="34" y1="${Y(0)}" x2="${w - 8}" y2="${Y(0)}" stroke="currentColor" stroke-opacity=".5"/><line x1="34" y1="8" x2="34" y2="${Y(0)}" stroke="currentColor" stroke-opacity=".5"/>`;
+  for (let i = 0; i <= xMax; i++) g += `<line x1="${X(i)}" y1="${Y(0)}" x2="${X(i)}" y2="${Y(0) + 3}" stroke="currentColor" stroke-opacity=".5"/><text x="${X(i)}" y="${Y(0) + 13}" font-size="8" text-anchor="middle" fill="currentColor">${i}</text>`;
+  for (let v = 0.5; v < yMax; v += 0.5) { g += `<line x1="34" y1="${Y(v)}" x2="${w - 8}" y2="${Y(v)}" stroke="currentColor" stroke-opacity=".12"/><text x="30" y="${Y(v) + 3}" font-size="8" text-anchor="end" fill="currentColor">${v}</text>`; }
+  g += `<text x="${w - 8}" y="${Y(0) - 5}" font-size="9" text-anchor="end" fill="currentColor" fill-opacity=".75">加熱の回数（回）</text><text x="38" y="11" font-size="9" fill="currentColor" fill-opacity=".75">はかった質量 (g)</text>`;
+  const draw = (pts, col, cur, label) => {
+    if (!pts.length) return;
+    if (pts.length > 1) g += `<polyline points="${pts.map(([a, b]) => `${X(a).toFixed(1)},${Y(b).toFixed(1)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="${cur ? 2 : 1.4}"${cur ? '' : ' stroke-opacity=".7"'}/>`;
+    pts.forEach(([a, b], i) => { g += `<circle cx="${X(a)}" cy="${Y(b)}" r="${cur ? 4.5 : 3}" fill="${col}"${cur ? '' : ' fill-opacity=".8"'}/>`; if (cur) g += `<text x="${X(a)}" y="${Y(b) - 8}" font-size="8.5" text-anchor="middle" fill="${col}" font-weight="700">${b.toFixed(2)}</text>`; });
+    const last = pts[pts.length - 1]; if (label) g += `<text x="${Math.min(w - 10, X(last[0]) + 8)}" y="${Y(last[1]) + (cur ? 12 : -6)}" font-size="8" fill="${col}">${label}</text>`;
+  };
+  s.runs.forEach((r, i) => draw(r.pts, COL[i % COL.length], false, `銅 ${r.m0.toFixed(1)} g`));
+  if (s.cur.length) draw(s.cur, '#2753d6', true, `銅 ${s.m0.toFixed(1)} g（いま）`);
+  if (s.stable && s.cur.length) { const m = s.cur[s.cur.length - 1][1]; g += `<line x1="${X(0)}" y1="${Y(m)}" x2="${w - 8}" y2="${Y(m)}" stroke="#d9661f" stroke-dasharray="4 3" stroke-opacity=".8"/>`; }
+  return g + '</svg>';
+}
+
 // ---------- 銅の酸化（質量の変化） ----------
 PR['p-cuox'] = {
   init() {
     const g = R.group;
-    const s = { m0: 1.2, n: 0, f: 0, heating: 0, pts: (state.pr && state.pr.ptsKeep) || [], lastMass: null, stable: false };
+    const s = { m0: 1.2, n: 0, f: 0, heating: 0, pts: (state.pr && state.pr.ptsKeep) || [], runs: (state.pr && state.pr.runsKeep) || [], cur: [], lastMass: null, stable: false };
     state.pr = s;
     const bm = MODELS.burner(); bm.g.scale.setScalar(0.62); bm.g.position.set(-1.6, 0, 0); g.add(bm.g);
     bm.flame.size = 0.5; bm.flame.air = 0.9;
@@ -2689,9 +2762,13 @@ PR['p-cuox'] = {
       <div class="sl"><label for="cuS">銅の質量</label><input id="cuS" type="range" min="0.4" max="2" step="0.2" value="${s.m0}" ${s.n ? 'disabled' : ''}><output>${s.m0.toFixed(2)} g</output></div>
       <div class="row"><button type="button" class="btn main" data-a="cuheat">加熱してかき混ぜる（1回）</button><button type="button" class="btn" data-a="cuweigh">冷ましてはかる</button><button type="button" class="btn" data-a="cunew">新しい銅で</button></div>
       <div class="elecv"><span>加熱した回数 <b>${s.n}</b></span><span>はかった質量 <b>${s.lastMass === null ? '—' : s.lastMass.toFixed(2)}</b> g</span></div>
-      ${s.stable ? `<div class="verdict ok">質量が変わらなくなった＝銅がすべて酸化銅(II)になった。<button type="button" class="btn" data-a="curec">グラフに記録</button></div>` : ''}
+      ${s.stable ? `<div class="verdict ok">質量が変わらなくなった＝銅がすべて酸化銅(II)になった。（② のグラフに自動で記録したよ）</div>` : ''}
+      <h3 class="sub">① 加熱の回数と、はかった質量（1回目・2回目・…）</h3>
+      ${cuRunsGraph(s)}
+      <p class="note">${s.cur.length < 2 ? '「冷ましてはかる」をおすたびに、点がふえる。加熱前（0回）の質量も はかってみよう。' : s.stable ? '質量が変わらなくなった：これ以上 酸素と結びつく銅が のこっていない（すべて酸化銅(II)になった）。' : '加熱するほど質量はふえるが、ふえ方はだんだん小さくなる（銅がへって、反応する銅が少なくなるから）。'}</p>
+      <h3 class="sub">② 銅の質量と、できた酸化銅の質量</h3>
       ${svgGraph(300, 150, s.pts, s.pts.length >= 2 ? line : null, '銅の質量 (g)', '酸化銅の質量 (g)', 2.2, 2.8)}
-      <p class="note">記録 ${s.pts.length} 点${s.pts.length >= 3 ? '：原点を通る直線になる → 銅：酸化銅 ＝ 4：5、銅：酸素 ＝ 4：1' : '（3点以上記録しよう）'}</p>
+      <p class="note">記録 ${s.pts.length} 点${s.pts.length >= 3 ? '：原点を通る直線になる → 銅：酸化銅 ＝ 4：5、銅：酸素 ＝ 4：1' : '（銅の質量を変えて「新しい銅で」くり返し、3点以上そろえよう。質量が変わらなくなると自動で記録される）'}</p>
       <div class="purpose"><b>反応式</b>2Cu + O₂ → 2CuO（赤かっ色の銅が、黒色の酸化銅(II)になる）</div></div>`;
   },
   act(a, v) {
@@ -2699,15 +2776,17 @@ PR['p-cuox'] = {
     if (a === 'cu') { s.m0 = v; }
     if (a === 'cuheat') { s.n++; s.f = 1 - Math.pow(0.42, s.n); if (s.n >= 6) s.f = 1; s.heating = performance.now(); s.stable = false; }
     if (a === 'cuweigh') {
-      if (!s.n) { toast('まず加熱しよう。加熱前の銅の質量は ' + s.m0.toFixed(2) + ' g。', 'info'); }
+      if (!s.n) { toast('これが加熱前（0回）の質量：' + s.m0.toFixed(2) + ' g。加熱してから、もう一度はかろう。', 'info'); }
       const m = s.mass();
       s.stable = s.lastMass !== null && Math.abs(m - s.lastMass) < 0.005 && s.n > 1;
       s.lastMass = m;
+      s.cur = s.cur.filter(p => p[0] !== s.n).concat([[s.n, m]]).sort((a, b) => a[0] - b[0]); // 加熱 n 回めの質量を グラフに 1 点ふやす
+      if (s.stable && !s.pts.some(p => Math.abs(p[0] - s.m0) < 0.01)) { s.pts.push([s.m0, m]); if (s.pts.length >= 3) markDone('p-cuox'); } // 質量が変わらなくなったら 自動で ② のグラフにも記録
       s.pD.visible = true; s.bal.show(m.toFixed(2), true);
       if (!s.stable && s.n) toast('まだ質量がふえている。もう一度加熱してかき混ぜよう。', 'info');
     }
     if (a === 'curec') { if (!s.pts.some(p => Math.abs(p[0] - s.m0) < 0.01)) s.pts.push([s.m0, s.lastMass]); if (s.pts.length >= 3) markDone('p-cuox'); s.stable = false; }
-    if (a === 'cunew') { const keep = s.pts; clearScene(); state.pr = { ptsKeep: keep }; this.init(); }
+    if (a === 'cunew') { const keep = s.pts, runs = s.cur.length > 1 ? s.runs.concat([{ m0: s.m0, pts: s.cur }]) : s.runs; clearScene(); state.pr = { ptsKeep: keep, runsKeep: runs }; this.init(); }
     renderCard();
   },
 };
@@ -3506,6 +3585,8 @@ Object.keys(SEQ).forEach(id => {
   const d = SEQ[id];
   INFO[id] = { purpose: d.purpose, steps: d.steps.map(s => [s.do, s.why]), mistakes: d.mistakes, danger: d.danger };
 });
+// 手順の 1 つめは どの実験も「仮説を立てる」（予想してから 実験する）
+Object.keys(HYP).forEach(id => { if (INFO[id] && !INFO[id].hyp) { INFO[id].hyp = 1; INFO[id].steps.unshift(['仮説を立てる：結果がどうなるか 予想する', 'まず予想してから実験すると、結果が合ったかどうかで 理解をたしかめられる。ちがったときは「なぜ？」を考えるチャンスになる。']); } });
 PRACTICES.push(
   { id: 'p-volflask', name: '決まった濃度の溶液をつくる', icon: 'M', item: null, grp: '実験' },
   { id: 'p-nahco3', name: '炭酸水素ナトリウムの熱分解', icon: '重', item: null, grp: '実験' },
@@ -4178,6 +4259,10 @@ document.addEventListener('click', ev => {
   if (pl && state.play && PLAY[state.id]) { PLAY[state.id].act(pl.dataset.p, pl.dataset.pv); return; }
   const cat = t.closest('[data-cat]');
   if (cat) { state.libCat = cat.dataset.cat; renderLib(); return; }
+  const hy = t.closest('[data-hyp]');
+  if (hy && state.mode === 'practice') { const o = hypState()[state.id] = hypState()[state.id] || {}; if (!o.show) { o.pick = +hy.dataset.hyp; renderCard(); } return; }
+  const hs = t.closest('[data-hypshow]');
+  if (hs && state.mode === 'practice') { const o = hypState()[state.id] = hypState()[state.id] || {}; if (hs.dataset.hypshow === '1') o.show = true; else { o.show = false; o.pick = null; } renderCard(); return; }
   const stp = t.closest('[data-step]');
   if (stp) { const i = +stp.dataset.step; state.stepOpen = state.stepOpen === i ? -1 : i; renderCard(); return; }
   const ord = t.closest('[data-order]');
